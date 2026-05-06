@@ -1,33 +1,192 @@
 'use client'
-import { Settings, User, Bell, Shield, RotateCcw } from 'lucide-react'
+
+import { useState, useEffect } from 'react'
+import { User, Bell, Shield, RotateCcw, Save, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 export default function ConfiguracoesPage() {
   const user = useAuthStore(s => s.user)
+  const setUser = useAuthStore(s => s.setUser)
+  const logout = useAuthStore(s => s.logout)
+  const router = useRouter()
+
+  const [nome, setNome] = useState(user?.name ?? '')
+  const [showPass, setShowPass] = useState(false)
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmSenha, setConfirmSenha] = useState('')
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [notifs, setNotifs] = useState({
+    lembreteDiario: true,
+    flashcardsPendentes: true,
+    novosSimulados: true,
+    relatorioSemanal: false,
+    dicasIA: true,
+  })
+
+  useEffect(() => {
+    const saved = localStorage.getItem('gabaritai_notifs')
+    if (saved) setNotifs(JSON.parse(saved))
+  }, [])
+
+  function salvarPerfil() {
+    if (!nome.trim()) { toast.error('Nome não pode ser vazio'); return }
+    setUser({ ...user!, name: nome })
+    toast.success('Perfil atualizado!')
+  }
+
+  function salvarSenha() {
+    if (!senhaAtual) { toast.error('Digite a senha atual'); return }
+    if (novaSenha.length < 6) { toast.error('Nova senha precisa ter ao menos 6 caracteres'); return }
+    if (novaSenha !== confirmSenha) { toast.error('Senhas não conferem'); return }
+    setSenhaAtual(''); setNovaSenha(''); setConfirmSenha('')
+    toast.success('Senha alterada com sucesso!')
+  }
+
+  function toggleNotif(key: keyof typeof notifs) {
+    const updated = { ...notifs, [key]: !notifs[key] }
+    setNotifs(updated)
+    localStorage.setItem('gabaritai_notifs', JSON.stringify(updated))
+  }
+
+  function resetarProgresso() {
+    localStorage.removeItem('gabaritai_flashcards_custom')
+    localStorage.removeItem('gabaritai_progresso')
+    localStorage.removeItem('gabaritai_notifs')
+    logout()
+    toast.success('Progresso resetado. Faça login novamente.')
+    router.push('/login')
+  }
+
+  const NOTIF_LABELS: Record<keyof typeof notifs, string> = {
+    lembreteDiario: 'Lembrete diário de estudo',
+    flashcardsPendentes: 'Flashcards pendentes para revisão',
+    novosSimulados: 'Novos simulados disponíveis',
+    relatorioSemanal: 'Relatório semanal de desempenho',
+    dicasIA: 'Dicas personalizadas do Mentor IA',
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-black text-foreground">Configurações</h1>
-      <div className="card p-5 space-y-4">
-        <h2 className="font-bold text-foreground flex items-center gap-2"><User className="w-4 h-4" /> Perfil</h2>
-        <div className="grid gap-3">
-          <div><label className="label">Nome</label><input className="input" defaultValue={user?.name} /></div>
-          <div><label className="label">E-mail</label><input className="input" defaultValue={user?.email} disabled /></div>
-        </div>
-        <button className="btn-primary btn-md">Salvar alterações</button>
+      <div>
+        <h1 className="text-2xl font-black text-foreground">Configurações</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Gerencie seu perfil e preferências</p>
       </div>
+
+      {/* Perfil */}
+      <div className="card p-5 space-y-4">
+        <h2 className="font-bold text-foreground flex items-center gap-2 text-sm">
+          <User className="w-4 h-4" /> Perfil
+        </h2>
+
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center text-white font-black text-xl">
+            {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <div className="font-semibold text-foreground">{user?.name}</div>
+            <div className="text-xs text-muted-foreground">{user?.email}</div>
+            <div className="text-xs text-brand-600 dark:text-brand-400 mt-0.5 font-medium">{user?.plan} • {user?.concursoAlvo}</div>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <div>
+            <label className="label">Nome</label>
+            <input className="input" value={nome} onChange={e => setNome(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">E-mail</label>
+            <input className="input" defaultValue={user?.email} disabled />
+            <p className="text-xs text-muted-foreground mt-1">O e-mail não pode ser alterado nesta versão.</p>
+          </div>
+          {user?.concursoAlvo && (
+            <div>
+              <label className="label">Concurso alvo</label>
+              <input className="input" defaultValue={user.concursoAlvo} disabled />
+            </div>
+          )}
+        </div>
+        <button onClick={salvarPerfil} className="btn-primary btn-md">
+          <Save className="w-4 h-4" /> Salvar alterações
+        </button>
+      </div>
+
+      {/* Senha */}
+      <div className="card p-5 space-y-4">
+        <h2 className="font-bold text-foreground flex items-center gap-2 text-sm">
+          <Shield className="w-4 h-4" /> Alterar Senha
+        </h2>
+        <div className="grid gap-3">
+          <div>
+            <label className="label">Senha atual</label>
+            <div className="relative">
+              <input type={showPass ? 'text' : 'password'} className="input pr-11" value={senhaAtual} onChange={e => setSenhaAtual(e.target.value)} placeholder="••••••••" />
+              <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="label">Nova senha</label>
+            <input type="password" className="input" value={novaSenha} onChange={e => setNovaSenha(e.target.value)} placeholder="Mínimo 6 caracteres" />
+          </div>
+          <div>
+            <label className="label">Confirmar nova senha</label>
+            <input type="password" className="input" value={confirmSenha} onChange={e => setConfirmSenha(e.target.value)} placeholder="Repita a nova senha" />
+          </div>
+        </div>
+        <button onClick={salvarSenha} className="btn-outline btn-md">
+          <Shield className="w-4 h-4" /> Alterar senha
+        </button>
+      </div>
+
+      {/* Notificações */}
       <div className="card p-5 space-y-3">
-        <h2 className="font-bold text-foreground flex items-center gap-2"><Bell className="w-4 h-4" /> Notificações</h2>
-        {['Lembrete diário de estudo', 'Flashcards pendentes', 'Novos simulados disponíveis'].map(l => (
-          <label key={l} className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm text-muted-foreground">{l}</span>
-            <div className="w-10 h-5 bg-brand-500 rounded-full" />
+        <h2 className="font-bold text-foreground flex items-center gap-2 text-sm">
+          <Bell className="w-4 h-4" /> Notificações
+        </h2>
+        <p className="text-xs text-muted-foreground">Escolha quais notificações deseja receber.</p>
+        {(Object.keys(notifs) as (keyof typeof notifs)[]).map(key => (
+          <label key={key} className="flex items-center justify-between cursor-pointer py-1">
+            <span className="text-sm text-foreground">{NOTIF_LABELS[key]}</span>
+            <button
+              onClick={() => toggleNotif(key)}
+              className={`w-11 h-6 rounded-full transition-colors relative ${notifs[key] ? 'bg-brand-500' : 'bg-muted-foreground/30'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifs[key] ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
           </label>
         ))}
       </div>
+
+      {/* Zona de perigo */}
       <div className="card p-5 border-danger-200 dark:border-danger-800/40">
-        <h2 className="font-bold text-danger-600 flex items-center gap-2 mb-3"><RotateCcw className="w-4 h-4" /> Zona de perigo</h2>
-        <p className="text-sm text-muted-foreground mb-3">Apagar toda a memória da IA e reiniciar seu progresso do zero. Esta ação não pode ser desfeita.</p>
-        <button className="btn-danger btn-md">Resetar progresso e memória da IA</button>
+        <h2 className="font-bold text-danger-600 flex items-center gap-2 mb-3 text-sm">
+          <AlertTriangle className="w-4 h-4" /> Zona de perigo
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Apaga todo o progresso local (flashcards criados, configurações) e faz logout. Esta ação não pode ser desfeita.
+        </p>
+        {!confirmReset ? (
+          <button onClick={() => setConfirmReset(true)} className="btn-danger btn-md">
+            <RotateCcw className="w-4 h-4" /> Resetar progresso e memória da IA
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded-xl bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800/40 p-3">
+              <p className="text-sm font-semibold text-danger-600">Tem certeza? Esta ação é irreversível.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmReset(false)} className="btn-outline btn-md flex-1">Cancelar</button>
+              <button onClick={resetarProgresso} className="btn-danger btn-md flex-1">
+                Confirmar reset
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
