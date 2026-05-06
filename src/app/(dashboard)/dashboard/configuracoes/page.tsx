@@ -52,12 +52,18 @@ export default function ConfiguracoesPage() {
   }
 
   function resetarProgresso() {
-    localStorage.removeItem('gabaritai_flashcards_custom')
-    localStorage.removeItem('gabaritai_progresso')
-    localStorage.removeItem('gabaritai_notifs')
+    // Limpa TODOS os dados locais
+    const keys = [
+      'gabaritai_token', 'gabaritai_flashcards_custom', 'gabaritai_progresso',
+      'gabaritai_notifs', 'gabaritai_cronograma_config', 'gabaritai-auth',
+      'gabaritai_conteudo', 'gabaritai_simulados_feitos',
+    ]
+    keys.forEach(k => localStorage.removeItem(k))
+    // Limpa TUDO do localStorage com prefixo gabaritai
+    Object.keys(localStorage).filter(k => k.startsWith('gabaritai')).forEach(k => localStorage.removeItem(k))
     logout()
-    toast.success('Progresso resetado. Faça login novamente.')
-    router.push('/login')
+    toast.success('Progresso resetado! Redirecionando para login...')
+    setTimeout(() => router.push('/login'), 1000)
   }
 
   const NOTIF_LABELS: Record<keyof typeof notifs, string> = {
