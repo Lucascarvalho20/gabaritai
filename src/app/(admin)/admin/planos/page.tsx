@@ -22,11 +22,11 @@ const initialPlanos: Plano[] = [
   {
     id: 'free',
     nome: 'Trial Gratuito',
-    descricao: '7 dias para experimentar',
+    descricao: '3 dias — 1 curso específico',
     precoMensal: 0, precoAnual: 0, precoVitalicio: null,
     cor: 'from-slate-400 to-slate-500',
     destaque: false, ativo: true, alunos: 2,
-    features: ['1 concurso à escolha', 'Cronograma básico', 'Banco de questões limitado (50/dia)', 'Flashcards IA (20/dia)', 'Dashboard de progresso'],
+    features: ['1 concurso à escolha (fixo durante o trial)', '3 dias de acesso completo', 'Questões IA (até 30/dia)', 'Flashcards IA (até 15/dia)', '1 mini-simulado', 'Dashboard de progresso'],
   },
   {
     id: 'basic',

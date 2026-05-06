@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, RotateCcw, FileText, Star, DollarSign, HelpCircle, Users, Globe } from 'lucide-react'
+import { Save, RotateCcw, Star, DollarSign, Users, Globe } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const DEFAULTS = {
@@ -10,7 +10,7 @@ const DEFAULTS = {
   heroBotao: 'Começar grátis',
   stat1Valor: '17', stat1Label: 'Cursos disponíveis',
   stat2Valor: '94%', stat2Label: 'Satisfação',
-  stat3Valor: '7 dias', stat3Label: 'Grátis para testar',
+  stat3Valor: '3 dias', stat3Label: 'Grátis para testar',
   stat4Valor: '24/7', stat4Label: 'Mentor IA',
   depoimento1Nome: 'Rafael M.', depoimento1Cargo: 'Aprovado — PMDF 2024',
   depoimento1Texto: 'Em 4 meses usando o GabaritAI passei do zero para aprovado no PMDF. A IA sabia exatamente onde eu precisava melhorar.',
