@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Brain, Zap, Map, FileText, HelpCircle, List, Loader2, Copy, Check, Upload, Sparkles } from 'lucide-react'
+import { Brain, Zap, Map, FileText, HelpCircle, List, Loader2, Copy, Check, Sparkles } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
@@ -35,7 +35,7 @@ export default function ResumosPage() {
     setLoading(true)
     setResultado('')
     try {
-      const res = await api.post('/api/ai/resumo', {
+      const res = await api.post('/ai/resumo', {
         conteudo,
         tipo,
         concurso: user?.concursoAlvo ?? '',

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -29,10 +29,14 @@ const QUICK_ACCESS = [
   { label: '🇧🇷 CNU',   email: 'cnu@gabaritai.com.br',      pass: 'Teste@2024!' },
 ]
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const setUser = useAuthStore(s => s.setUser)
   const [showPass, setShowPass] = useState(false)
+
+  // Acesso rápido só aparece com ?dev=gabaritai na URL
+  const showDevPanel = searchParams.get('dev') === 'gabaritai'
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -106,26 +110,36 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Acesso rápido — todos os perfis de teste */}
-      <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border">
-        <p className="text-xs font-semibold text-muted-foreground mb-3">ACESSO RÁPIDO — PERFIS DE TESTE</p>
-        <div className="grid grid-cols-1 gap-1.5">
-          {QUICK_ACCESS.map(({ label, email, pass }) => (
-            <button
-              key={email}
-              type="button"
-              onClick={() => quickLogin(email, pass)}
-              className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background hover:bg-brand-50 dark:hover:bg-brand-900/20 border border-border hover:border-brand-300 transition-colors flex justify-between items-center group"
-            >
-              <span className="font-semibold text-foreground">{label}</span>
-              <span className="text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate ml-2">{email}</span>
-            </button>
-          ))}
+      {/* Acesso rápido — visível SOMENTE com ?dev=gabaritai na URL */}
+      {showDevPanel && (
+        <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border">
+          <p className="text-xs font-semibold text-muted-foreground mb-3">ACESSO RÁPIDO — PERFIS DE TESTE</p>
+          <div className="grid grid-cols-1 gap-1.5">
+            {QUICK_ACCESS.map(({ label, email, pass }) => (
+              <button
+                key={email}
+                type="button"
+                onClick={() => quickLogin(email, pass)}
+                className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background hover:bg-brand-50 dark:hover:bg-brand-900/20 border border-border hover:border-brand-300 transition-colors flex justify-between items-center group"
+              >
+                <span className="font-semibold text-foreground">{label}</span>
+                <span className="text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate ml-2">{email}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Clique em qualquer perfil para entrar automaticamente
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Clique em qualquer perfil para entrar automaticamente
-        </p>
-      </div>
+      )}
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="animate-fade-in"><div className="mb-8"><div className="h-8 bg-muted rounded w-64 mb-2" /><div className="h-4 bg-muted rounded w-80" /></div></div>}>
+      <LoginForm />
+    </Suspense>
   )
 }
