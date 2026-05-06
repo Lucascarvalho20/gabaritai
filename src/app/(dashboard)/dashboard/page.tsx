@@ -123,8 +123,8 @@ function CourseCard({ courseId, label, icon, stats }: { courseId: string; label:
         )}
       </div>
 
-      <Link href="/dashboard/questoes" className="btn-outline btn-sm text-center text-xs mt-auto">
-        Praticar este curso
+      <Link href={`/dashboard/curso/${courseId}`} className="btn-primary btn-sm text-center text-xs mt-auto">
+        Ver curso completo →
       </Link>
     </div>
   )
