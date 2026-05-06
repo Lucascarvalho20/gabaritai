@@ -22,8 +22,10 @@ export async function POST(req: NextRequest) {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
+  const groqKey      = process.env.GROQ_API_KEY
+  const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
-  // Tenta na ordem: Claude → OpenAI → Gemini → fallback
+  // Cascade: Claude → OpenAI → Gemini → Groq (grátis) → DeepSeek → fallback
   if (anthropicKey) {
     try {
       const r = await callClaude(message, history, systemPrompt, anthropicKey)
@@ -43,6 +45,24 @@ export async function POST(req: NextRequest) {
       const r = await callGemini(message, history, systemPrompt, geminiKey)
       return NextResponse.json({ response: r, provider: 'gemini' })
     } catch (e) { console.error('[Gemini]', e) }
+  }
+
+  if (groqKey) {
+    try {
+      const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
+        'https://api.groq.com/openai/v1/chat/completions',
+        process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')
+      return NextResponse.json({ response: r, provider: 'groq' })
+    } catch (e) { console.error('[Groq]', e) }
+  }
+
+  if (deepseekKey) {
+    try {
+      const r = await callOpenAICompat(message, history, systemPrompt, deepseekKey,
+        'https://api.deepseek.com/v1/chat/completions',
+        process.env.DEEPSEEK_MODEL ?? 'deepseek-chat')
+      return NextResponse.json({ response: r, provider: 'deepseek' })
+    } catch (e) { console.error('[DeepSeek]', e) }
   }
 
   return NextResponse.json({
@@ -67,19 +87,29 @@ async function callClaude(message: string, history: any[], system: string, apiKe
 }
 
 async function callOpenAI(message: string, history: any[], system: string, apiKey: string) {
+  return callOpenAICompat(message, history, system, apiKey,
+    'https://api.openai.com/v1/chat/completions',
+    process.env.OPENAI_MODEL ?? 'gpt-4o-mini')
+}
+
+// Função genérica OpenAI-compatível: serve OpenAI, Groq, DeepSeek, xAI, etc.
+async function callOpenAICompat(
+  message: string, history: any[], system: string, apiKey: string,
+  baseUrl: string, model: string
+) {
   const messages = [
     { role: 'system', content: system },
     ...history.map((m: any) => ({ role: m.role, content: m.content })),
     { role: 'user', content: message },
   ]
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch(baseUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', max_tokens: 2048, messages }),
+    body: JSON.stringify({ model, max_tokens: 2048, messages }),
   })
-  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
+  if (!res.ok) throw new Error(`${baseUrl} ${res.status}: ${await res.text()}`)
   const data = await res.json()
-  return data.choices[0].message.content
+  return data.choices[0].message.content as string
 }
 
 async function callGemini(message: string, history: any[], system: string, apiKey: string) {
