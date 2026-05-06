@@ -10,7 +10,12 @@ export interface User {
   role: UserRole
   avatar?: string
   plan?: 'FREE' | 'BASIC' | 'PREMIUM' | 'LIFETIME'
+  courses?: string[] | 'all'
   concursoAlvo?: string
+  nivel?: string
+  horasDia?: string
+  meta?: string
+  isBetaTester?: boolean
   createdAt?: string
 }
 
