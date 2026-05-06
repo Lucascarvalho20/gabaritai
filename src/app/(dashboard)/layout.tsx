@@ -83,7 +83,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifs, setNotifs] = useState(MOCK_NOTIFICACOES)
   const isAdmin = user?.role === 'ADMIN'
-  const navItems = isAdmin ? NAV_ADMIN : NAV_ALUNO
+  const isAdminArea = pathname.startsWith('/admin')
+  // Admin vê nav de aluno quando está em /dashboard (modo vitalício)
+  const navItems = isAdmin && isAdminArea ? NAV_ADMIN : NAV_ALUNO
   const naoLidas = notifs.filter(n => !n.lido).length
 
   useEffect(() => { setSidebarOpen(false); setNotifOpen(false) }, [pathname])
@@ -240,9 +242,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </div>
 
-            {isAdmin && (
+            {isAdmin && isAdminArea && (
               <Link href="/dashboard" className="btn-outline btn-sm ml-2">
-                Ver como aluno
+                👁️ Ver como aluno
+              </Link>
+            )}
+            {isAdmin && !isAdminArea && (
+              <Link href="/admin" className="btn-primary btn-sm ml-2">
+                ⚙️ Painel Admin
               </Link>
             )}
           </div>

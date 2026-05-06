@@ -73,10 +73,23 @@ ${conteudo}`,
   return prompts[tipo] ?? prompts.resumo
 }
 
+async function callOpenAICompat(prompt: string, url: string, model: string, apiKey: string) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+  })
+  if (!res.ok) throw new Error(`${url} ${res.status}`)
+  const data = await res.json()
+  return data.choices[0].message.content as string
+}
+
 async function callAI(prompt: string): Promise<string> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
+  const groqKey      = process.env.GROQ_API_KEY
+  const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
   if (anthropicKey) {
     try {
@@ -98,19 +111,7 @@ async function callAI(prompt: string): Promise<string> {
 
   if (openaiKey) {
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-        body: JSON.stringify({
-          model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-          max_tokens: 4096,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return data.choices[0].message.content
-      }
+      return await callOpenAICompat(prompt, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', openaiKey)
     } catch (e) { console.error('[OpenAI]', e) }
   }
 
@@ -145,5 +146,19 @@ async function callAI(prompt: string): Promise<string> {
     }
   }
 
-  return '⚠️ Nenhuma chave de IA configurada ou todas falharam. Verifique GEMINI_API_KEY no Vercel.'
+  // Groq — grátis, modelos LLaMA da Meta (console.groq.com)
+  if (groqKey) {
+    try {
+      return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile', groqKey)
+    } catch (e) { console.error('[Groq]', e) }
+  }
+
+  // DeepSeek — muito barato, alta qualidade (platform.deepseek.com)
+  if (deepseekKey) {
+    try {
+      return await callOpenAICompat(prompt, 'https://api.deepseek.com/v1/chat/completions', process.env.DEEPSEEK_MODEL ?? 'deepseek-chat', deepseekKey)
+    } catch (e) { console.error('[DeepSeek]', e) }
+  }
+
+  return '⚠️ Nenhuma chave de IA funcionou. Configure GEMINI_API_KEY, GROQ_API_KEY ou ANTHROPIC_API_KEY no Vercel → Environment Variables.'
 }
