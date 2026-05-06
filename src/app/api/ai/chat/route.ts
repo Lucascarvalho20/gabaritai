@@ -83,26 +83,52 @@ async function callOpenAI(message: string, history: any[], system: string, apiKe
 }
 
 async function callGemini(message: string, history: any[], system: string, apiKey: string) {
-  const contents = [
-    ...history.map((m: any) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    })),
-    { role: 'user', parts: [{ text: message }] }
-  ]
-  const systemInstruction = { parts: [{ text: system }] }
-  const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-flash'
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ systemInstruction, contents, generationConfig: { maxOutputTokens: 2048 } }),
+  const MODELS = [
+    process.env.GEMINI_MODEL,
+    'gemini-pro',
+    'gemini-1.0-pro',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+  ].filter(Boolean) as string[]
+
+  for (const model of MODELS) {
+    try {
+      // gemini-pro não suporta systemInstruction — inclui no primeiro turn
+      const firstText = system ? `${system}\n\nUsuário: ${message}` : message
+      const contents = history.length === 0
+        ? [{ role: 'user', parts: [{ text: firstText }] }]
+        : [
+            ...history.map((m: any) => ({
+              role: m.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: m.content }]
+            })),
+            { role: 'user', parts: [{ text: message }] }
+          ]
+
+      const body: Record<string, unknown> = { contents, generationConfig: { maxOutputTokens: 2048 } }
+      // systemInstruction só funciona em modelos 1.5+
+      if (model.includes('1.5') && system) {
+        body.systemInstruction = { parts: [{ text: system }] }
+        body.contents = [
+          ...history.map((m: any) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+          { role: 'user', parts: [{ text: message }] }
+        ]
+      }
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        return data.candidates[0].content.parts[0].text as string
+      }
+      console.error(`[Gemini] model ${model} failed ${res.status}`)
+    } catch (e) {
+      console.error(`[Gemini] model ${model} exception:`, e)
     }
-  )
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
-  const data = await res.json()
-  return data.candidates[0].content.parts[0].text
+  }
+  throw new Error('Todos os modelos Gemini falharam')
 }
 
 function buildMentorPrompt(user: any): string {
