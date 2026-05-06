@@ -144,7 +144,7 @@ const DEPOIMENTOS = [
 ]
 
 const STATS = [
-  { value: '12.400+', label: 'Alunos aprovados' },
+  { value: '17', label: 'Cursos disponíveis' },
   { value: '94%', label: 'Taxa de satisfação' },
   { value: '180+', label: 'Concursos cobertos' },
   { value: '2.5M+', label: 'Questões resolvidas' },
@@ -568,7 +568,7 @@ export default function LandingPage() {
                 Sua aprovação começa hoje
               </h2>
               <p className="text-white/80 mb-8 text-lg max-w-xl mx-auto">
-                Mais de 12.400 alunos já estão estudando de forma inteligente. Comece grátis por 7 dias, sem cartão de crédito.
+                Plataforma de mentoria IA para concursos públicos do DF e Brasil. Comece grátis por 7 dias, sem cartão de crédito.
               </p>
               <Link href="/registro" className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-bold btn-xl rounded-2xl transition-colors">
                 Criar conta grátis

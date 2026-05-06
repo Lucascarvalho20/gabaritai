@@ -31,7 +31,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </blockquote>
 
           <div className="mt-10 grid grid-cols-2 gap-4">
-            {[['12.400+', 'Aprovados'], ['94%', 'Satisfação'], ['7 dias', 'Grátis para testar'], ['24/7', 'Mentor IA']].map(([v, l]) => (
+            {[['17', 'Cursos'], ['94%', 'Satisfação'], ['7 dias', 'Grátis para testar'], ['24/7', 'Mentor IA']].map(([v, l]) => (
               <div key={l} className="bg-white/5 rounded-2xl p-4 border border-white/10">
                 <div className="text-2xl font-black text-white">{v}</div>
                 <div className="text-xs text-gray-400 mt-0.5">{l}</div>

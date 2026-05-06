@@ -1,6 +1,7 @@
 'use client'
 
 import { TrendingUp, Target, Clock, Flame, BookOpen, Zap, Award } from 'lucide-react'
+import { useAuthStore } from '@/store/auth'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
 
 const performanceData = [
@@ -27,6 +28,8 @@ const EDITAL = [
 ]
 
 export default function ProgressoPage() {
+  const user = useAuthStore(s => s.user)
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
       <div>
@@ -93,7 +96,7 @@ export default function ProgressoPage() {
 
       {/* Edital verticalizado */}
       <div className="card p-5">
-        <h2 className="font-bold text-foreground mb-1">Edital verticalizado — PMDF</h2>
+        <h2 className="font-bold text-foreground mb-1">Edital verticalizado — {user?.concursoAlvo ?? 'Seu Concurso'}</h2>
         <p className="text-xs text-muted-foreground mb-4">Clique em uma matéria para ver os tópicos detalhados</p>
         <div className="space-y-4">
           {EDITAL.map(e => (
