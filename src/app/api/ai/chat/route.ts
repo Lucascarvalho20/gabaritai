@@ -14,203 +14,124 @@ export async function POST(req: NextRequest) {
   const user = DEMO_USERS.find(u => u.id === payload.sub)
   const { message, history = [] } = await req.json()
 
+  if (!message?.trim()) {
+    return NextResponse.json({ message: 'Mensagem não pode ser vazia' }, { status: 400 })
+  }
+
   const systemPrompt = buildMentorPrompt(user)
-
-  // Tenta Claude primeiro, depois OpenAI, depois resposta de fallback
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  const openaiKey = process.env.OPENAI_API_KEY
+  const openaiKey    = process.env.OPENAI_API_KEY
+  const geminiKey    = process.env.GEMINI_API_KEY
 
+  // Tenta na ordem: Claude → OpenAI → Gemini → fallback
   if (anthropicKey) {
     try {
-      const res = await callClaude(message, history, systemPrompt, anthropicKey)
-      return NextResponse.json({ response: res })
-    } catch (e) {
-      console.error('Claude error:', e)
-    }
+      const r = await callClaude(message, history, systemPrompt, anthropicKey)
+      return NextResponse.json({ response: r, provider: 'claude' })
+    } catch (e) { console.error('[Claude]', e) }
   }
 
   if (openaiKey) {
     try {
-      const res = await callOpenAI(message, history, systemPrompt, openaiKey)
-      return NextResponse.json({ response: res })
-    } catch (e) {
-      console.error('OpenAI error:', e)
-    }
+      const r = await callOpenAI(message, history, systemPrompt, openaiKey)
+      return NextResponse.json({ response: r, provider: 'openai' })
+    } catch (e) { console.error('[OpenAI]', e) }
   }
 
-  // Fallback inteligente quando não há chave configurada
-  const fallback = generateFallbackResponse(message, user)
-  return NextResponse.json({ response: fallback })
+  if (geminiKey) {
+    try {
+      const r = await callGemini(message, history, systemPrompt, geminiKey)
+      return NextResponse.json({ response: r, provider: 'gemini' })
+    } catch (e) { console.error('[Gemini]', e) }
+  }
+
+  return NextResponse.json({
+    response: generateFallbackResponse(message, user),
+    provider: 'fallback'
+  })
 }
 
-async function callClaude(
-  message: string,
-  history: Array<{ role: string; content: string }>,
-  system: string,
-  apiKey: string
-): Promise<string> {
+async function callClaude(message: string, history: any[], system: string, apiKey: string) {
   const messages = [
-    ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: message },
+    ...history.map((m: any) => ({ role: m.role, content: m.content })),
+    { role: 'user', content: message },
   ]
-
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6',
-      max_tokens: 2048,
-      system,
-      messages,
-    }),
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6', max_tokens: 2048, system, messages }),
   })
-
-  if (!res.ok) throw new Error(`Claude API error: ${res.status}`)
+  if (!res.ok) throw new Error(`Claude ${res.status}: ${await res.text()}`)
   const data = await res.json()
   return data.content[0].text
 }
 
-async function callOpenAI(
-  message: string,
-  history: Array<{ role: string; content: string }>,
-  system: string,
-  apiKey: string
-): Promise<string> {
+async function callOpenAI(message: string, history: any[], system: string, apiKey: string) {
   const messages = [
     { role: 'system', content: system },
-    ...history.map(m => ({ role: m.role, content: m.content })),
+    ...history.map((m: any) => ({ role: m.role, content: m.content })),
     { role: 'user', content: message },
   ]
-
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o',
-      max_tokens: 2048,
-      messages,
-    }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: process.env.OPENAI_MODEL ?? 'gpt-4o', max_tokens: 2048, messages }),
   })
-
-  if (!res.ok) throw new Error(`OpenAI API error: ${res.status}`)
+  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
   const data = await res.json()
   return data.choices[0].message.content
 }
 
-function buildMentorPrompt(user: any): string {
-  const nome = user?.name?.split(' ')[0] ?? 'Concurseiro'
-  const concurso = user?.concursoAlvo ?? 'concurso público'
-  const nivel = user?.nivel ?? 'intermediario'
-  const meta = user?.meta ?? ''
-  const horasDia = user?.horasDia ?? '3'
+async function callGemini(message: string, history: any[], system: string, apiKey: string) {
+  const contents = [
+    ...history.map((m: any) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    })),
+    { role: 'user', parts: [{ text: message }] }
+  ]
+  const systemInstruction = { parts: [{ text: system }] }
+  const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-pro'
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ systemInstruction, contents, generationConfig: { maxOutputTokens: 2048 } }),
+    }
+  )
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
+  const data = await res.json()
+  return data.candidates[0].content.parts[0].text
+}
 
-  return `Você é o Mentor IA do GabaritAI — plataforma de estudos para concursos públicos brasileiros.
+function buildMentorPrompt(user: any): string {
+  return `Você é o Mentor IA do GabaritAI — plataforma brasileira de estudos para concursos públicos.
 
 ## SEU ALUNO
-- Nome: ${nome}
-- Concurso alvo: ${concurso}
-- Nível atual: ${nivel}
-- Horas disponíveis por dia: ${horasDia}h
-- Meta pessoal: "${meta}"
+- Nome: ${user?.name?.split(' ')[0] ?? 'Concurseiro'}
+- Concurso alvo: ${user?.concursoAlvo ?? 'concurso público'}
+- Nível: ${user?.nivel ?? 'intermediario'}
+- Horas/dia: ${user?.horasDia ?? '3'}h
+- Meta: "${user?.meta ?? 'Ser aprovado no concurso'}"
 
-## SUA MISSÃO
-1. Ser um mentor próximo, motivador e estratégico — não genérico
-2. Adaptar cada resposta ao perfil do aluno (concurso, nível, disponibilidade)
-3. Para questões jurídicas, citar artigos e legislação específica do concurso
-4. Dar feedback honesto sobre progresso e viabilidade de aprovação
-5. Sugerir técnicas de estudo (pomodoro, spaced repetition, revisões ativas)
-6. Linguagem: próxima, direta e motivadora — português do Brasil
-7. Para Polícias: usar linguagem mais técnica/estratégica; para Bancos: mais analítica
+## MISSÃO
+Atuar como mentor próximo, estratégico e motivador. Responda sempre em português do Brasil.
+Adapte cada resposta ao perfil do aluno. Para carreiras policiais, use linguagem técnica e objetiva.
+Para bancas como CESPE, enfatize atenção às assertivas. Para FCC/CESGRANRIO, enfatize a teoria.
 
-## FORMATO
-- Use markdown para organizar (negrito, bullets, numeração)
-- Seja conciso mas completo — evite enrolação
-- Sempre termine com um próximo passo concreto para o aluno`
+Cite legislação, artigos e jurisprudência quando relevante. Dê sempre um próximo passo concreto.
+Use markdown para organizar. Seja direto, sem enrolação.`
 }
 
 function generateFallbackResponse(message: string, user: any): string {
   const nome = user?.name?.split(' ')[0] ?? 'Concurseiro'
   const concurso = user?.concursoAlvo ?? 'seu concurso'
-  const msgLower = message.toLowerCase()
+  const msg = message.toLowerCase()
 
-  if (msgLower.includes('ponto fraco') || msgLower.includes('dificuldade') || msgLower.includes('errando')) {
-    return `Analisando seu histórico, ${nome}! 📊
-
-Com base nos seus dados de desempenho para **${concurso}**, identifiquei que suas maiores dificuldades estão concentradas em:
-
-1. **Matemática/Raciocínio Lógico** — taxa de acerto abaixo de 60%
-2. **Conhecimentos Específicos** — questões situacionais da banca
-
-**Plano de ação recomendado:**
-- Dedique **40% do tempo** para as matérias com menor acerto
-- Use os flashcards para fixar conceitos que você erra repetidamente
-- Faça simulados semanais para calibrar seu progresso
-
-**Próximo passo:** Acesse a seção de Questões agora e filtre por "questões que errei" — revisar seus erros é mais eficiente do que estudar conteúdo novo.
-
-> ⚠️ **Atenção:** Para respostas personalizadas com IA real, configure a chave ANTHROPIC_API_KEY no arquivo .env`
+  if (msg.includes('ponto fraco') || msg.includes('errando') || msg.includes('dificuldade')) {
+    return `Analisando seu perfil, ${nome}! 📊\n\nCom base nos padrões de alunos de **${concurso}**, os pontos que mais derrubam candidatos são:\n\n1. **Questões de múltipla interpretação** (CESPE) — muitos erram por não ler todas as opções\n2. **Legislação específica** — artigos que parecem iguais mas têm palavras diferentes\n3. **Matemática sob pressão** — erros de cálculo por falta de treino cronometrado\n\n**Próximo passo:** Faça 10 questões agora na seção Questões, filtre pelo assunto que mais erra.\n\n> ⚠️ Para análise com IA real, adicione ANTHROPIC_API_KEY, OPENAI_API_KEY ou GEMINI_API_KEY no Vercel → Settings → Environment Variables.`
   }
 
-  if (msgLower.includes('cronograma') || msgLower.includes('plano') || msgLower.includes('horas')) {
-    return `Ótima pergunta, ${nome}! Vou montar uma análise do seu cronograma para **${concurso}**. 📅
-
-**Análise de viabilidade:**
-Com base nas horas que você tem disponíveis por dia, calculei:
-
-✅ É possível fechar o edital antes da prova
-📌 Você precisará manter consistência de pelo menos 5 dias por semana
-🔄 Reserve os últimos 30 dias para revisão intensiva
-
-**Distribuição sugerida de hoje:**
-- 45 min → Teoria (matéria mais fraca)
-- 30 min → 20 questões práticas
-- 15 min → Revisão de flashcards
-
-**Próximo passo:** Acesse o Cronograma para ver seu plano completo desta semana.
-
-> ⚠️ Configure ANTHROPIC_API_KEY no .env para análises personalizadas com IA real.`
-  }
-
-  if (msgLower.includes('aprovação') || msgLower.includes('chance') || msgLower.includes('passar')) {
-    return `${nome}, vou ser direto com você sobre **${concurso}**! 🎯
-
-**Análise da sua situação atual:**
-- Você está no caminho certo, mas há pontos a melhorar
-- Sua taxa de acerto atual: ~72% (simulados recentes)
-- Meta mínima para aprovação: 70-75% (varia por concurso)
-
-**O que vai definir sua aprovação:**
-1. Consistência nos estudos (sequência de dias sem falhar)
-2. Foco nos pontos fracos identificados pela IA
-3. Simulados semanais no estilo da banca
-
-**Previsão:** Mantendo o ritmo atual, você tem **boa chance** de aprovação. A chave é não parar.
-
-**Próximo passo:** Faça o simulado semanal hoje para calibrar onde você realmente está.
-
-> ⚠️ Configure ANTHROPIC_API_KEY no .env para análises preditivas reais com IA.`
-  }
-
-  return `Olá, ${nome}! Estou aqui para te ajudar com seus estudos para **${concurso}**. 🧠
-
-Posso te ajudar com:
-- 📊 **Análise de desempenho** e pontos fracos
-- 📅 **Ajuste do cronograma** de estudos
-- 📝 **Explicações** de qualquer matéria do edital
-- 🎯 **Estratégias** para a banca do seu concurso
-- 💡 **Dicas** de técnicas de memorização
-
-**Pergunte algo específico**, como:
-- "Qual meu maior ponto fraco?"
-- "Explique inviolabilidade domiciliar"
-- "Como está minha chance de aprovação?"
-
-> ⚠️ **Modo demo ativo** — Configure ANTHROPIC_API_KEY no arquivo \`apps/web/.env.local\` para respostas com IA real (Claude). Veja o arquivo COMO_INSTALAR.md.`
+  return `Olá, ${nome}! Sou seu Mentor IA para **${concurso}**. 🧠\n\nPosso te ajudar com:\n- 📊 Análise de desempenho e pontos fracos\n- 📅 Ajuste do cronograma\n- 📝 Explicações de qualquer matéria\n- 🎯 Estratégias por banca\n\nO que você precisa hoje?\n\n> ⚠️ **Modo demonstração** — Configure uma chave de IA no Vercel para respostas reais (veja CHAVES_API.md).`
 }
