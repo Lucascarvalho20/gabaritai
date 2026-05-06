@@ -2,7 +2,9 @@ import axios from 'axios'
 
 // Em desenvolvimento, usa as rotas da própria Next.js (/api/...)
 // Em produção pode apontar para backend externo se quiser
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+// Se NEXT_PUBLIC_API_URL estiver vazio, usa /api (rotas internas do Next.js)
+// Se tiver valor (ex: backend externo), usa ele
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api'
 
 export const api = axios.create({
   baseURL: API_URL,
