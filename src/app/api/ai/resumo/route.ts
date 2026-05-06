@@ -115,25 +115,35 @@ async function callAI(prompt: string): Promise<string> {
   }
 
   if (geminiKey) {
-    try {
-      const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-flash'
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 4096 },
-          }),
+    const MODELS = [
+      process.env.GEMINI_MODEL,
+      'gemini-pro',
+      'gemini-1.0-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+    ].filter(Boolean) as string[]
+
+    for (const model of MODELS) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              generationConfig: { maxOutputTokens: 4096 },
+            }),
+          }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          return data.candidates[0].content.parts[0].text
         }
-      )
-      if (res.ok) {
-        const data = await res.json()
-        return data.candidates[0].content.parts[0].text
-      }
-    } catch (e) { console.error('[Gemini]', e) }
+        console.error(`[Gemini] model ${model} failed ${res.status}`)
+      } catch (e) { console.error(`[Gemini] model ${model}:`, e) }
+    }
   }
 
-  return '⚠️ Nenhuma chave de IA configurada. Adicione ANTHROPIC_API_KEY, OPENAI_API_KEY ou GEMINI_API_KEY no Vercel → Environment Variables.'
+  return '⚠️ Nenhuma chave de IA configurada ou todas falharam. Verifique GEMINI_API_KEY no Vercel.'
 }
