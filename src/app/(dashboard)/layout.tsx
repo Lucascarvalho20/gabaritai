@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, BookOpen, Zap, Target, Brain,
   TrendingUp, Settings, LogOut, Menu, X,
-  Bell, Sun, Moon, Users, DollarSign, BarChart3
+  Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/auth'
@@ -21,6 +21,7 @@ const NAV_ALUNO = [
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap },
   { href: '/dashboard/simulados', label: 'Simulados', icon: Target },
   { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA' },
+  { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo' },
   { href: '/dashboard/progresso', label: 'Meu Progresso', icon: TrendingUp },
 ]
 
