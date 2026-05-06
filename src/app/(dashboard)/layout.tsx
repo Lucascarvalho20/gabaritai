@@ -31,6 +31,7 @@ const NAV_ADMIN = [
   { href: '/admin/cursos', label: 'Cursos', icon: BookOpen },
   { href: '/admin/planos', label: 'Planos e Preços', icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { href: '/admin/conteudo', label: 'Conteúdo do Site', icon: Sparkles },
 ]
 
 function ThemeToggle() {
@@ -67,15 +68,25 @@ function NavItem({ href, label, icon: Icon, badge, active }: { href: string; lab
   )
 }
 
+const MOCK_NOTIFICACOES = [
+  { id: 1, tipo: 'alerta', titulo: 'Simulado disponível!', desc: `Novo simulado semanal disponível para você.`, lido: false, tempo: '2h' },
+  { id: 2, tipo: 'progresso', titulo: 'Meta diária atingida 🎯', desc: 'Você completou 80 questões hoje. Continue assim!', lido: false, tempo: '4h' },
+  { id: 3, tipo: 'dica', titulo: 'Dica do Mentor IA', desc: 'Você está errando 38% em Raciocínio Lógico. Revise hoje!', lido: true, tempo: '1d' },
+  { id: 4, tipo: 'progresso', titulo: 'Sequência de 12 dias! 🔥', desc: 'Parabéns! Você manteve 12 dias consecutivos de estudo.', lido: true, tempo: '2d' },
+]
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifs, setNotifs] = useState(MOCK_NOTIFICACOES)
   const isAdmin = user?.role === 'ADMIN'
   const navItems = isAdmin ? NAV_ADMIN : NAV_ALUNO
+  const naoLidas = notifs.filter(n => !n.lido).length
 
-  useEffect(() => { setSidebarOpen(false) }, [pathname])
+  useEffect(() => { setSidebarOpen(false); setNotifOpen(false) }, [pathname])
 
   function handleLogout() {
     logout()
@@ -169,10 +180,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <button className="relative p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full" />
-            </button>
+
+            {/* Sino de notificações */}
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(v => !v)}
+                className="relative p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <Bell className="w-4 h-4" />
+                {naoLidas > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full" />
+                )}
+              </button>
+
+              {notifOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
+                    <div className="p-4 border-b border-border flex items-center justify-between">
+                      <span className="font-bold text-foreground text-sm">Notificações</span>
+                      {naoLidas > 0 && (
+                        <button
+                          onClick={() => setNotifs(ns => ns.map(n => ({ ...n, lido: true })))}
+                          className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
+                        >
+                          Marcar todas como lidas
+                        </button>
+                      )}
+                    </div>
+                    <div className="divide-y divide-border max-h-80 overflow-y-auto">
+                      {notifs.map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, lido: true } : x))}
+                          className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${!n.lido ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-lg shrink-0">{n.tipo === 'alerta' ? '🔔' : n.tipo === 'progresso' ? '📈' : '💡'}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-foreground">{n.titulo}</span>
+                                {!n.lido && <span className="w-1.5 h-1.5 bg-brand-500 rounded-full shrink-0" />}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.desc}</p>
+                              <span className="text-xs text-muted-foreground/60 mt-1 block">{n.tempo} atrás</span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="p-3 border-t border-border">
+                      <Link href="/dashboard/configuracoes" onClick={() => setNotifOpen(false)}
+                        className="text-xs text-brand-600 dark:text-brand-400 hover:underline block text-center">
+                        Gerenciar notificações
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {isAdmin && (
               <Link href="/dashboard" className="btn-outline btn-sm ml-2">
                 Ver como aluno
