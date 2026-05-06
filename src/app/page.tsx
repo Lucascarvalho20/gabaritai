@@ -589,20 +589,33 @@ export default function LandingPage() {
                 Mentoria inteligente para concursos públicos com IA adaptativa.
               </p>
             </div>
-            {[
-              { title: 'Plataforma', links: ['Recursos', 'Como funciona', 'Planos', 'Blog'] },
-              { title: 'Concursos', links: ['PMDF', 'Polícia Federal', 'Banco do Brasil', 'TJDFT'] },
-              { title: 'Empresa', links: ['Sobre nós', 'Termos de uso', 'Privacidade', 'Contato'] },
-            ].map(({ title, links }) => (
-              <div key={title}>
-                <h4 className="font-semibold text-sm text-foreground mb-3">{title}</h4>
-                <ul className="space-y-2">
-                  {links.map(l => (
-                    <li key={l}><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</a></li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div>
+              <h4 className="font-semibold text-sm text-foreground mb-3">Plataforma</h4>
+              <ul className="space-y-2">
+                <li><a href="/#recursos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a></li>
+                <li><a href="/#como-funciona" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Como funciona</a></li>
+                <li><a href="/#planos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</a></li>
+                <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Blog</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm text-foreground mb-3">Concursos</h4>
+              <ul className="space-y-2">
+                <li><Link href="/concursos/pmdf" className="text-sm text-muted-foreground hover:text-foreground transition-colors">PMDF</Link></li>
+                <li><Link href="/concursos/policia-federal" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Polícia Federal</Link></li>
+                <li><Link href="/concursos/banco-do-brasil" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Banco do Brasil</Link></li>
+                <li><Link href="/concursos/tjdft" className="text-sm text-muted-foreground hover:text-foreground transition-colors">TJDFT</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm text-foreground mb-3">Empresa</h4>
+              <ul className="space-y-2">
+                <li><Link href="/sobre" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sobre nós</Link></li>
+                <li><Link href="/termos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos de uso</Link></li>
+                <li><Link href="/privacidade" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</Link></li>
+                <li><a href="mailto:contato@gabaritai.com.br" className="text-sm text-muted-foreground hover:text-foreground transition-colors">contato@gabaritai.com.br</a></li>
+              </ul>
+            </div>
           </div>
           <div className="border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">© 2024 GabaritAI. Todos os direitos reservados.</p>
