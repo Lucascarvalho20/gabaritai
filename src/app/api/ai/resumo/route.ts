@@ -91,28 +91,11 @@ async function callAI(prompt: string): Promise<string> {
   const groqKey      = process.env.GROQ_API_KEY
   const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
-  if (anthropicKey) {
+  // Groq first — grátis, rápido (console.groq.com)
+  if (groqKey) {
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6',
-          max_tokens: 4096,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        return data.content[0].text
-      }
-    } catch (e) { console.error('[Claude]', e) }
-  }
-
-  if (openaiKey) {
-    try {
-      return await callOpenAICompat(prompt, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', openaiKey)
-    } catch (e) { console.error('[OpenAI]', e) }
+      return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile', groqKey)
+    } catch (e) { console.error('[Groq]', e) }
   }
 
   if (geminiKey) {
@@ -146,14 +129,31 @@ async function callAI(prompt: string): Promise<string> {
     }
   }
 
-  // Groq — grátis, modelos LLaMA da Meta (console.groq.com)
-  if (groqKey) {
+  if (anthropicKey) {
     try {
-      return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile', groqKey)
-    } catch (e) { console.error('[Groq]', e) }
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6',
+          max_tokens: 4096,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return data.content[0].text
+      }
+    } catch (e) { console.error('[Claude]', e) }
   }
 
-  // DeepSeek — muito barato, alta qualidade (platform.deepseek.com)
+  if (openaiKey) {
+    try {
+      return await callOpenAICompat(prompt, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', openaiKey)
+    } catch (e) { console.error('[OpenAI]', e) }
+  }
+
+  // DeepSeek — barato, alta qualidade (platform.deepseek.com)
   if (deepseekKey) {
     try {
       return await callOpenAICompat(prompt, 'https://api.deepseek.com/v1/chat/completions', process.env.DEEPSEEK_MODEL ?? 'deepseek-chat', deepseekKey)

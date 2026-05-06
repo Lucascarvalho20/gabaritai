@@ -25,7 +25,23 @@ export async function POST(req: NextRequest) {
   const groqKey      = process.env.GROQ_API_KEY
   const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
-  // Cascade: Claude → OpenAI → Gemini → Groq (grátis) → DeepSeek → fallback
+  // Cascade: Groq (grátis) → Gemini → Claude → OpenAI → DeepSeek → fallback
+  if (groqKey) {
+    try {
+      const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
+        'https://api.groq.com/openai/v1/chat/completions',
+        process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')
+      return NextResponse.json({ response: r, provider: 'groq' })
+    } catch (e) { console.error('[Groq]', e) }
+  }
+
+  if (geminiKey) {
+    try {
+      const r = await callGemini(message, history, systemPrompt, geminiKey)
+      return NextResponse.json({ response: r, provider: 'gemini' })
+    } catch (e) { console.error('[Gemini]', e) }
+  }
+
   if (anthropicKey) {
     try {
       const r = await callClaude(message, history, systemPrompt, anthropicKey)
@@ -38,22 +54,6 @@ export async function POST(req: NextRequest) {
       const r = await callOpenAI(message, history, systemPrompt, openaiKey)
       return NextResponse.json({ response: r, provider: 'openai' })
     } catch (e) { console.error('[OpenAI]', e) }
-  }
-
-  if (geminiKey) {
-    try {
-      const r = await callGemini(message, history, systemPrompt, geminiKey)
-      return NextResponse.json({ response: r, provider: 'gemini' })
-    } catch (e) { console.error('[Gemini]', e) }
-  }
-
-  if (groqKey) {
-    try {
-      const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
-        'https://api.groq.com/openai/v1/chat/completions',
-        process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')
-      return NextResponse.json({ response: r, provider: 'groq' })
-    } catch (e) { console.error('[Groq]', e) }
   }
 
   if (deepseekKey) {
