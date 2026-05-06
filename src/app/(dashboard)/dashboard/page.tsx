@@ -56,7 +56,7 @@ function AccuracyBar({ pct }: { pct: number }) {
 function CourseCard({ courseId, label, icon, stats }: { courseId: string; label: string; icon: string; stats: ReturnType<typeof mockCurso> }) {
   const color = stats.acerto >= 75 ? 'text-success-600' : stats.acerto >= 60 ? 'text-warning-500' : 'text-danger-500'
   return (
-    <div className="card p-5 flex flex-col gap-4">
+    <div className="card p-5 flex flex-col gap-4 h-full">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
@@ -108,15 +108,22 @@ function CourseCard({ courseId, label, icon, stats }: { courseId: string; label:
         </div>
       </div>
 
-      {/* Ponto fraco */}
-      {stats.alertaMateria.pct < 65 && (
-        <div className="rounded-lg bg-warning-50 dark:bg-warning-900/10 border border-warning-200 dark:border-warning-800/30 p-2.5 text-xs">
-          <span className="text-warning-700 dark:text-warning-400 font-semibold">⚠️ Ponto fraco: </span>
-          <span className="text-muted-foreground">{stats.alertaMateria.name} ({stats.alertaMateria.pct}%)</span>
-        </div>
-      )}
+      {/* Status IA — sempre mostra algo para manter altura uniforme */}
+      <div className={`rounded-lg p-2.5 text-xs border ${
+        stats.alertaMateria.pct < 65
+          ? 'bg-warning-50 dark:bg-warning-900/10 border-warning-200 dark:border-warning-800/30'
+          : 'bg-success-50 dark:bg-success-900/10 border-success-200 dark:border-success-800/30'
+      }`}>
+        {stats.alertaMateria.pct < 65 ? (
+          <><span className="text-warning-700 dark:text-warning-400 font-semibold">⚠️ Ponto fraco: </span>
+          <span className="text-muted-foreground">{stats.alertaMateria.name} ({stats.alertaMateria.pct}%)</span></>
+        ) : (
+          <><span className="text-success-700 dark:text-success-400 font-semibold">✅ No caminho certo! </span>
+          <span className="text-muted-foreground">Acerto médio acima de 65% em todas matérias.</span></>
+        )}
+      </div>
 
-      <Link href="/dashboard/questoes" className="btn-outline btn-sm text-center text-xs">
+      <Link href="/dashboard/questoes" className="btn-outline btn-sm text-center text-xs mt-auto">
         Praticar este curso
       </Link>
     </div>
@@ -213,7 +220,7 @@ export default function DashboardPage() {
               Análise completa <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
             {userCursos.map(curso => (
               <CourseCard
                 key={curso.id}

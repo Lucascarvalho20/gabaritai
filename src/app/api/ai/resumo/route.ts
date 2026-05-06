@@ -102,7 +102,7 @@ async function callAI(prompt: string): Promise<string> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
         body: JSON.stringify({
-          model: process.env.OPENAI_MODEL ?? 'gpt-4o',
+          model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
           max_tokens: 4096,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -116,7 +116,7 @@ async function callAI(prompt: string): Promise<string> {
 
   if (geminiKey) {
     try {
-      const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-pro'
+      const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-flash'
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
         {

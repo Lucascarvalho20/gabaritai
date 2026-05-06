@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Calendar, CheckCircle2, Clock, BookOpen, Zap, Brain, ChevronRight, Play } from 'lucide-react'
+import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -29,7 +30,7 @@ const CRONOGRAMA_SEMANA = [
       { tipo: 'Teoria', materia: 'Dir. Administrativo', topico: 'Atos Administrativos', tempo: 45, done: false },
       { tipo: 'Questões', materia: 'Dir. Administrativo', topico: '20 questões', tempo: 30, done: false },
       { tipo: 'Flashcards', materia: 'Dir. Penal (revisão)', topico: '20 cards', tempo: 15, done: false },
-      { tipo: 'Simulado', materia: 'Módulo 3', topico: 'PMDF estilo CESPE', tempo: 90, done: false },
+      { tipo: 'Simulado', materia: 'Módulo 3', topico: 'estilo CESPE', tempo: 90, done: false },
     ]
   },
   {
@@ -50,7 +51,7 @@ const CRONOGRAMA_SEMANA = [
   {
     dia: 'Sáb', data: '11/01', ativo: false,
     tarefas: [
-      { tipo: 'Simulado', materia: 'Simulado completo', topico: 'PMDF — 80 questões', tempo: 120, done: false },
+      { tipo: 'Simulado', materia: 'Simulado completo', topico: '80 questões', tempo: 120, done: false },
       { tipo: 'Revisão', materia: 'Análise do simulado', topico: 'Correção com IA', tempo: 30, done: false },
     ]
   },
@@ -79,6 +80,7 @@ const TIPO_HREF: Record<string, string> = {
 }
 
 export default function CronogramaPage() {
+  const user = useAuthStore(s => s.user)
   const [diaAtivo, setDiaAtivo] = useState(2) // Quarta = índice 2
 
   const dia = CRONOGRAMA_SEMANA[diaAtivo]
@@ -103,7 +105,7 @@ export default function CronogramaPage() {
       <div className="card p-4 bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 border-brand-200 dark:border-brand-800/40">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-foreground text-sm">Análise de viabilidade — PMDF</p>
+            <p className="font-semibold text-foreground text-sm">Análise de viabilidade — {user?.concursoAlvo ?? 'Seu Concurso'}</p>
             <p className="text-muted-foreground text-xs mt-0.5">
               Com <strong>4h/dia</strong> você conclui o edital em <strong>87 dias</strong> e ainda tem <strong>23 dias para revisar</strong> antes da prova.
             </p>

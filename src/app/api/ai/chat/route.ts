@@ -75,7 +75,7 @@ async function callOpenAI(message: string, history: any[], system: string, apiKe
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: process.env.OPENAI_MODEL ?? 'gpt-4o', max_tokens: 2048, messages }),
+    body: JSON.stringify({ model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', max_tokens: 2048, messages }),
   })
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
   const data = await res.json()
@@ -91,7 +91,7 @@ async function callGemini(message: string, history: any[], system: string, apiKe
     { role: 'user', parts: [{ text: message }] }
   ]
   const systemInstruction = { parts: [{ text: system }] }
-  const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-pro'
+  const model = process.env.GEMINI_MODEL ?? 'gemini-1.5-flash'
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
@@ -133,5 +133,5 @@ function generateFallbackResponse(message: string, user: any): string {
     return `Analisando seu perfil, ${nome}! 📊\n\nCom base nos padrões de alunos de **${concurso}**, os pontos que mais derrubam candidatos são:\n\n1. **Questões de múltipla interpretação** (CESPE) — muitos erram por não ler todas as opções\n2. **Legislação específica** — artigos que parecem iguais mas têm palavras diferentes\n3. **Matemática sob pressão** — erros de cálculo por falta de treino cronometrado\n\n**Próximo passo:** Faça 10 questões agora na seção Questões, filtre pelo assunto que mais erra.\n\n> ⚠️ Para análise com IA real, adicione ANTHROPIC_API_KEY, OPENAI_API_KEY ou GEMINI_API_KEY no Vercel → Settings → Environment Variables.`
   }
 
-  return `Olá, ${nome}! Sou seu Mentor IA para **${concurso}**. 🧠\n\nPosso te ajudar com:\n- 📊 Análise de desempenho e pontos fracos\n- 📅 Ajuste do cronograma\n- 📝 Explicações de qualquer matéria\n- 🎯 Estratégias por banca\n\nO que você precisa hoje?\n\n> ⚠️ **Modo demonstração** — Configure uma chave de IA no Vercel para respostas reais (veja CHAVES_API.md).`
+  return `Olá, ${nome}! Sou seu Mentor IA para **${concurso}**. 🧠\n\nPosso te ajudar com:\n- 📊 Análise de desempenho e pontos fracos\n- 📅 Ajuste do cronograma\n- 📝 Explicações de qualquer matéria\n- 🎯 Estratégias por banca\n\nO que você precisa hoje?\n\n> ⚠️ **Modo demonstração** — Para respostas reais, adicione uma chave de IA no Vercel → Environment Variables.`
 }

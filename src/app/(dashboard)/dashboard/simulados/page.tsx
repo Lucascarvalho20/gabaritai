@@ -3,21 +3,25 @@
 import { useState } from 'react'
 import { Target, Clock, Trophy, Play, BarChart3, CheckCircle2, XCircle, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const SIMULADOS_DISPONIVEIS = [
-  { id: 1, titulo: 'Simulado PMDF — Módulo 1', questoes: 30, tempo: 45, materia: 'Dir. Constitucional + Penal', dificuldade: 'Médio', novo: false },
-  { id: 2, titulo: 'Simulado PMDF — Módulo 2', questoes: 40, tempo: 60, materia: 'Dir. Administrativo + Português', dificuldade: 'Médio', novo: false },
-  { id: 3, titulo: 'Simulado PMDF — Módulo 3', questoes: 50, tempo: 75, materia: 'Todos os conteúdos', dificuldade: 'Difícil', novo: true },
-  { id: 4, titulo: 'Simulado Adaptativo — Pontos Fracos', questoes: 25, tempo: 35, materia: 'Gerado pela IA com seus erros', dificuldade: 'Personalizado', novo: true },
-]
-
-const HISTORICO = [
-  { titulo: 'Simulado PMDF — Módulo 2', data: '05/01', acerto: 72, tempo: '58min', questoes: 40 },
-  { titulo: 'Simulado PMDF — Módulo 1', data: '29/12', acerto: 65, tempo: '44min', questoes: 30 },
-  { titulo: 'Simulado Adaptativo', data: '22/12', acerto: 58, tempo: '32min', questoes: 25 },
-]
+import { useAuthStore } from '@/store/auth'
 
 export default function SimuladosPage() {
+  const user = useAuthStore(s => s.user)
+  const concursoLabel = user?.concursoAlvo ?? 'Concurso'
+
+  const SIMULADOS_DISPONIVEIS = [
+    { id: 1, titulo: `Simulado ${concursoLabel} — Módulo 1`, questoes: 30, tempo: 45, materia: 'Dir. Constitucional + Penal', dificuldade: 'Médio', novo: false },
+    { id: 2, titulo: `Simulado ${concursoLabel} — Módulo 2`, questoes: 40, tempo: 60, materia: 'Dir. Administrativo + Português', dificuldade: 'Médio', novo: false },
+    { id: 3, titulo: `Simulado ${concursoLabel} — Módulo 3`, questoes: 50, tempo: 75, materia: 'Todos os conteúdos', dificuldade: 'Difícil', novo: true },
+    { id: 4, titulo: 'Simulado Adaptativo — Pontos Fracos', questoes: 25, tempo: 35, materia: 'Gerado pela IA com seus erros', dificuldade: 'Personalizado', novo: true },
+  ]
+
+  const HISTORICO = [
+    { titulo: `Simulado ${concursoLabel} — Módulo 2`, data: '05/01', acerto: 72, tempo: '58min', questoes: 40 },
+    { titulo: `Simulado ${concursoLabel} — Módulo 1`, data: '29/12', acerto: 65, tempo: '44min', questoes: 30 },
+    { titulo: 'Simulado Adaptativo', data: '22/12', acerto: 58, tempo: '32min', questoes: 25 },
+  ]
+
   const [aba, setAba] = useState<'disponiveis' | 'historico'>('disponiveis')
 
   return (
