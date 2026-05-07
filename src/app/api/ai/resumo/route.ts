@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
 
-/**
- * Rota de IA para resumo de conteúdo — similar ao NotebookLM do Google.
- * Gera: resumo, mapa mental, flashcards e questões a partir de um texto/edital.
- */
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')

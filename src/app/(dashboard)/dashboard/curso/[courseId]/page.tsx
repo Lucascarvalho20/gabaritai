@@ -18,6 +18,22 @@ import toast from 'react-hot-toast'
 
 type Tab = 'overview' | 'questoes' | 'flashcards' | 'simulados' | 'edital'
 
+function getTopicProb(materiaId: string, idx: number, banca: string): number {
+  // Base probability decreases for later topics (later = more specific = less common)
+  const baseByIdx = [92, 88, 82, 75, 68, 60, 52, 45, 38, 30]
+  let prob = baseByIdx[Math.min(idx, baseByIdx.length - 1)]
+
+  // CEBRASPE tends to cover all topics broadly, FGV/CESGRANRIO focus more on fundamentals
+  if (banca === 'CEBRASPE' || banca === 'CESPE') prob = Math.min(prob + 5, 97)
+  if (banca === 'FGV' || banca === 'CESGRANRIO') prob = idx === 0 ? 95 : Math.max(prob - 5, 25)
+
+  // High-frequency matérias
+  if (materiaId === 'dc' || materiaId === 'pt') prob = Math.min(prob + 8, 97)
+  if (materiaId === 'da' || materiaId === 'dp') prob = Math.min(prob + 5, 95)
+
+  return prob
+}
+
 function getDefaultTopicos(materiaNome: string): string[] {
   const m = materiaNome.toLowerCase()
   if (m.includes('constitucional')) return [
@@ -214,6 +230,7 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
   const [cardAtual, setCardAtual] = useState(0)
   const [virado, setVirado] = useState(false)
   const [loadingFC, setLoadingFC] = useState(false)
+  const [materiaFC, setMateriaFC] = useState('aleatorio')
 
   // Edital state
   const [editalProgress, setEditalProgress] = useState<Record<string, boolean>>(() => {
@@ -303,7 +320,9 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
     setLoadingFC(true)
     setCardAtual(0)
     setVirado(false)
-    const materia = materias[Math.floor(Math.random() * materias.length)]?.nome ?? cd.label
+    const materia = materiaFC === 'aleatorio'
+      ? materias[Math.floor(Math.random() * materias.length)]?.nome ?? cd.label
+      : materias.find(m => m.id === materiaFC)?.nome ?? cd.label
     try {
       const res = await fetch('/api/ai/gerar', {
         method: 'POST',
@@ -614,12 +633,19 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
       {/* ═══ FLASHCARDS ═══ */}
       {tab === 'flashcards' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-foreground">Flashcards — {cd.label}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">IA gera flashcards específicos do edital deste concurso</p>
+          <div className="card p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex-1">
+              <label className="label text-xs">Matéria para gerar flashcards</label>
+              <select
+                className="input text-sm"
+                value={materiaFC}
+                onChange={e => setMateriaFC(e.target.value)}
+              >
+                <option value="aleatorio">Aleatória (surpresa)</option>
+                {materias.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
             </div>
-            <button onClick={gerarFlashcards} disabled={loadingFC} className="btn-primary btn-md">
+            <button onClick={gerarFlashcards} disabled={loadingFC} className="btn-primary btn-md shrink-0">
               {loadingFC ? (
                 <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Gerando...</>
               ) : (
@@ -792,7 +818,12 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
         <div className="space-y-4">
           <div className="card p-5">
             <h2 className="font-bold text-foreground mb-1">Edital Verticalizado — {cd.label}</h2>
-            <p className="text-xs text-muted-foreground mb-4">Marque os tópicos conforme você estuda. Seu progresso é salvo automaticamente.</p>
+            <p className="text-xs text-muted-foreground mb-2">Marque os tópicos conforme você estuda. A % indica a probabilidade de cair na prova ({cd.banca}).</p>
+            <div className="flex items-center gap-3 text-xs mb-4">
+              <span className="text-danger-600 dark:text-danger-400 font-bold">■ ≥80% Alta</span>
+              <span className="text-warning-600 dark:text-warning-400 font-bold">■ 60-79% Média</span>
+              <span className="text-muted-foreground font-bold">■ &lt;60% Baixa</span>
+            </div>
             <div className="flex items-center gap-3">
               <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
                 <div
@@ -823,6 +854,8 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
                 <div className="space-y-1.5">
                   {topicos.map((topico, idx) => {
                     const key = `${materia.id}_${idx}`
+                    const prob = getTopicProb(materia.id, idx, cd.banca)
+                    const probColor = prob >= 80 ? 'text-danger-600 dark:text-danger-400' : prob >= 60 ? 'text-warning-600 dark:text-warning-400' : 'text-muted-foreground'
                     return (
                       <label key={key} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted cursor-pointer">
                         <input
@@ -833,6 +866,9 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
                         />
                         <span className={`text-sm flex-1 ${editalProgress[key] ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                           {topico}
+                        </span>
+                        <span className={`text-xs font-bold shrink-0 ${probColor}`} title="Probabilidade de cair na prova">
+                          {prob}%
                         </span>
                         {editalProgress[key] && <CheckCircle2 className="w-3.5 h-3.5 text-success-500 shrink-0" />}
                       </label>

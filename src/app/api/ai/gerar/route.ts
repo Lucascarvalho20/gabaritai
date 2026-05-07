@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
 
-// Endpoint universal para geração de conteúdo com IA
-// POST { tipo, materia, curso, quantidade, nivel, semana }
+export const maxDuration = 60
 // tipo: 'flashcards' | 'questoes' | 'simulado'
 
 export async function POST(req: NextRequest) {
