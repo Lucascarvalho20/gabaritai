@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   Users, Brain, CheckCircle2, Crown, Lock, Unlock,
   Eye, X, BookOpen, Zap, Target, Database, BarChart3,
-  AlertTriangle, Settings
+  Settings
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import Link from 'next/link'
@@ -384,14 +384,13 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="card p-4 border-warning-200 dark:border-warning-800/30 bg-warning-50/50 dark:bg-warning-900/10">
+          <div className="card p-4 border-success-200 dark:border-success-800/30 bg-success-50/50 dark:bg-success-900/10">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-success-500 shrink-0 mt-0.5" />
               <div className="text-sm text-muted-foreground">
-                <span className="font-bold text-foreground">Próximo passo crítico: </span>
-                Para os dados dos alunos serem reais e persistentes (progresso, histórico de questões, notas dos simulados),
-                é necessário integrar um banco de dados. Recomendado: <strong>Supabase</strong> (gratuito até 500MB).
-                Custo: ~2 dias de desenvolvimento.
+                <span className="font-bold text-foreground">Supabase conectado. </span>
+                Banco de dados ativo — questões respondidas, simulados e flashcards revisados são salvos automaticamente.
+                Configure <code className="bg-muted px-1 rounded text-xs">NEXT_PUBLIC_SUPABASE_URL</code> e <code className="bg-muted px-1 rounded text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> no Vercel se ainda não o fez.
               </div>
             </div>
           </div>

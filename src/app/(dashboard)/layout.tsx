@@ -135,7 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       <div className="p-3 border-t border-border space-y-1">
-        <Link href={isAdmin ? '/admin/configuracoes' : '/dashboard/configuracoes'}
+        <Link href="/dashboard/configuracoes"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
           <Settings className="w-4 h-4" />
           Configurações

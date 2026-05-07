@@ -211,7 +211,8 @@ export default function AdminPlanosPage() {
           <div>
             <p className="text-sm font-semibold text-foreground">Integração com Mercado Pago</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Para ativar cobranças reais, adicione <code className="bg-muted px-1 rounded">MERCADOPAGO_ACCESS_TOKEN</code> e <code className="bg-muted px-1 rounded">MERCADOPAGO_PUBLIC_KEY</code> no arquivo <code className="bg-muted px-1 rounded">apps/web/.env.local</code>. Veja o arquivo <strong>COMO_INSTALAR.md</strong> para instruções.
+              Para ativar cobranças reais, adicione <code className="bg-muted px-1 rounded">MERCADOPAGO_ACCESS_TOKEN</code> e <code className="bg-muted px-1 rounded">MERCADOPAGO_PUBLIC_KEY</code> nas variáveis de ambiente do Vercel (Settings → Environment Variables).
+              As chaves são geradas em <strong>mercadopago.com.br → Credenciais</strong>.
             </p>
           </div>
         </div>
