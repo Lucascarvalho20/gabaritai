@@ -182,23 +182,76 @@ export const DEMO_USERS: DemoUser[] = [
 
 // Cursos disponíveis no sistema
 export const CURSOS_DISPONIVEIS = [
-  { id: 'pmdf-soldado', label: 'PMDF — Soldado PM', categoria: 'policial', icon: '🛡️' },
-  { id: 'pmdf-oficial', label: 'PMDF — Oficial', categoria: 'policial', icon: '⭐' },
-  { id: 'pf-agente', label: 'Polícia Federal — Agente', categoria: 'policial', icon: '🔵' },
-  { id: 'pf-delegado', label: 'Polícia Federal — Delegado', categoria: 'policial', icon: '🏅' },
-  { id: 'prf-policial', label: 'PRF — Policial Rodoviário', categoria: 'policial', icon: '🚔' },
-  { id: 'pcdf-delegado', label: 'PCDF — Delegado', categoria: 'policial', icon: '🔍' },
-  { id: 'pcdf-agente', label: 'PCDF — Agente', categoria: 'policial', icon: '🔍' },
-  { id: 'pol-legislativa', label: 'Polícia Legislativa', categoria: 'policial', icon: '🏛️' },
-  { id: 'cbmdf-soldado', label: 'CBMDF — Soldado', categoria: 'militar', icon: '🚒' },
-  { id: 'cbmdf-oficial', label: 'CBMDF — Oficial', categoria: 'militar', icon: '🚒' },
+  // Polícia Federal
+  { id: 'pf-agente',      label: 'PF — Agente de Polícia Federal',      categoria: 'federal-seg', icon: '🔵' },
+  { id: 'pf-delegado',    label: 'PF — Delegado de Polícia Federal',    categoria: 'federal-seg', icon: '🏅' },
+  { id: 'pf-escrivao',    label: 'PF — Escrivão de Polícia Federal',    categoria: 'federal-seg', icon: '✍️' },
+  { id: 'pf-perito',      label: 'PF — Perito Criminal Federal',        categoria: 'federal-seg', icon: '🔬' },
+  { id: 'prf-policial',   label: 'PRF — Policial Rodoviário Federal',   categoria: 'federal-seg', icon: '🚔' },
+  { id: 'pol-legislativa-camara', label: 'Pol. Legislativa — Câmara', categoria: 'federal-seg', icon: '🏛️' },
+  { id: 'pol-legislativa-senado', label: 'Pol. Legislativa — Senado', categoria: 'federal-seg', icon: '🏛️' },
+  // CNU
+  { id: 'cnu-bloco1', label: 'CNU — Bloco 1 (Infraestrutura)',     categoria: 'federal', icon: '🇧🇷' },
+  { id: 'cnu-bloco2', label: 'CNU — Bloco 2 (TI e Dados)',         categoria: 'federal', icon: '🇧🇷' },
+  { id: 'cnu-bloco3', label: 'CNU — Bloco 3 (Ambiental)',          categoria: 'federal', icon: '🌿' },
+  { id: 'cnu-bloco4', label: 'CNU — Bloco 4 (Trabalho/Prev.)',     categoria: 'federal', icon: '🇧🇷' },
+  { id: 'cnu-bloco5', label: 'CNU — Bloco 5 (Educação)',           categoria: 'federal', icon: '📚' },
+  { id: 'cnu-bloco6', label: 'CNU — Bloco 6 (Adm. Pública)',       categoria: 'federal', icon: '🇧🇷' },
+  { id: 'cnu-bloco7', label: 'CNU — Bloco 7 (Regulação)',          categoria: 'federal', icon: '⚖️' },
+  { id: 'cnu-bloco8', label: 'CNU — Bloco 8 (Nível Médio)',        categoria: 'federal', icon: '🇧🇷' },
+  // PMDF
+  { id: 'pmdf-soldado', label: 'PMDF — Soldado PM',   categoria: 'pm', icon: '🛡️' },
+  { id: 'pmdf-oficial', label: 'PMDF — Oficial PM',   categoria: 'pm', icon: '⭐' },
+  // PMs Estaduais
+  { id: 'pm-sp-soldado', label: 'PMESP — Soldado PM (SP)',         categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-rj-soldado', label: 'PMERJ — Soldado PM (RJ)',         categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-mg-soldado', label: 'PMMG — Soldado PM (MG)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-rs-soldado', label: 'BM-RS — Soldado Brigada Militar', categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-ba-soldado', label: 'PMBA — Soldado PM (BA)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-ce-soldado', label: 'PMCE — Soldado PM (CE)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-go-soldado', label: 'PMGO — Soldado PM (GO)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-pe-soldado', label: 'PMPE — Soldado PM (PE)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-pr-soldado', label: 'PMPR — Soldado PM (PR)',          categoria: 'pm', icon: '🛡️' },
+  { id: 'pm-sc-soldado', label: 'PMSC — Soldado PM (SC)',          categoria: 'pm', icon: '🛡️' },
+  // Polícia Civil — DF
+  { id: 'pc-df-agente',   label: 'PCDF — Agente de Polícia',  categoria: 'pc', icon: '🔍' },
+  { id: 'pc-df-delegado', label: 'PCDF — Delegado',           categoria: 'pc', icon: '🏅' },
+  { id: 'pc-df-escrivao', label: 'PCDF — Escrivão',           categoria: 'pc', icon: '✍️' },
+  // Polícia Civil — Estados
+  { id: 'pc-sp-agente', label: 'PCSP — Investigador (SP)',    categoria: 'pc', icon: '🔍' },
+  { id: 'pc-rj-agente', label: 'PCRJ — Inspetor (RJ)',        categoria: 'pc', icon: '🔍' },
+  { id: 'pc-mg-agente', label: 'PCMG — Investigador (MG)',    categoria: 'pc', icon: '🔍' },
+  { id: 'pc-rs-agente', label: 'PC-RS — Agente/Delegado',     categoria: 'pc', icon: '🔍' },
+  { id: 'pc-ba-agente', label: 'PC-BA — Investigador (BA)',   categoria: 'pc', icon: '🔍' },
+  { id: 'pc-ce-agente', label: 'PC-CE — Inspetor (CE)',       categoria: 'pc', icon: '🔍' },
+  { id: 'pc-pe-agente', label: 'PC-PE — Agente (PE)',         categoria: 'pc', icon: '🔍' },
+  { id: 'pc-go-agente', label: 'PC-GO — Investigador (GO)',   categoria: 'pc', icon: '🔍' },
+  { id: 'pc-agente-custodia', label: 'Agente de Custódia (Sistema Prisional)', categoria: 'pc', icon: '🔐' },
+  // Bombeiros
+  { id: 'cbmdf-soldado',  label: 'CBMDF — Soldado Bombeiro',       categoria: 'bombeiro', icon: '🚒' },
+  { id: 'cbmdf-oficial',  label: 'CBMDF — Oficial Bombeiro',       categoria: 'bombeiro', icon: '🚒' },
+  { id: 'cbm-sp-soldado', label: 'CBMSP — Soldado Bombeiro (SP)',  categoria: 'bombeiro', icon: '🚒' },
+  { id: 'cbm-rj-soldado', label: 'CBMRJ — Soldado Bombeiro (RJ)', categoria: 'bombeiro', icon: '🚒' },
+  { id: 'cbm-mg-soldado', label: 'CBMMG — Soldado Bombeiro (MG)', categoria: 'bombeiro', icon: '🚒' },
+  { id: 'cbm-ba-soldado', label: 'CBMBA — Soldado Bombeiro (BA)', categoria: 'bombeiro', icon: '🚒' },
+  // Bancos
   { id: 'bb-escriturario', label: 'Banco do Brasil — Escriturário', categoria: 'banco', icon: '🏦' },
-  { id: 'cef-tecnico', label: 'Caixa Econômica — Técnico', categoria: 'banco', icon: '💛' },
-  { id: 'tjdft-tecnico', label: 'TJDFT — Técnico Judiciário', categoria: 'judiciario', icon: '⚖️' },
-  { id: 'tjdft-analista', label: 'TJDFT — Analista Judiciário', categoria: 'judiciario', icon: '⚖️' },
-  { id: 'cnu-bloco1', label: 'CNU — Bloco 1 (Infra/Eng)', categoria: 'federal', icon: '🇧🇷' },
-  { id: 'cnu-bloco2', label: 'CNU — Bloco 2 (Regulação)', categoria: 'federal', icon: '🇧🇷' },
-  { id: 'cnu-bloco3', label: 'CNU — Bloco 3 (Ambiental)', categoria: 'federal', icon: '🇧🇷' },
+  { id: 'cef-tecnico',     label: 'Caixa Econômica — Técnico',     categoria: 'banco', icon: '💛' },
+  { id: 'bndes-analista',  label: 'BNDES — Analista',              categoria: 'banco', icon: '🏛️' },
+  { id: 'bacen-analista',  label: 'Banco Central — Analista',      categoria: 'banco', icon: '🏛️' },
+  // Judiciário
+  { id: 'tjdft-tecnico',    label: 'TJDFT — Técnico Judiciário',     categoria: 'judiciario', icon: '⚖️' },
+  { id: 'tjdft-analista',   label: 'TJDFT — Analista Judiciário',    categoria: 'judiciario', icon: '⚖️' },
+  { id: 'stj-tecnico',      label: 'STJ — Técnico Judiciário',       categoria: 'judiciario', icon: '⚖️' },
+  { id: 'trf-tecnico',      label: 'TRF — Técnico Judiciário',       categoria: 'judiciario', icon: '⚖️' },
+  { id: 'tj-sp-escrevente', label: 'TJ-SP — Escrevente Técnico',    categoria: 'judiciario', icon: '⚖️' },
+  // DETRAN
+  { id: 'detran-df-agente', label: 'DETRAN-DF — Agente de Trânsito', categoria: 'transito', icon: '🚦' },
+  { id: 'detran-sp-agente', label: 'DETRAN-SP — Agente de Trânsito', categoria: 'transito', icon: '🚦' },
+  // Guarda Civil / Municipal
+  { id: 'gcm-sp',    label: 'GCM — Guarda Civil Metropolitano (SP)', categoria: 'guarda', icon: '🏙️' },
+  { id: 'gcm-rj',    label: 'GM — Guarda Municipal (RJ)',            categoria: 'guarda', icon: '🏙️' },
+  { id: 'guarda-df', label: 'GCM-DF — Guarda Civil Metropolitana',  categoria: 'guarda', icon: '🏙️' },
 ]
 
 export function findUserByEmail(email: string): DemoUser | undefined {

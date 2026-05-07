@@ -1,18 +1,18 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, use } from 'react'
 import { useAuthStore } from '@/store/auth'
 import { getCursoData, getMateriasByContest } from '@/lib/curso-data'
 import { CURSOS_DISPONIVEIS } from '@/lib/demo-users'
 import {
   BookOpen, Zap, Target, TrendingUp, ChevronLeft, Brain,
-  CheckCircle2, XCircle, Clock, BarChart3, Download,
-  Trophy, AlertTriangle, Play, RotateCcw, CheckSquare
+  CheckCircle2, BarChart3,
+  Trophy, Play, RotateCcw, CheckSquare
 } from 'lucide-react'
 import Link from 'next/link'
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, ResponsiveContainer, RadialBarChart, RadialBar
+  AreaChart, Area, XAxis, YAxis, Tooltip,
+  CartesianGrid, ResponsiveContainer
 } from 'recharts'
 import toast from 'react-hot-toast'
 
@@ -143,7 +143,6 @@ function QuestaoCard({
 
 export default function CursoPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params)
-  const user = useAuthStore(s => s.user)
   const token = useAuthStore(s => s.token)
   const [tab, setTab] = useState<Tab>('overview')
 
@@ -171,7 +170,6 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
   const [simuladoRespostas, setSimuladoRespostas] = useState<Record<number, string>>({})
   const [simuladoFinalizado, setSimuladoFinalizado] = useState(false)
   const [loadingSim, setLoadingSim] = useState(false)
-  const [tempoRestante, setTempoRestante] = useState(0)
 
   const semana = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000))
   const materiaStats = materias.map(m => ({ ...m, stats: mockMateriaStats(m.id, courseId) }))
@@ -191,12 +189,15 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
     )
   }
 
+  // cursoData is guaranteed non-null here (early return above handles null case)
+  const cd = cursoData!
+
   // --- Questões ---
   async function gerarQuestoes() {
     setLoadingQ(true)
     setRespostas({})
     const materia = materiaFiltro === 'todas'
-      ? materias[Math.floor(Math.random() * materias.length)]?.nome ?? cursoData.label
+      ? materias[Math.floor(Math.random() * materias.length)]?.nome ?? cd.label
       : materias.find(m => m.id === materiaFiltro)?.nome ?? materiaFiltro
 
     try {
@@ -206,12 +207,12 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
         body: JSON.stringify({
           tipo: 'questoes',
           materia,
-          curso: cursoData.label,
+          curso: cd.label,
           quantidade: 10,
           nivel: 'medio',
           semana,
-          banca: cursoData.banca,
-          formato: cursoData.simuladoFormat.tipo,
+          banca: cd.banca,
+          formato: cd.simuladoFormat.tipo,
         }),
       })
       const d = await res.json()
@@ -219,7 +220,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
       if (lista.length > 0) {
         setQuestoes(lista.map((q: any) => ({
           ...q,
-          tipo: cursoData.simuladoFormat.tipo,
+          tipo: cd.simuladoFormat.tipo,
           materia: q.materia ?? materia,
         })))
       } else {
@@ -236,12 +237,12 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
     setLoadingFC(true)
     setCardAtual(0)
     setVirado(false)
-    const materia = materias[Math.floor(Math.random() * materias.length)]?.nome ?? cursoData.label
+    const materia = materias[Math.floor(Math.random() * materias.length)]?.nome ?? cd.label
     try {
       const res = await fetch('/api/ai/gerar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ tipo: 'flashcards', materia, curso: cursoData.label, quantidade: 10, semana }),
+        body: JSON.stringify({ tipo: 'flashcards', materia, curso: cd.label, quantidade: 10, semana }),
       })
       const d = await res.json()
       const lista = Array.isArray(d.data) ? d.data : []
@@ -269,7 +270,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
         body: JSON.stringify({
           tipo: 'simulado',
           materia: 'todas',
-          curso: cursoData.label,
+          curso: cd.label,
           quantidade: qtd,
           semana,
           nivel: 'medio',
@@ -280,7 +281,6 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
       if (lista.length > 0) {
         setSimuladoQuestoes(lista.map((q: any) => ({ ...q, tipo: simuladoFormat?.tipo ?? 'multipla_escolha' })))
         setSimuladoAtivo(true)
-        setTempoRestante(qtd * 3 * 60) // 3 min por questão
       } else {
         toast.error('Erro ao gerar simulado.')
       }
@@ -322,8 +322,8 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
           <div className="flex items-center gap-3">
             <span className="text-4xl">{cursoDisp.icon}</span>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-foreground">{cursoData.label}</h1>
-              <p className="text-sm text-muted-foreground">{cursoData.orgao} · {cursoData.banca}</p>
+              <h1 className="text-xl sm:text-2xl font-black text-foreground">{cd.label}</h1>
+              <p className="text-sm text-muted-foreground">{cd.orgao} · {cd.banca}</p>
             </div>
           </div>
           <div className="sm:ml-auto flex items-center gap-3">
@@ -378,7 +378,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
           {simuladoFormat && (
             <div className="card p-5">
               <h2 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm">
-                <Trophy className="w-4 h-4 text-yellow-500" /> Formato da prova real — {cursoData.banca}
+                <Trophy className="w-4 h-4 text-yellow-500" /> Formato da prova real — {cd.banca}
               </h2>
               <div className="grid sm:grid-cols-3 gap-4 text-sm">
                 <div className="rounded-xl bg-muted/50 p-3">
@@ -500,14 +500,14 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
             <div className="card p-10 text-center">
               <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
               <p className="font-semibold text-foreground">Nenhuma questão ainda</p>
-              <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar questões com IA" para começar a praticar específico para {cursoData.label}.</p>
+              <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar questões com IA" para começar a praticar específico para {cd.label}.</p>
             </div>
           )}
 
           {questoes.length > 0 && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">{questoes.length} questões geradas para <strong>{cursoData.label}</strong></p>
+                <p className="text-sm text-muted-foreground">{questoes.length} questões geradas para <strong>{cd.label}</strong></p>
                 {Object.keys(respostas).length > 0 && (
                   <span className="text-sm font-bold text-foreground">
                     {Object.values(respostas).filter(r => r.correta).length}/{Object.keys(respostas).length} corretas
@@ -546,7 +546,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-bold text-foreground">Flashcards — {cursoData.label}</h2>
+              <h2 className="font-bold text-foreground">Flashcards — {cd.label}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">IA gera flashcards específicos do edital deste concurso</p>
             </div>
             <button onClick={gerarFlashcards} disabled={loadingFC} className="btn-primary btn-md">
@@ -562,7 +562,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
             <div className="card p-10 text-center">
               <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-40" />
               <p className="font-semibold text-foreground">Sem flashcards</p>
-              <p className="text-sm text-muted-foreground mt-1">Gere flashcards com IA para revisar os tópicos do edital de {cursoData.label}.</p>
+              <p className="text-sm text-muted-foreground mt-1">Gere flashcards com IA para revisar os tópicos do edital de {cd.label}.</p>
             </div>
           )}
 
@@ -634,7 +634,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
               <div className="card p-4 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground">Simulado em andamento</span>
-                  <p className="text-xs text-muted-foreground">{simuladoQuestoes.length} questões · {cursoData.label}</p>
+                  <p className="text-xs text-muted-foreground">{simuladoQuestoes.length} questões · {cd.label}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">{Object.keys(simuladoRespostas).length}/{simuladoQuestoes.length} respondidas</span>
@@ -667,7 +667,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
           {!simuladoAtivo && !simuladoFinalizado && (
             <>
               <div className="card p-5">
-                <h2 className="font-bold text-foreground mb-1">Formato oficial — {cursoData.banca}</h2>
+                <h2 className="font-bold text-foreground mb-1">Formato oficial — {cd.banca}</h2>
                 <p className="text-xs text-muted-foreground mb-4">
                   Prova real: {simuladoFormat?.totalQuestoes} questões · {Math.floor((simuladoFormat?.tempoMinutos ?? 240) / 60)}h{(simuladoFormat?.tempoMinutos ?? 0) % 60 > 0 ? `${(simuladoFormat?.tempoMinutos ?? 0) % 60}min` : ''} · {simuladoFormat?.tipo === 'certo_errado' ? 'Certo/Errado' : `Múltipla escolha ${simuladoFormat?.alternativas ?? 5} alt.`}
                 </p>
@@ -693,7 +693,7 @@ export default function CursoPage({ params }: { params: Promise<{ courseId: stri
               <div className="card p-5">
                 <h2 className="font-bold text-foreground mb-1">Simulado completo</h2>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Simula a prova real com {simuladoFormat?.totalQuestoes} questões no estilo {cursoData.banca}
+                  Simula a prova real com {simuladoFormat?.totalQuestoes} questões no estilo {cd.banca}
                 </p>
                 <button
                   onClick={() => iniciarSimulado(simuladoFormat?.totalQuestoes ?? 60)}
