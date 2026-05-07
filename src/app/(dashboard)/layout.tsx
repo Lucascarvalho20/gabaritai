@@ -69,10 +69,10 @@ function NavItem({ href, label, icon: Icon, badge, active }: { href: string; lab
 }
 
 const MOCK_NOTIFICACOES = [
-  { id: 1, tipo: 'alerta', titulo: 'Simulado disponível!', desc: `Novo simulado semanal disponível para você.`, lido: false, tempo: '2h' },
-  { id: 2, tipo: 'progresso', titulo: 'Meta diária atingida 🎯', desc: 'Você completou 80 questões hoje. Continue assim!', lido: false, tempo: '4h' },
-  { id: 3, tipo: 'dica', titulo: 'Dica do Mentor IA', desc: 'Você está errando 38% em Raciocínio Lógico. Revise hoje!', lido: true, tempo: '1d' },
-  { id: 4, tipo: 'progresso', titulo: 'Sequência de 12 dias! 🔥', desc: 'Parabéns! Você manteve 12 dias consecutivos de estudo.', lido: true, tempo: '2d' },
+  { id: 1, tipo: 'alerta', titulo: 'Simulado disponível!', desc: `Novo simulado semanal disponível para você.`, lido: false, tempo: '2h', href: '/dashboard/simulados' },
+  { id: 2, tipo: 'progresso', titulo: 'Meta diária atingida 🎯', desc: 'Você completou 80 questões hoje. Continue assim!', lido: false, tempo: '4h', href: '/dashboard/progresso' },
+  { id: 3, tipo: 'dica', titulo: 'Dica do Mentor IA', desc: 'Você está errando 38% em Raciocínio Lógico. Revise hoje!', lido: true, tempo: '1d', href: '/dashboard/mentor' },
+  { id: 4, tipo: 'progresso', titulo: 'Sequência de 12 dias! 🔥', desc: 'Parabéns! Você manteve 12 dias consecutivos de estudo.', lido: true, tempo: '2d', href: '/dashboard/progresso' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -212,10 +212,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                     <div className="divide-y divide-border max-h-80 overflow-y-auto">
                       {notifs.map(n => (
-                        <button
+                        <Link
                           key={n.id}
-                          onClick={() => setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, lido: true } : x))}
-                          className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${!n.lido ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
+                          href={n.href}
+                          onClick={() => { setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, lido: true } : x)); setNotifOpen(false) }}
+                          className={`block p-4 hover:bg-muted/50 transition-colors ${!n.lido ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
                         >
                           <div className="flex items-start gap-3">
                             <span className="text-lg shrink-0">{n.tipo === 'alerta' ? '🔔' : n.tipo === 'progresso' ? '📈' : '💡'}</span>
@@ -228,7 +229,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               <span className="text-xs text-muted-foreground/60 mt-1 block">{n.tempo} atrás</span>
                             </div>
                           </div>
-                        </button>
+                        </Link>
                       ))}
                     </div>
                     <div className="p-3 border-t border-border">

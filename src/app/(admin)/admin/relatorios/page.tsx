@@ -50,7 +50,7 @@ export default function RelatoriosPage() {
           <h1 className="text-2xl font-black text-foreground">Relatórios</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Visão analítica da plataforma</p>
         </div>
-        <button className="btn-outline btn-sm">
+        <button className="btn-outline btn-sm" onClick={() => window.print()}>
           <Download className="w-3.5 h-3.5" /> Exportar PDF
         </button>
       </div>

@@ -2,6 +2,41 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
 import { DEMO_USERS } from '@/lib/demo-users'
 
+function detectCronogramaUpdate(userMessage: string, _aiResponse: string): { horas_dia?: number; dias_semana?: number[] } | null {
+  const msg = userMessage.toLowerCase()
+  const isCronogramaRequest = msg.includes('cronograma') || msg.includes('horário') || msg.includes('horas') || msg.includes('dias de estudo') || msg.includes('segunda') || msg.includes('dias da semana')
+  if (!isCronogramaRequest) return null
+
+  const update: { horas_dia?: number; dias_semana?: number[] } = {}
+
+  const horasMatch = msg.match(/(\d+)\s*hora/i)
+  if (horasMatch) update.horas_dia = parseInt(horasMatch[1])
+
+  const diasMap: Record<string, number> = {
+    'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3,
+    'quinta': 4, 'sexta': 5, 'sábado': 6, 'sabado': 6,
+  }
+  const diasMentioned: number[] = []
+  for (const [dia, num] of Object.entries(diasMap)) {
+    if (msg.includes(dia)) diasMentioned.push(num)
+  }
+
+  const naoQueroDias: number[] = []
+  for (const [dia, num] of Object.entries(diasMap)) {
+    if (msg.includes(`${dia} não`) || msg.includes(`não.*${dia}`) || (msg.includes('não quero') && msg.includes(dia))) {
+      naoQueroDias.push(num)
+    }
+  }
+
+  if (diasMentioned.length > 0 || naoQueroDias.length > 0) {
+    let studyDays = diasMentioned.length > 0 ? diasMentioned : [1, 2, 3, 4, 5, 6]
+    studyDays = studyDays.filter(d => !naoQueroDias.includes(d))
+    if (studyDays.length > 0) update.dias_semana = studyDays
+  }
+
+  return Object.keys(update).length > 0 ? update : null
+}
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) {
@@ -27,32 +62,38 @@ export async function POST(req: NextRequest) {
 
   // Cascade: Groq (grátis) → Gemini → Claude → OpenAI → DeepSeek → fallback
   if (groqKey) {
-    try {
-      const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
-        'https://api.groq.com/openai/v1/chat/completions',
-        process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile')
-      return NextResponse.json({ response: r, provider: 'groq' })
-    } catch (e) { console.error('[Groq]', e) }
+    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
+    for (const gm of groqModels) {
+      try {
+        const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
+          'https://api.groq.com/openai/v1/chat/completions', gm)
+        const cronogramaUpdate = detectCronogramaUpdate(message, r)
+        return NextResponse.json({ response: r, provider: 'groq', cronogramaUpdate })
+      } catch (e) { console.error(`[Groq ${gm}]`, e) }
+    }
   }
 
   if (geminiKey) {
     try {
       const r = await callGemini(message, history, systemPrompt, geminiKey)
-      return NextResponse.json({ response: r, provider: 'gemini' })
+      const cronogramaUpdate = detectCronogramaUpdate(message, r)
+      return NextResponse.json({ response: r, provider: 'gemini', cronogramaUpdate })
     } catch (e) { console.error('[Gemini]', e) }
   }
 
   if (anthropicKey) {
     try {
       const r = await callClaude(message, history, systemPrompt, anthropicKey)
-      return NextResponse.json({ response: r, provider: 'claude' })
+      const cronogramaUpdate = detectCronogramaUpdate(message, r)
+      return NextResponse.json({ response: r, provider: 'claude', cronogramaUpdate })
     } catch (e) { console.error('[Claude]', e) }
   }
 
   if (openaiKey) {
     try {
       const r = await callOpenAI(message, history, systemPrompt, openaiKey)
-      return NextResponse.json({ response: r, provider: 'openai' })
+      const cronogramaUpdate = detectCronogramaUpdate(message, r)
+      return NextResponse.json({ response: r, provider: 'openai', cronogramaUpdate })
     } catch (e) { console.error('[OpenAI]', e) }
   }
 
@@ -61,13 +102,17 @@ export async function POST(req: NextRequest) {
       const r = await callOpenAICompat(message, history, systemPrompt, deepseekKey,
         'https://api.deepseek.com/v1/chat/completions',
         process.env.DEEPSEEK_MODEL ?? 'deepseek-chat')
-      return NextResponse.json({ response: r, provider: 'deepseek' })
+      const cronogramaUpdate = detectCronogramaUpdate(message, r)
+      return NextResponse.json({ response: r, provider: 'deepseek', cronogramaUpdate })
     } catch (e) { console.error('[DeepSeek]', e) }
   }
 
+  const r = generateFallbackResponse(message, user)
+  const cronogramaUpdate = detectCronogramaUpdate(message, r)
   return NextResponse.json({
-    response: generateFallbackResponse(message, user),
-    provider: 'fallback'
+    response: r,
+    provider: 'fallback',
+    cronogramaUpdate,
   })
 }
 
@@ -80,6 +125,7 @@ async function callClaude(message: string, history: any[], system: string, apiKe
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({ model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6', max_tokens: 2048, system, messages }),
+    signal: AbortSignal.timeout(8000),
   })
   if (!res.ok) throw new Error(`Claude ${res.status}: ${await res.text()}`)
   const data = await res.json()
@@ -106,6 +152,7 @@ async function callOpenAICompat(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, max_tokens: 2048, messages }),
+    signal: AbortSignal.timeout(8000),
   })
   if (!res.ok) throw new Error(`${baseUrl} ${res.status}: ${await res.text()}`)
   const data = await res.json()
@@ -147,7 +194,7 @@ async function callGemini(message: string, history: any[], system: string, apiKe
 
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(8000) }
       )
       if (res.ok) {
         const data = await res.json()

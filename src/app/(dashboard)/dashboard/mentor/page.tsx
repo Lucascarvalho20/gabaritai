@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Brain, Send, Loader2, Sparkles, RefreshCw, BookOpen, Target, Clock } from 'lucide-react'
+import { Brain, Send, Loader2, Sparkles, RefreshCw } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
@@ -54,13 +54,26 @@ export default function MentorPage() {
     try {
       const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
       const res = await api.post('/ai/chat', { message: text, history })
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: res.data.response,
-        createdAt: new Date(),
+      if (res.data.cronogramaUpdate) {
+        const existing = JSON.parse(localStorage.getItem('gabaritai_cronograma_config') ?? '{}')
+        const updated = { ...existing, ...res.data.cronogramaUpdate, updatedAt: new Date().toISOString() }
+        localStorage.setItem('gabaritai_cronograma_config', JSON.stringify(updated))
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: res.data.response + '\n\n✅ **Cronograma atualizado!** Acesse a aba Cronograma para ver as mudanças.',
+          createdAt: new Date(),
+        }
+        setMessages(prev => [...prev, aiMsg])
+      } else {
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: res.data.response,
+          createdAt: new Date(),
+        }
+        setMessages(prev => [...prev, aiMsg])
       }
-      setMessages(prev => [...prev, aiMsg])
     } catch {
       const errMsg: Message = {
         id: (Date.now() + 1).toString(),
