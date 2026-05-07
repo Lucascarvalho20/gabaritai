@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState } from 'react'
 import { useAuthStore } from '@/store/auth'
 import { getCursoData, getMateriasByContest } from '@/lib/curso-data'
 import { CURSOS_DISPONIVEIS } from '@/lib/demo-users'
@@ -141,8 +141,8 @@ function QuestaoCard({
   )
 }
 
-export default function CursoPage({ params }: { params: Promise<{ courseId: string }> }) {
-  const { courseId } = use(params)
+export default function CursoPage({ params }: { params: { courseId: string } }) {
+  const { courseId } = params
   const token = useAuthStore(s => s.token)
   const [tab, setTab] = useState<Tab>('overview')
 
