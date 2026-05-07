@@ -125,6 +125,7 @@ async function callAI(prompt: string): Promise<string> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+      signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) throw new Error(`${res.status}`)
     const d = await res.json()
@@ -133,8 +134,11 @@ async function callAI(prompt: string): Promise<string> {
 
   // Groq first (free, fast)
   if (groqKey) {
-    try { return await tryOpenAICompat('https://api.groq.com/openai/v1/chat/completions', 'llama-3.3-70b-versatile', groqKey) }
-    catch (e) { console.error('[Groq gerar]', e) }
+    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
+    for (const gm of groqModels) {
+      try { return await tryOpenAICompat('https://api.groq.com/openai/v1/chat/completions', gm, groqKey) }
+      catch (e) { console.error(`[Groq ${gm}]`, e) }
+    }
   }
 
   // Gemini
@@ -146,6 +150,7 @@ async function callAI(prompt: string): Promise<string> {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 4096 } }),
+          signal: AbortSignal.timeout(8000),
         })
         if (res.ok) { const d = await res.json(); return d.candidates[0].content.parts[0].text }
       } catch (e) { console.error(`[Gemini ${m} gerar]`, e) }
@@ -159,6 +164,7 @@ async function callAI(prompt: string): Promise<string> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+        signal: AbortSignal.timeout(8000),
       })
       if (res.ok) { const d = await res.json(); return d.content[0].text }
     } catch (e) { console.error('[Anthropic gerar]', e) }

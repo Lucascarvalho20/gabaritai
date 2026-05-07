@@ -6,7 +6,7 @@ import { getCursoData, getMateriasByContest } from '@/lib/curso-data'
 import { CURSOS_DISPONIVEIS } from '@/lib/demo-users'
 import {
   BookOpen, Zap, Target, TrendingUp, ChevronLeft, Brain,
-  CheckCircle2, BarChart3,
+  CheckCircle2, BarChart3, FileText,
   Trophy, Play, RotateCcw, CheckSquare
 } from 'lucide-react'
 import Link from 'next/link'
@@ -16,7 +16,58 @@ import {
 } from 'recharts'
 import toast from 'react-hot-toast'
 
-type Tab = 'overview' | 'questoes' | 'flashcards' | 'simulados'
+type Tab = 'overview' | 'questoes' | 'flashcards' | 'simulados' | 'edital'
+
+function getDefaultTopicos(materiaNome: string): string[] {
+  const m = materiaNome.toLowerCase()
+  if (m.includes('constitucional')) return [
+    'Princípios Fundamentais (Arts. 1º-4º)', 'Direitos e Garantias Fundamentais (Art. 5º)',
+    'Direitos Sociais (Arts. 6º-11)', 'Organização do Estado', 'Separação dos Poderes',
+    'Administração Pública (Arts. 37-41)', 'Ordem Econômica e Social',
+  ]
+  if (m.includes('administrativo')) return [
+    'Princípios da Administração (LIMPE)', 'Atos Administrativos', 'Poderes Administrativos',
+    'Administração Direta e Indireta', 'Servidores Públicos', 'Licitações (Lei 14.133/2021)',
+    'Controle da Administração', 'Responsabilidade Civil do Estado',
+  ]
+  if (m.includes('penal') && !m.includes('processo')) return [
+    'Princípios do Direito Penal', 'Lei Penal no Tempo e Espaço', 'Teoria do Crime',
+    'Culpabilidade e Antijuridicidade', 'Concurso de Pessoas e Crimes',
+    'Crimes contra a Vida', 'Crimes contra o Patrimônio',
+    'Crimes contra a Administração Pública',
+  ]
+  if (m.includes('processual') || m.includes('processo penal') || m.includes('cpp')) return [
+    'Inquérito Policial', 'Ação Penal', 'Competência', 'Provas',
+    'Prisão e Medidas Cautelares', 'Liberdade Provisória', 'Procedimentos', 'Recursos',
+  ]
+  if (m.includes('português') || m.includes('lingua')) return [
+    'Interpretação de Texto', 'Ortografia e Acentuação', 'Classes de Palavras',
+    'Sintaxe: sujeito e predicado', 'Concordância Nominal e Verbal',
+    'Regência Nominal e Verbal', 'Crase', 'Pontuação',
+  ]
+  if (m.includes('lógico') || m.includes('raciocínio')) return [
+    'Proposições e Conectivos', 'Tabela-Verdade', 'Silogismo e Inferências',
+    'Sequências e Séries', 'Raciocínio Analítico', 'Probabilidade', 'Geometria Básica',
+  ]
+  if (m.includes('informática')) return [
+    'Windows e Linux básico', 'Word, Excel e PowerPoint',
+    'Internet e Segurança da Informação', 'Redes de Computadores', 'LGPD',
+  ]
+  if (m.includes('direitos humanos')) return [
+    'Declaração Universal dos Direitos Humanos', 'Pacto de São José da Costa Rica',
+    'Direitos Humanos na CF/88', 'Sistema Interamericano de Direitos Humanos',
+  ]
+  if (m.includes('matemática') || m.includes('mat.')) return [
+    'Conjuntos e Operações', 'Porcentagem e Razão', 'Regra de Três',
+    'Juros Simples e Compostos', 'Equações e Inequações', 'Geometria Plana',
+  ]
+  return [
+    `${materiaNome} — Conceitos fundamentais`,
+    `${materiaNome} — Legislação aplicável`,
+    `${materiaNome} — Questões mais cobradas`,
+    `${materiaNome} — Jurisprudência e atualidades`,
+  ]
+}
 
 // Mock determinístico por matéria
 function mockMateriaStats(materiaId: string, courseId: string) {
@@ -164,6 +215,21 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
   const [virado, setVirado] = useState(false)
   const [loadingFC, setLoadingFC] = useState(false)
 
+  // Edital state
+  const [editalProgress, setEditalProgress] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try { return JSON.parse(localStorage.getItem(`edital_${courseId}`) ?? '{}') } catch {}
+    }
+    return {}
+  })
+  function toggleTopic(key: string) {
+    setEditalProgress(prev => {
+      const updated = { ...prev, [key]: !prev[key] }
+      localStorage.setItem(`edital_${courseId}`, JSON.stringify(updated))
+      return updated
+    })
+  }
+
   // Simulado state
   const [simuladoAtivo, setSimuladoAtivo] = useState(false)
   const [simuladoQuestoes, setSimuladoQuestoes] = useState<any[]>([])
@@ -309,7 +375,11 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
     { id: 'questoes',  label: 'Questões',     icon: BookOpen },
     { id: 'flashcards',label: 'Flashcards',   icon: Zap },
     { id: 'simulados', label: 'Simulados',    icon: Target },
+    { id: 'edital',    label: 'Edital',       icon: FileText },
   ]
+
+  const allTopicos = materias.flatMap(m => (m.topicos ?? getDefaultTopicos(m.nome)).map((_, idx) => `${m.id}_${idx}`))
+  const topicosEstudados = allTopicos.filter(k => editalProgress[k]).length
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -714,6 +784,64 @@ export default function CursoPage({ params }: { params: { courseId: string } }) 
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* ═══ EDITAL VERTICALIZADO ═══ */}
+      {tab === 'edital' && (
+        <div className="space-y-4">
+          <div className="card p-5">
+            <h2 className="font-bold text-foreground mb-1">Edital Verticalizado — {cd.label}</h2>
+            <p className="text-xs text-muted-foreground mb-4">Marque os tópicos conforme você estuda. Seu progresso é salvo automaticamente.</p>
+            <div className="flex items-center gap-3">
+              <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-brand-500 rounded-full transition-all duration-500"
+                  style={{ width: `${allTopicos.length > 0 ? Math.round((topicosEstudados / allTopicos.length) * 100) : 0}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-brand-600 dark:text-brand-400 shrink-0">
+                {topicosEstudados}/{allTopicos.length} tópicos
+              </span>
+            </div>
+          </div>
+
+          {materias.map(materia => {
+            const topicos = materia.topicos ?? getDefaultTopicos(materia.nome)
+            const estudados = topicos.filter((_, idx) => editalProgress[`${materia.id}_${idx}`]).length
+            return (
+              <div key={materia.id} className="card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-brand-500" />
+                    {materia.nome}
+                  </h3>
+                  <span className={`text-xs font-bold ${estudados === topicos.length ? 'text-success-600' : 'text-muted-foreground'}`}>
+                    {estudados}/{topicos.length}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {topicos.map((topico, idx) => {
+                    const key = `${materia.id}_${idx}`
+                    return (
+                      <label key={key} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!editalProgress[key]}
+                          onChange={() => toggleTopic(key)}
+                          className="w-4 h-4 rounded accent-brand-500 shrink-0"
+                        />
+                        <span className={`text-sm flex-1 ${editalProgress[key] ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                          {topico}
+                        </span>
+                        {editalProgress[key] && <CheckCircle2 className="w-3.5 h-3.5 text-success-500 shrink-0" />}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

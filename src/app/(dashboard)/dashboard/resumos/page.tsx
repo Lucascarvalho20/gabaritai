@@ -11,8 +11,8 @@ import toast from 'react-hot-toast'
 const TIPOS = [
   { id: 'resumo',       label: 'Resumo Inteligente', icon: FileText, desc: 'Pontos principais para prova', color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
   { id: 'mapa_mental',  label: 'Mapa Mental',         icon: Map,      desc: 'Estrutura visual hierárquica', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-  { id: 'flashcards',   label: 'Gerar Flashcards',    icon: Zap,      desc: '10 flashcards prontos para revisar', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-  { id: 'questoes',     label: 'Criar Questões',       icon: HelpCircle, desc: 'Questões estilo CESPE + gabarito', color: 'text-success-600', bg: 'bg-success-50 dark:bg-success-600/10' },
+  { id: 'flashcards',   label: 'Flashcards',           icon: Zap,      desc: '10 flashcards prontos para revisar', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+  { id: 'questoes',     label: 'Questões',             icon: HelpCircle, desc: 'Questões estilo CESPE + gabarito', color: 'text-success-600', bg: 'bg-success-50 dark:bg-success-600/10' },
   { id: 'pontos_chave', label: 'Pontos-Chave',         icon: List,     desc: 'Top 10 pontos mais importantes', color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
 ]
 

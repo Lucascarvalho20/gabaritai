@@ -78,6 +78,7 @@ async function callOpenAICompat(prompt: string, url: string, model: string, apiK
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+    signal: AbortSignal.timeout(8000),
   })
   if (!res.ok) throw new Error(`${url} ${res.status}`)
   const data = await res.json()
@@ -93,9 +94,11 @@ async function callAI(prompt: string): Promise<string> {
 
   // Groq first — grátis, rápido (console.groq.com)
   if (groqKey) {
-    try {
-      return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile', groqKey)
-    } catch (e) { console.error('[Groq]', e) }
+    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
+    for (const gm of groqModels) {
+      try { return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', gm, groqKey) }
+      catch (e) { console.error(`[Groq ${gm}]`, e) }
+    }
   }
 
   if (geminiKey) {
@@ -118,6 +121,7 @@ async function callAI(prompt: string): Promise<string> {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: 4096 },
             }),
+            signal: AbortSignal.timeout(8000),
           }
         )
         if (res.ok) {
@@ -139,6 +143,7 @@ async function callAI(prompt: string): Promise<string> {
           max_tokens: 4096,
           messages: [{ role: 'user', content: prompt }],
         }),
+        signal: AbortSignal.timeout(8000),
       })
       if (res.ok) {
         const data = await res.json()

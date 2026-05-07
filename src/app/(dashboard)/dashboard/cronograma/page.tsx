@@ -1,12 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Calendar, CheckCircle2, Clock, BookOpen, Zap, Brain, ChevronRight, Play } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle2, Clock, Brain, Play } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-
-const DIAS_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 const CRONOGRAMA_SEMANA = [
   {
@@ -79,14 +77,28 @@ const TIPO_HREF: Record<string, string> = {
   Revisão: '/dashboard/progresso',
 }
 
+const DIAS_NOME: Record<number, string> = { 0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb' }
+
 export default function CronogramaPage() {
   const user = useAuthStore(s => s.user)
-  const [diaAtivo, setDiaAtivo] = useState(2) // Quarta = índice 2
+  const [diaAtivo, setDiaAtivo] = useState(2)
+  const [configCronograma, setConfigCronograma] = useState({ horas_dia: 4, dias_semana: [1, 2, 3, 4, 5] })
+
+  useEffect(() => {
+    const saved = localStorage.getItem('gabaritai_cronograma_config')
+    if (saved) {
+      try { setConfigCronograma(JSON.parse(saved)) } catch {}
+    }
+  }, [])
 
   const dia = CRONOGRAMA_SEMANA[diaAtivo]
   const concluidas = dia.tarefas.filter(t => t.done).length
   const total = dia.tarefas.length
   const tempoTotal = dia.tarefas.reduce((acc, t) => acc + t.tempo, 0)
+
+  const diasLabel = configCronograma.dias_semana.length > 0
+    ? configCronograma.dias_semana.map(d => DIAS_NOME[d]).filter(Boolean).join(', ')
+    : 'Seg a Sex'
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
@@ -107,7 +119,7 @@ export default function CronogramaPage() {
           <div>
             <p className="font-semibold text-foreground text-sm">Análise de viabilidade — {user?.concursoAlvo ?? 'Seu Concurso'}</p>
             <p className="text-muted-foreground text-xs mt-0.5">
-              Com <strong>4h/dia</strong> você conclui o edital em <strong>87 dias</strong> e ainda tem <strong>23 dias para revisar</strong> antes da prova.
+              Com <strong>{configCronograma.horas_dia}h/dia</strong> ({diasLabel}) você conclui o edital em <strong>87 dias</strong> e ainda tem <strong>23 dias para revisar</strong> antes da prova.
             </p>
           </div>
           <div className="shrink-0">
@@ -118,32 +130,28 @@ export default function CronogramaPage() {
 
       {/* Seletor de dias */}
       <div className="grid grid-cols-7 gap-1.5">
-        {CRONOGRAMA_SEMANA.map((d, i) => {
-          const conc = d.tarefas.filter(t => t.done).length
-          const tot = d.tarefas.length
-          return (
-            <button
-              key={d.dia}
-              onClick={() => setDiaAtivo(i)}
-              className={cn(
-                'flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all text-sm',
-                i === diaAtivo
-                  ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
-                  : d.ativo
-                  ? 'border-brand-300 dark:border-brand-700 bg-brand-50/50 dark:bg-brand-900/10'
-                  : 'border-border hover:border-brand-300 hover:bg-muted'
-              )}
-            >
-              <span className={cn('font-semibold text-xs', i === diaAtivo ? 'text-brand-600 dark:text-brand-400' : 'text-muted-foreground')}>{d.dia}</span>
-              <span className={cn('text-xs', i === diaAtivo ? 'text-brand-700 dark:text-brand-300 font-medium' : 'text-muted-foreground')}>{d.data}</span>
-              <div className="flex gap-0.5">
-                {d.tarefas.map((t, j) => (
-                  <div key={j} className={cn('w-1.5 h-1.5 rounded-full', t.done ? 'bg-success-500' : i === diaAtivo ? 'bg-brand-300' : 'bg-muted-foreground/30')} />
-                ))}
-              </div>
-            </button>
-          )
-        })}
+        {CRONOGRAMA_SEMANA.map((d, i) => (
+          <button
+            key={d.dia}
+            onClick={() => setDiaAtivo(i)}
+            className={cn(
+              'flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all text-sm',
+              i === diaAtivo
+                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30'
+                : d.ativo
+                ? 'border-brand-300 dark:border-brand-700 bg-brand-50/50 dark:bg-brand-900/10'
+                : 'border-border hover:border-brand-300 hover:bg-muted'
+            )}
+          >
+            <span className={cn('font-semibold text-xs', i === diaAtivo ? 'text-brand-600 dark:text-brand-400' : 'text-muted-foreground')}>{d.dia}</span>
+            <span className={cn('text-xs', i === diaAtivo ? 'text-brand-700 dark:text-brand-300 font-medium' : 'text-muted-foreground')}>{d.data}</span>
+            <div className="flex gap-0.5">
+              {d.tarefas.map((t, j) => (
+                <div key={j} className={cn('w-1.5 h-1.5 rounded-full', t.done ? 'bg-success-500' : i === diaAtivo ? 'bg-brand-300' : 'bg-muted-foreground/30')} />
+              ))}
+            </div>
+          </button>
+        ))}
       </div>
 
       {/* Tarefas do dia selecionado */}

@@ -45,6 +45,8 @@ export default function AdminCursosPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<{ mensal: string; anual: string }>({ mensal: '', anual: '' })
   const [savedId, setSavedId] = useState<string | null>(null)
+  const [showNovoCurso, setShowNovoCurso] = useState(false)
+  const [novoCurso, setNovoCurso] = useState({ label: '', categoria: 'policial', icon: '📋', precoMensal: '79', precoAnual: '690' })
 
   const categorias = [...new Set(courses.map(c => c.categoria))]
   const totalAlunos = courses.reduce((acc, c) => acc + c.alunos, 0)
@@ -78,7 +80,7 @@ export default function AdminCursosPage() {
           <h1 className="text-2xl font-black text-foreground">Gerenciar Cursos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Controle preços, disponibilidade e visualize alunos por curso</p>
         </div>
-        <button className="btn-primary btn-sm">
+        <button className="btn-primary btn-sm" onClick={() => setShowNovoCurso(true)}>
           <Plus className="w-3.5 h-3.5" /> Novo curso
         </button>
       </div>
@@ -189,6 +191,74 @@ export default function AdminCursosPage() {
           </div>
         )
       })}
+
+      {showNovoCurso && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-foreground">Novo Curso</h3>
+              <button onClick={() => setShowNovoCurso(false)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="label text-xs">Nome do curso</label>
+                <input className="input" placeholder="Ex: PCDF — Delegado" value={novoCurso.label} onChange={e => setNovoCurso(p => ({ ...p, label: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs">Categoria</label>
+                  <select className="input" value={novoCurso.categoria} onChange={e => setNovoCurso(p => ({ ...p, categoria: e.target.value }))}>
+                    <option value="policial">Policial</option>
+                    <option value="militar">Militar</option>
+                    <option value="banco">Banco</option>
+                    <option value="judiciario">Judiciário</option>
+                    <option value="federal">Federal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">Ícone (emoji)</label>
+                  <input className="input" placeholder="🚔" value={novoCurso.icon} onChange={e => setNovoCurso(p => ({ ...p, icon: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs">Preço mensal (R$)</label>
+                  <input className="input" type="number" value={novoCurso.precoMensal} onChange={e => setNovoCurso(p => ({ ...p, precoMensal: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label text-xs">Preço anual (R$)</label>
+                  <input className="input" type="number" value={novoCurso.precoAnual} onChange={e => setNovoCurso(p => ({ ...p, precoAnual: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground bg-muted p-3 rounded-xl">
+              ℹ️ Após criar, o curso aparecerá na lista. Questões e flashcards serão gerados pela IA com base no nome do concurso.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowNovoCurso(false)} className="btn-outline btn-md flex-1">Cancelar</button>
+              <button
+                disabled={!novoCurso.label.trim()}
+                onClick={() => {
+                  const newId = novoCurso.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+                  const newCourse: CourseData = {
+                    id: newId, label: novoCurso.label, categoria: novoCurso.categoria,
+                    icon: novoCurso.icon || '📋', ativo: true,
+                    precoMensal: parseInt(novoCurso.precoMensal) || 79,
+                    precoAnual: parseInt(novoCurso.precoAnual) || 690,
+                    alunos: 0, taxaAcertoMedia: 0,
+                  }
+                  setCourses(prev => [...prev, newCourse])
+                  setShowNovoCurso(false)
+                  setNovoCurso({ label: '', categoria: 'policial', icon: '📋', precoMensal: '79', precoAnual: '690' })
+                }}
+                className="btn-primary btn-md flex-1"
+              >
+                <Plus className="w-4 h-4" /> Criar Curso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
