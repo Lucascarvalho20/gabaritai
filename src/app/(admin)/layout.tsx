@@ -22,7 +22,9 @@ const NAV = [
   { href: '/admin/relatorios', label: 'Relatórios',      icon: BarChart3 },
   { href: '/admin/insights',   label: 'Insights',        icon: BarChart3 },
   { href: '/admin/conteudo',   label: 'Conteúdo do Site',icon: Sparkles },
+  { href: '/admin/banco-questoes', label: 'Banco de questões', icon: Database },
   { href: '/admin/broadcast',  label: 'Broadcast',       icon: Megaphone },
+  { href: '/admin/chat',       label: 'Mensagens',       icon: Megaphone },
 ]
 
 function ThemeToggle() {

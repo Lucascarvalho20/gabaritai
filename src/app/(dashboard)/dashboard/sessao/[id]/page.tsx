@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Loader2, ArrowLeft, BookOpen, Brain, Target, CheckCircle2, Clock,
-  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles,
+  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -103,9 +103,18 @@ export default function SessaoPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 animate-fade-in">
-      <Link href="/dashboard/cronograma" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-        <ArrowLeft className="w-3 h-3" /> Voltar ao cronograma
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/dashboard/cronograma" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <ArrowLeft className="w-3 h-3" /> Voltar ao cronograma
+        </Link>
+        <Link
+          href={`/dashboard/sessao/${params.id}/imprimir`}
+          target="_blank"
+          className="text-xs font-bold inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-500 text-white hover:bg-purple-600"
+        >
+          <Download className="w-3 h-3" /> Baixar PDF
+        </Link>
+      </div>
 
       {/* Header */}
       <div className="card p-4 bg-gradient-to-br from-brand-500/10 to-purple-500/10 border-brand-500/30">
