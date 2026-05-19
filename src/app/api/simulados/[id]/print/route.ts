@@ -39,13 +39,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       explicacao: true,
       subjectId: true,
       bancaSlug: true,
+      subject: { select: { id: true, name: true, slug: true } },
     },
   })
   const byId = new Map(questions.map((q) => [q.id, q]))
   const ordered = questionIds.map((id, idx) => {
     const q = byId.get(id)
     if (!q) return null
-    return { numero: idx + 1, ...q }
+    return {
+      numero: idx + 1,
+      ...q,
+      subjectName: q.subject?.name ?? 'Geral',
+      subjectSlug: q.subject?.slug ?? 'geral',
+    }
   }).filter(Boolean)
 
   const answers = myResult?.answers as Array<{ questionId: string; selected: string | null; correct: boolean }> | undefined
