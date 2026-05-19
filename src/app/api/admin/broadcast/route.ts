@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     where,
     select: {
       id: true, name: true, email: true,
-      notifyEmail: true, notifyTelegram: true, telegramChatId: true,
+      notifyEmail: true,
     },
   })
 
@@ -44,7 +44,6 @@ export async function POST(req: NextRequest) {
       dryRun: true,
       wouldNotify: users.length,
       withEmail: users.filter((u) => u.notifyEmail && u.email).length,
-      withTelegram: users.filter((u) => u.notifyTelegram && u.telegramChatId).length,
     })
   }
 
@@ -71,22 +70,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => {})
   }
 
-  // 3. Envia Telegram pra quem conectou bot
-  const usersComTelegram = users.filter((u) => u.notifyTelegram && u.telegramChatId)
-  if (usersComTelegram.length > 0 && process.env.TELEGRAM_BOT_TOKEN) {
-    const token = process.env.TELEGRAM_BOT_TOKEN
-    for (const u of usersComTelegram) {
-      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: u.telegramChatId,
-          text: `*${title}*\n\n${body}`,
-          parse_mode: 'Markdown',
-        }),
-      }).catch((err) => console.warn('[broadcast] telegram falhou', err))
-    }
-  }
+  // (Telegram pra aluno removido — admin ainda recebe via TELEGRAM_BOT_TOKEN)
 
   // Audita
   await prisma.auditLog.create({

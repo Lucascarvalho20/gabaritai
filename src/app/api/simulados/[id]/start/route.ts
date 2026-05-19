@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { isWindowOpen } from '@/lib/mock-exam-scheduler'
+import { consumeQuota, trackFeatureUsage } from '@/lib/ai-quota'
 
 // POST /api/simulados/[id]/start
 // Cria MockExamResult em status IN_PROGRESS com expiresAt = startedAt + durationMin.
@@ -49,6 +50,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
   }
 
+  // Quota: limite 2 mini-simulados/semana, 1 real/domingo
+  const userFull = await prisma.user.findUnique({ where: { id: user.id }, select: { hasFullAccess: true } })
+  if (user.role !== 'ADMIN' && exam.type !== 'PERSONALIZADO') {
+    try {
+      const kind = exam.type === 'REAL' ? 'simulado_real' : 'mini_simulado'
+      await consumeQuota({ userId: user.id, kind, hasFullAccess: !!userFull?.hasFullAccess })
+    } catch (err: any) {
+      if (err.code === 'QUOTA_EXCEEDED') {
+        return NextResponse.json({ message: err.message, code: 'QUOTA_EXCEEDED', quota: err.quota }, { status: 429 })
+      }
+      throw err
+    }
+  }
+
   const startedAt = new Date()
   const expiresAt = new Date(startedAt.getTime() + exam.durationMin * 60_000)
 
@@ -61,6 +76,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       expiresAt,
     },
   })
+
+  trackFeatureUsage({ userId: user.id, feature: exam.type === 'REAL' ? 'simulado_real' : 'simulado_mini' })
 
   return NextResponse.json({
     resultId: result.id,
