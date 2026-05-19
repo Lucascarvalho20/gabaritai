@@ -14,6 +14,8 @@ type Q = {
   alternativas: Array<{ letra: string; texto: string }>
   gabarito: string
   explicacao: string
+  subjectName: string
+  subjectSlug: string
 }
 
 type ExamPrint = {
@@ -104,45 +106,60 @@ export default function ImprimirSimuladoPage() {
           </p>
         </section>
 
-        {/* QUESTÕES */}
-        <section className="space-y-6">
-          {exam.questions.map((q) => {
-            const minhaResp = respMap.get(q.id)
-            return (
-              <article key={q.id} className="break-inside-avoid">
-                <div className="font-bold text-sm mb-2">Questão {q.numero}</div>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed mb-3">{q.enunciado}</p>
-                {isCE ? (
-                  <div className="flex gap-6 text-sm">
-                    <span>(  ) Certo</span>
-                    <span>(  ) Errado</span>
-                  </div>
-                ) : (
-                  <ol className="space-y-1 text-sm">
-                    {q.alternativas?.map((alt) => (
-                      <li key={alt.letra} className="flex gap-2">
-                        <span className="font-semibold">({alt.letra})</span>
-                        <span>{alt.texto}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                {minhaResp && (
-                  <div className="text-xs mt-2 italic">
-                    Sua resposta: <strong>{minhaResp.selected ?? '—'}</strong>
-                    {' · '}
-                    {minhaResp.correct ? '✓ correto' : minhaResp.selected ? `✗ (gabarito: ${q.gabarito})` : `em branco (gabarito: ${q.gabarito})`}
-                  </div>
-                )}
-                {showExplicacoes && q.explicacao && (
-                  <div className="text-xs mt-2 p-2 border-l-2 border-gray-400 bg-gray-50">
-                    <strong>Explicação:</strong> {q.explicacao}
-                  </div>
-                )}
-              </article>
-            )
-          })}
-        </section>
+        {/* QUESTÕES agrupadas por BLOCO TEMÁTICO (estilo Ponto Juris/Cebraspe) */}
+        {Object.entries(
+          exam.questions.reduce<Record<string, Q[]>>((acc, q) => {
+            const key = q.subjectName
+            if (!acc[key]) acc[key] = []
+            acc[key].push(q)
+            return acc
+          }, {}),
+        ).map(([subjectName, qs], blockIdx) => (
+          <section key={subjectName} className={blockIdx > 0 ? 'mt-8' : ''}>
+            <div className="bg-gray-700 text-white text-center py-1.5 px-3 my-3 rounded-sm">
+              <div className="text-[10px] uppercase tracking-widest opacity-80">Bloco {blockIdx + 1}</div>
+              <div className="font-black text-base">{subjectName.toUpperCase()}</div>
+            </div>
+            <div className="space-y-5">
+              {qs.map((q) => {
+                const minhaResp = respMap.get(q.id)
+                return (
+                  <article key={q.id} className="break-inside-avoid">
+                    <div className="font-bold text-sm mb-2">Questão {q.numero}</div>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed mb-3">{q.enunciado}</p>
+                    {isCE ? (
+                      <div className="flex gap-6 text-sm">
+                        <span>(  ) Certo</span>
+                        <span>(  ) Errado</span>
+                      </div>
+                    ) : (
+                      <ol className="space-y-1 text-sm">
+                        {q.alternativas?.map((alt) => (
+                          <li key={alt.letra} className="flex gap-2">
+                            <span className="font-semibold">({alt.letra})</span>
+                            <span>{alt.texto}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    {minhaResp && (
+                      <div className="text-xs mt-2 italic">
+                        Sua resposta: <strong>{minhaResp.selected ?? '—'}</strong>
+                        {' · '}
+                        {minhaResp.correct ? '✓ correto' : minhaResp.selected ? `✗ (gabarito: ${q.gabarito})` : `em branco (gabarito: ${q.gabarito})`}
+                      </div>
+                    )}
+                    {showExplicacoes && q.explicacao && (
+                      <div className="text-xs mt-2 p-2 border-l-2 border-gray-400 bg-gray-50">
+                        <strong>Explicação:</strong> {q.explicacao}
+                      </div>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+        ))}
 
         {/* FOLHA DE RESPOSTAS */}
         <section className="page-break mt-10 pt-10 border-t-2 border-black">

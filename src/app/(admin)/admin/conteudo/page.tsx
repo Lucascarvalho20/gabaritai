@@ -179,7 +179,8 @@ function QuestoesTab() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState({ source: '', banca: '' })
+  const [filter, setFilter] = useState({ source: '', banca: '', ano: '', q: '' })
+  const [editing, setEditing] = useState<Question | null>(null)
 
   async function load() {
     setLoading(true)
@@ -187,6 +188,8 @@ function QuestoesTab() {
       const params: Record<string, string> = {}
       if (filter.source) params.source = filter.source
       if (filter.banca) params.banca = filter.banca
+      if (filter.ano) params.ano = filter.ano
+      if (filter.q) params.q = filter.q
       const { data } = await api.get('/admin/content/questions', { params })
       setQuestions(data.questions)
       setStats(data.stats)
@@ -215,7 +218,7 @@ function QuestoesTab() {
         </div>
       )}
 
-      <div className="card p-3 flex gap-2">
+      <div className="card p-3 flex gap-2 flex-wrap">
         <select value={filter.source} onChange={(e) => setFilter((p) => ({ ...p, source: e.target.value }))} className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm">
           <option value="">Todas origens</option>
           <option value="OFFICIAL">Oficiais</option>
@@ -223,10 +226,23 @@ function QuestoesTab() {
           <option value="ADAPTED">Adaptadas</option>
         </select>
         <input
-          placeholder="Banca slug (ex: cebraspe)"
+          placeholder="Banca (cebraspe)"
           value={filter.banca}
           onChange={(e) => setFilter((p) => ({ ...p, banca: e.target.value }))}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm flex-1"
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm w-32"
+        />
+        <input
+          placeholder="Ano"
+          type="number"
+          value={filter.ano}
+          onChange={(e) => setFilter((p) => ({ ...p, ano: e.target.value }))}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm w-24"
+        />
+        <input
+          placeholder="Busca enunciado..."
+          value={filter.q}
+          onChange={(e) => setFilter((p) => ({ ...p, q: e.target.value }))}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm flex-1 min-w-[200px]"
         />
       </div>
 
@@ -246,12 +262,20 @@ function QuestoesTab() {
                   <span className="text-[10px] text-muted-foreground">· {q.subject?.name ?? '—'}</span>
                   {q.anulada && <span className="badge-red text-[10px]">ANULADA</span>}
                 </div>
-                <button
-                  onClick={() => toggleAnulada(q)}
-                  className="text-[10px] px-2 py-1 rounded-md border border-border hover:bg-muted"
-                >
-                  {q.anulada ? 'Reativar' : 'Anular'}
-                </button>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => setEditing(q)}
+                    className="text-[10px] px-2 py-1 rounded-md border border-border hover:bg-muted"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => toggleAnulada(q)}
+                    className="text-[10px] px-2 py-1 rounded-md border border-border hover:bg-muted"
+                  >
+                    {q.anulada ? 'Reativar' : 'Anular'}
+                  </button>
+                </div>
               </div>
               <p className="text-sm line-clamp-2">{q.enunciado}</p>
               <div className="text-[10px] text-muted-foreground mt-1">Gabarito: <strong>{q.gabarito}</strong></div>
@@ -259,6 +283,120 @@ function QuestoesTab() {
           ))}
         </div>
       )}
+
+      {editing && (
+        <EditQuestionModal
+          question={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function EditQuestionModal({ question, onClose, onSaved }: { question: Question; onClose: () => void; onSaved: () => void }) {
+  const [enunciado, setEnunciado] = useState(question.enunciado)
+  const [gabarito, setGabarito] = useState(question.gabarito)
+  const [explicacao, setExplicacao] = useState((question as any).explicacao ?? '')
+  const [alternativas, setAlternativas] = useState<Array<{ letra: string; texto: string }>>(
+    Array.isArray((question as any).alternativas) ? (question as any).alternativas : []
+  )
+  const [saving, setSaving] = useState(false)
+
+  function updateAlt(i: number, field: 'letra' | 'texto', value: string) {
+    setAlternativas(alternativas.map((a, idx) => (idx === i ? { ...a, [field]: value } : a)))
+  }
+
+  async function save() {
+    setSaving(true)
+    try {
+      await api.patch(`/admin/content/questions/${question.id}`, {
+        enunciado, gabarito, explicacao,
+        alternativas,
+      })
+      toast.success('Questão atualizada')
+      onSaved()
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Erro ao salvar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteQ() {
+    if (!confirm('Apagar essa questão? (soft-delete — fica oculta mas histórico preservado)')) return
+    setSaving(true)
+    try {
+      await api.delete(`/admin/content/questions/${question.id}`)
+      toast.success('Questão removida')
+      onSaved()
+    } catch (e: any) {
+      toast.error('Erro')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const isCE = alternativas.length === 0 || gabarito === 'C' || gabarito === 'E'
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div onClick={(e) => e.stopPropagation()} className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-lg">Editar questão</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+        </div>
+        <div>
+          <label className="text-xs font-bold">Enunciado</label>
+          <textarea value={enunciado} onChange={(e) => setEnunciado(e.target.value)} rows={5}
+            className="mt-1 w-full rounded-lg border border-border bg-background p-2 text-sm" />
+        </div>
+        {!isCE && alternativas.length > 0 && (
+          <div>
+            <label className="text-xs font-bold">Alternativas</label>
+            <div className="space-y-1.5 mt-1">
+              {alternativas.map((alt, i) => (
+                <div key={i} className="flex gap-2">
+                  <input value={alt.letra} onChange={(e) => updateAlt(i, 'letra', e.target.value)}
+                    className="w-12 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-center font-bold" />
+                  <input value={alt.texto} onChange={(e) => updateAlt(i, 'texto', e.target.value)}
+                    className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div>
+          <label className="text-xs font-bold">Gabarito</label>
+          {isCE ? (
+            <select value={gabarito} onChange={(e) => setGabarito(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background p-2 text-sm">
+              <option value="C">C — Certo</option>
+              <option value="E">E — Errado</option>
+            </select>
+          ) : (
+            <input value={gabarito} onChange={(e) => setGabarito(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background p-2 text-sm" />
+          )}
+        </div>
+        <div>
+          <label className="text-xs font-bold">Explicação (opcional)</label>
+          <textarea value={explicacao} onChange={(e) => setExplicacao(e.target.value)} rows={4}
+            placeholder="Fundamentação legal, base normativa, etc"
+            className="mt-1 w-full rounded-lg border border-border bg-background p-2 text-sm" />
+        </div>
+        <div className="flex gap-2 pt-2">
+          <button onClick={save} disabled={saving}
+            className="flex-1 rounded-xl bg-brand-500 text-white py-2 text-sm font-bold hover:bg-brand-600 disabled:opacity-50 inline-flex items-center justify-center gap-1">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+          </button>
+          <button onClick={deleteQ} disabled={saving}
+            className="rounded-xl border border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 text-sm font-bold">
+            Excluir
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
