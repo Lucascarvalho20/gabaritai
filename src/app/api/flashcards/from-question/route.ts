@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
+import { consumeQuota, trackFeatureUsage } from '@/lib/ai-quota'
 
 export const maxDuration = 60
 
@@ -15,6 +16,20 @@ export async function POST(req: NextRequest) {
 
   const { questionId, useAI = true } = await req.json()
   if (!questionId) return NextResponse.json({ message: 'questionId obrigatório' }, { status: 400 })
+
+  // Quota
+  if (useAI) {
+    const userFull = await prisma.user.findUnique({ where: { id: user.id }, select: { hasFullAccess: true } })
+    try {
+      await consumeQuota({ userId: user.id, kind: 'flashcard_ia', hasFullAccess: !!userFull?.hasFullAccess })
+    } catch (err: any) {
+      if (err.code === 'QUOTA_EXCEEDED') {
+        return NextResponse.json({ message: err.message, code: 'QUOTA_EXCEEDED', quota: err.quota }, { status: 429 })
+      }
+      throw err
+    }
+  }
+  trackFeatureUsage({ userId: user.id, feature: 'flashcard' })
 
   const q = await prisma.question.findUnique({
     where: { id: questionId },

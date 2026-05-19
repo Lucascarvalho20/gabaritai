@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { CheckCircle2, Clock, Brain, Play, Calendar, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -319,6 +320,7 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
   const [selectedDay, setSelectedDay] = useState<string>(toIsoDay(today))
   const [loading, setLoading] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
+  const [planStatus, setPlanStatus] = useState<any>(null)
 
   async function loadMonth(y: number, m: number) {
     setLoading(true)
@@ -332,9 +334,18 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
     }
   }
 
+  async function loadStatus() {
+    try {
+      const { data } = await api.get(`/schedule/${plan.id}/status`)
+      setPlanStatus(data)
+    } catch {}
+  }
+
   useEffect(() => {
     loadMonth(viewYear, viewMonth)
   }, [viewYear, viewMonth, plan.id])
+
+  useEffect(() => { loadStatus() }, [plan.id])
 
   const grid = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
   const sessionsByDate = useMemo(() => {
@@ -422,6 +433,35 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
           </div>
         </div>
       </div>
+
+      {/* Warnings + % edital */}
+      {planStatus && (
+        <>
+          {planStatus.warnings?.length > 0 && (
+            <div className="space-y-2">
+              {planStatus.warnings.map((w: any, i: number) => (
+                <div key={i} className={cn(
+                  'card p-3 text-sm flex items-start gap-2',
+                  w.kind === 'atraso' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300' :
+                  w.kind === 'tempo' ? 'bg-red-50 dark:bg-red-900/20 border-red-300' :
+                  'bg-blue-50 dark:bg-blue-900/20 border-blue-300',
+                )}>
+                  <AlertTriangle className={cn('w-4 h-4 shrink-0 mt-0.5',
+                    w.kind === 'atraso' ? 'text-yellow-600' :
+                    w.kind === 'tempo' ? 'text-red-600' : 'text-blue-600')} />
+                  <span>{w.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <StatusCard label="Plano concluído" value={`${planStatus.percentCompleted}%`} sub="de todas sessões" />
+            <StatusCard label="Edital dominado" value={`${planStatus.percentEdital}%`} sub="média mastery × peso" />
+            <StatusCard label="Dias até prova" value={planStatus.diasAtePrava} sub="contagem regressiva" />
+            <StatusCard label="Em atraso" value={planStatus.pendingPastCount} sub={planStatus.diasAtrasado > 0 ? `${planStatus.diasAtrasado}d a mais antiga` : 'em dia'} />
+          </div>
+        </>
+      )}
 
       {/* Calendário */}
       <div className="card p-5">
@@ -520,17 +560,18 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
         ) : (
           <div className="space-y-2.5">
             {selectedSessions.map((s) => (
-              <div
+              <Link
                 key={s.id}
+                href={`/dashboard/sessao/${s.id}`}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl border transition-all',
+                  'flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-md',
                   s.status === 'CONCLUIDO'
                     ? 'border-success-200 bg-success-50/40 dark:border-success-800/30 dark:bg-success-900/10'
-                    : 'border-border bg-background hover:border-brand-200',
+                    : 'border-border bg-background hover:border-brand-300',
                 )}
               >
                 <button
-                  onClick={() => s.status !== 'CONCLUIDO' && completeSession(s.id)}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (s.status !== 'CONCLUIDO') completeSession(s.id) }}
                   disabled={s.status === 'CONCLUIDO'}
                   className={cn(
                     'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition',
@@ -556,11 +597,22 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
                   <Clock className="w-3 h-3" />
                   {s.durationMin}min
                 </div>
-              </div>
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              </Link>
             ))}
           </div>
         )}
       </div>
     </>
+  )
+}
+
+function StatusCard({ label, value, sub }: { label: string; value: any; sub: string }) {
+  return (
+    <div className="card p-3">
+      <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</div>
+      <div className="text-xl font-black mt-0.5">{value}</div>
+      <div className="text-[10px] text-muted-foreground">{sub}</div>
+    </div>
   )
 }

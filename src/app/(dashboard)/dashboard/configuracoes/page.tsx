@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Bell, Shield, RotateCcw, Save, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { User, Bell, Shield, RotateCcw, Save, Eye, EyeOff, AlertTriangle, Mail, MessageCircle, Phone } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
 export default function ConfiguracoesPage() {
@@ -26,10 +27,37 @@ export default function ConfiguracoesPage() {
     dicasIA: true,
   })
 
+  // Canais de comunicação (in-app sempre on, email/whatsapp opt-in)
+  const [channels, setChannels] = useState({
+    notifyEmail: true,
+    notifyWhatsapp: false,
+    whatsappPhone: '',
+  })
+  const [savingChannels, setSavingChannels] = useState(false)
+
   useEffect(() => {
     const saved = localStorage.getItem('gabaritai_notifs')
     if (saved) setNotifs(JSON.parse(saved))
+    api.get('/me/preferences').then(({ data }) => {
+      setChannels({
+        notifyEmail: data.notifyEmail ?? true,
+        notifyWhatsapp: data.notifyWhatsapp ?? false,
+        whatsappPhone: data.whatsappPhone ?? '',
+      })
+    }).catch(() => {})
   }, [])
+
+  async function salvarCanais() {
+    setSavingChannels(true)
+    try {
+      await api.patch('/me/preferences', channels)
+      toast.success('Preferências salvas')
+    } catch {
+      toast.error('Erro ao salvar')
+    } finally {
+      setSavingChannels(false)
+    }
+  }
 
   function salvarPerfil() {
     if (!nome.trim()) { toast.error('Nome não pode ser vazio'); return }
@@ -149,12 +177,68 @@ export default function ConfiguracoesPage() {
         </button>
       </div>
 
+      {/* Canais de comunicação */}
+      <div className="card p-5 space-y-4">
+        <h2 className="font-bold text-foreground flex items-center gap-2 text-sm">
+          <Mail className="w-4 h-4" /> Como você prefere receber as comunicações
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Notificações dentro do site sempre aparecem. Escolha os canais extras:
+        </p>
+
+        <label className="flex items-center justify-between cursor-pointer py-2 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-blue-500" />
+            <div>
+              <div className="font-semibold text-sm">E-mail</div>
+              <div className="text-xs text-muted-foreground">Receba avisos no seu email cadastrado</div>
+            </div>
+          </div>
+          <button
+            onClick={() => setChannels({ ...channels, notifyEmail: !channels.notifyEmail })}
+            className={`w-11 h-6 rounded-full transition-colors relative ${channels.notifyEmail ? 'bg-brand-500' : 'bg-muted-foreground/30'}`}
+          >
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${channels.notifyEmail ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </label>
+
+        <div className="space-y-2">
+          <label className="flex items-center justify-between cursor-pointer py-2">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-green-500" />
+              <div>
+                <div className="font-semibold text-sm">WhatsApp <span className="text-[10px] text-yellow-600">em breve</span></div>
+                <div className="text-xs text-muted-foreground">Notificações pelo zap</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setChannels({ ...channels, notifyWhatsapp: !channels.notifyWhatsapp })}
+              className={`w-11 h-6 rounded-full transition-colors relative ${channels.notifyWhatsapp ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${channels.notifyWhatsapp ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </label>
+          {channels.notifyWhatsapp && (
+            <input
+              value={channels.whatsappPhone}
+              onChange={(e) => setChannels({ ...channels, whatsappPhone: e.target.value })}
+              placeholder="(11) 99999-9999"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          )}
+        </div>
+
+        <button onClick={salvarCanais} disabled={savingChannels} className="btn-primary btn-md mt-2">
+          <Save className="w-4 h-4" /> {savingChannels ? 'Salvando...' : 'Salvar canais'}
+        </button>
+      </div>
+
       {/* Notificações */}
       <div className="card p-5 space-y-3">
         <h2 className="font-bold text-foreground flex items-center gap-2 text-sm">
-          <Bell className="w-4 h-4" /> Notificações
+          <Bell className="w-4 h-4" /> Tipos de notificação
         </h2>
-        <p className="text-xs text-muted-foreground">Escolha quais notificações deseja receber.</p>
+        <p className="text-xs text-muted-foreground">Escolha quais tipos quer receber.</p>
         {(Object.keys(notifs) as (keyof typeof notifs)[]).map(key => (
           <label key={key} className="flex items-center justify-between cursor-pointer py-1">
             <span className="text-sm text-foreground">{NOTIF_LABELS[key]}</span>
