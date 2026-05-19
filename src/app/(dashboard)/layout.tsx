@@ -6,32 +6,43 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, BookOpen, Zap, Target, Brain,
   TrendingUp, Settings, LogOut, Menu, X,
-  Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles
+  Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles, FileText, Trophy
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/auth'
 import { Logo } from '@/components/ui/logo'
+import { ImpersonationBanner } from '@/components/impersonation-banner'
+import { OnboardingTour } from '@/components/onboarding-tour'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 const NAV_ALUNO = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/meus-cursos', label: 'Meus Cursos', icon: BookOpen },
   { href: '/dashboard/cronograma', label: 'Cronograma', icon: Calendar },
   { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen },
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap },
   { href: '/dashboard/simulados', label: 'Simulados', icon: Target },
   { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA' },
   { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo' },
-  { href: '/dashboard/progresso', label: 'Meu Progresso', icon: TrendingUp },
+  { href: '/dashboard/mapas-mentais', label: 'Mapas mentais', icon: Brain, badge: 'IA' },
+  { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp },
+  { href: '/dashboard/edital-verticalizado', label: 'Edital verticalizado', icon: FileText },
+  { href: '/dashboard/progresso', label: 'Meu progresso', icon: BarChart3 },
+  { href: '/dashboard/ranking', label: 'Ranking', icon: Trophy },
 ]
 
 const NAV_ADMIN = [
   { href: '/admin', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/admin/usuarios', label: 'Usuários', icon: Users },
   { href: '/admin/cursos', label: 'Cursos', icon: BookOpen },
+  { href: '/admin/concursos', label: 'Concursos abertos', icon: Calendar, badge: 'API' },
+  { href: '/admin/edital-changes', label: 'Mudanças em editais', icon: Calendar },
   { href: '/admin/planos', label: 'Planos e Preços', icon: DollarSign },
+  { href: '/admin/pagamentos', label: 'Pagamentos', icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
   { href: '/admin/conteudo', label: 'Conteúdo do Site', icon: Sparkles },
+  { href: '/admin/seguranca', label: 'Segurança', icon: Settings },
 ]
 
 function ThemeToggle() {
@@ -150,7 +161,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   )
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      <ImpersonationBanner />
+      <OnboardingTour />
+      <div className="flex flex-1 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
         <SidebarContent />
@@ -260,6 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
           {children}
         </main>
+      </div>
       </div>
     </div>
   )

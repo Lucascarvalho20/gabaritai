@@ -1,14 +1,22 @@
 {
-  "name": "GabaritAI",
-  "short_name": "GabaritAI",
-  "description": "Mentoria inteligente para concursos públicos",
-  "start_url": "/",
+  "name": "Gabaritai — Mentoria para Concursos",
+  "short_name": "Gabaritai",
+  "description": "Plataforma de estudo inteligente com IA pra concursos militares e policiais.",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0f1e",
-  "theme_color": "#2563eb",
   "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#7c3aed",
+  "lang": "pt-BR",
+  "categories": ["education", "productivity"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Cronograma", "url": "/dashboard/cronograma" },
+    { "name": "Simulados", "url": "/dashboard/simulados" },
+    { "name": "Mentor IA", "url": "/dashboard/mentor" }
   ]
 }
