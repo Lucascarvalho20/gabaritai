@@ -47,6 +47,11 @@ export default function CheckoutPage() {
   const [useDiscount, setUseDiscount] = useState(true)
   const [processing, setProcessing] = useState(false)
 
+  // Cupom
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountCents: number } | null>(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+
   useEffect(() => {
     Promise.all([
       fetch('/api/plans/public').then((r) => r.json()),
@@ -72,6 +77,24 @@ export default function CheckoutPage() {
 
   const selectedGroup = groups.find((g) => g.parentSlug === parentSlug)
 
+  async function validateCoupon() {
+    if (!couponCode) return
+    setValidatingCoupon(true)
+    try {
+      const { data } = await api.post('/coupons/validate', { code: couponCode, planSlug: params.planSlug })
+      if (data.valid) {
+        setAppliedCoupon({ code: data.code, discountCents: data.discountCents })
+        toast.success(`Cupom aplicado: -${(data.discountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`)
+      } else {
+        toast.error(data.message ?? 'Cupom inválido')
+        setAppliedCoupon(null)
+      }
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Cupom inválido')
+      setAppliedCoupon(null)
+    } finally { setValidatingCoupon(false) }
+  }
+
   async function pay() {
     if (!user) {
       // Salva o plano no localStorage e redireciona pra login
@@ -89,6 +112,7 @@ export default function CheckoutPage() {
         planSlug: plan.slug,
         courseSlug: plan.coverageType === 'SPECIFIC' ? courseSlug : undefined,
         useDiscount,
+        couponCode: appliedCoupon?.code,
       })
       if (data.free) {
         router.push(data.redirect)
@@ -221,6 +245,34 @@ export default function CheckoutPage() {
             </label>
           )}
 
+          {/* Cupom */}
+          {plan.priceCents > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold">🏷️ Cupom de desconto</label>
+              <div className="flex gap-2">
+                <input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="DIGITE O CÓDIGO"
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={validateCoupon}
+                  disabled={validatingCoupon || !couponCode}
+                  className="rounded-lg bg-yellow-500 text-white px-3 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Aplicar'}
+                </button>
+              </div>
+              {appliedCoupon && (
+                <div className="text-xs text-green-600 dark:text-green-400 inline-flex items-center gap-1">
+                  ✓ Cupom <strong>{appliedCoupon.code}</strong> aplicado: -{fmtBRL(appliedCoupon.discountCents)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Total */}
           <div className="bg-muted/40 p-4 rounded-xl">
             <div className="flex justify-between text-sm">
@@ -233,9 +285,15 @@ export default function CheckoutPage() {
                 <span>- {fmtBRL(plan.priceCents - pixPrice)}</span>
               </div>
             )}
+            {appliedCoupon && (
+              <div className="flex justify-between text-sm text-yellow-600">
+                <span>Cupom {appliedCoupon.code}</span>
+                <span>- {fmtBRL(appliedCoupon.discountCents)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-black pt-2 border-t border-border mt-2">
               <span>Total</span>
-              <span>{fmtBRL(pixPrice)}<span className="text-xs font-normal text-muted-foreground ml-1">{INTERVAL_LABEL[plan.interval]}</span></span>
+              <span>{fmtBRL(Math.max(0, pixPrice - (appliedCoupon?.discountCents ?? 0)))}<span className="text-xs font-normal text-muted-foreground ml-1">{INTERVAL_LABEL[plan.interval]}</span></span>
             </div>
           </div>
 
