@@ -1,6 +1,14 @@
 {
   "version": 2,
   "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/sync", "schedule": "0 6 * * 1" },
+    { "path": "/api/cron/generate-weekly-mocks?day=TUE", "schedule": "0 22 * * 1" },
+    { "path": "/api/cron/generate-weekly-mocks?day=THU", "schedule": "0 22 * * 3" },
+    { "path": "/api/cron/generate-weekly-mocks?day=SUN", "schedule": "0 22 * * 6" },
+    { "path": "/api/cron/cleanup", "schedule": "0 4 1 * *" },
+    { "path": "/api/cron/detect-new-editais", "schedule": "0 9 * * *" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

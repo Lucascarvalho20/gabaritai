@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import {
   LayoutDashboard, Users, BookOpen, DollarSign, BarChart3,
-  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database
+  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database, FileText
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Logo } from '@/components/ui/logo'
@@ -17,6 +17,7 @@ const NAV = [
   { href: '/admin',            label: 'Visão Geral',     icon: LayoutDashboard, exact: true },
   { href: '/admin/usuarios',   label: 'Beta Testers',    icon: Users },
   { href: '/admin/cursos',     label: 'Cursos',          icon: BookOpen },
+  { href: '/admin/editais',    label: 'Editais',         icon: FileText },
   { href: '/admin/planos',     label: 'Planos e Preços', icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios',      icon: BarChart3 },
   { href: '/admin/conteudo',   label: 'Conteúdo do Site',icon: Sparkles },

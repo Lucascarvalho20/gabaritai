@@ -11,6 +11,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   ResponsiveContainer
 } from 'recharts'
+import { GamifiedHeader } from '@/components/gamified-header'
 
 // Gera dados mock determinísticos por curso
 function mockCurso(courseId: string) {
@@ -163,6 +164,8 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+      <GamifiedHeader />
+
       {/* Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -185,7 +188,7 @@ export default function DashboardPage() {
       {/* Stats cards globais */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Sequência de estudo',  value: '12 dias',                          icon: Flame,     color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20',       trend: '+2 esta semana' },
+          { label: 'Sequência de estudo',  value: '14 dias',                          icon: Flame,     color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20',       trend: '+2 esta semana' },
           { label: 'Taxa de acerto média', value: `${globalAcerto}%`,                  icon: TrendingUp,color: 'text-success-600',bg: 'bg-success-50 dark:bg-success-600/10',    trend: '↑5% vs semana passada' },
           { label: 'Total de questões',    value: totalQuestoes.toLocaleString('pt-BR'),icon: BookOpen,  color: 'text-brand-500',  bg: 'bg-brand-50 dark:bg-brand-900/20',        trend: `${userCursos.length} curso${userCursos.length > 1 ? 's' : ''}` },
           { label: 'Horas de estudo',      value: `${totalHoras}h`,                    icon: Clock,     color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20',      trend: `Meta: ${parseInt(user?.horasDia ?? '4') * 7}h/semana` },

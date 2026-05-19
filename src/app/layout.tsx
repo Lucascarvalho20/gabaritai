@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { QueryProvider } from '@/components/ui/query-provider'
+import { PWARegister } from '@/components/pwa-register'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             {children}
+            <PWARegister />
             <Toaster
               position="top-right"
               toastOptions={{
