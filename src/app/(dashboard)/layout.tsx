@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/auth'
 import { Logo } from '@/components/ui/logo'
 import { ImpersonationBanner } from '@/components/impersonation-banner'
 import { OnboardingTour } from '@/components/onboarding-tour'
+import { OfflineIndicator } from '@/components/offline-indicator'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -28,6 +29,7 @@ const NAV_ALUNO = [
   { href: '/dashboard/mapas-mentais', label: 'Mapas mentais', icon: Brain, badge: 'IA' },
   { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp },
   { href: '/dashboard/edital-verticalizado', label: 'Edital verticalizado', icon: FileText },
+  { href: '/dashboard/chat', label: 'Mensagens', icon: Sparkles },
   { href: '/dashboard/progresso', label: 'Meu progresso', icon: BarChart3 },
   { href: '/dashboard/ranking', label: 'Ranking', icon: Trophy },
 ]
@@ -164,6 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <ImpersonationBanner />
       <OnboardingTour />
+      <OfflineIndicator />
       <div className="flex flex-1 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
