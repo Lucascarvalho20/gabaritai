@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { planSlug, courseSlug, useDiscount } = body
+    const { planSlug, courseSlug, useDiscount, couponCode } = body
     if (!planSlug) return NextResponse.json({ message: 'planSlug obrigatório' }, { status: 400 })
 
     const plan = await prisma.pricingPlan.findUnique({ where: { slug: planSlug } })
@@ -52,9 +52,37 @@ export async function POST(req: NextRequest) {
 
     // Calcula preço final (com desconto Pix se aplicável)
     const baseCents = plan.priceCents
-    const finalCents = useDiscount && plan.pixDiscount > 0
+    let finalCents = useDiscount && plan.pixDiscount > 0
       ? Math.round(baseCents * (1 - plan.pixDiscount / 100))
       : baseCents
+
+    // Aplica cupom (se válido)
+    let appliedCoupon: { id: string; code: string; discountCents: number } | null = null
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: String(couponCode).toUpperCase().trim() } })
+      if (coupon && coupon.active) {
+        const now = new Date()
+        const valid =
+          (!coupon.validFrom || now >= coupon.validFrom) &&
+          (!coupon.validUntil || now <= coupon.validUntil) &&
+          (!coupon.maxUses || coupon.usedCount < coupon.maxUses) &&
+          (!Array.isArray(coupon.appliesToPlans) || (coupon.appliesToPlans as string[]).length === 0 || (coupon.appliesToPlans as string[]).includes(plan.slug)) &&
+          (!coupon.minAmountCents || baseCents >= coupon.minAmountCents)
+
+        const usedByUser = await prisma.couponRedemption.count({
+          where: { couponId: coupon.id, userId: user.id },
+        })
+
+        if (valid && usedByUser < coupon.maxPerUser) {
+          const discountCents = coupon.type === 'PERCENT'
+            ? Math.round((finalCents * coupon.value) / 100)
+            : Math.min(coupon.value, finalCents)
+          finalCents = Math.max(0, finalCents - discountCents)
+          appliedCoupon = { id: coupon.id, code: coupon.code, discountCents }
+        }
+      }
+    }
+
     const finalAmount = +(finalCents / 100).toFixed(2)
 
     // 1. Cria registro de Payment (PENDING)
@@ -68,7 +96,7 @@ export async function POST(req: NextRequest) {
         amount: finalAmount,
         plan: PRICING_TO_PLAN[plan.type],
         status: 'PENDING',
-        metadata: { useDiscount: !!useDiscount, planType: plan.type, interval: plan.interval },
+        metadata: { useDiscount: !!useDiscount, planType: plan.type, interval: plan.interval, coupon: appliedCoupon },
       },
     })
 

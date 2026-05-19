@@ -19,6 +19,7 @@ const NAV = [
   { href: '/admin/cursos',     label: 'Cursos',          icon: BookOpen },
   { href: '/admin/editais',    label: 'Editais',         icon: FileText },
   { href: '/admin/planos',     label: 'Planos e Preços', icon: DollarSign },
+  { href: '/admin/cupons',     label: 'Cupons',          icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios',      icon: BarChart3 },
   { href: '/admin/insights',   label: 'Insights',        icon: BarChart3 },
   { href: '/admin/conteudo',   label: 'Conteúdo do Site',icon: Sparkles },

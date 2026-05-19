@@ -1,7 +1,10 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import { CURSOS_DISPONIVEIS } from '@/lib/demo-users'
+import { api } from '@/lib/api'
 import {
   Flame, Clock, BookOpen, TrendingUp, CheckCircle2,
   AlertCircle, ChevronRight, Brain, BarChart3, Sparkles
@@ -133,9 +136,18 @@ function CourseCard({ courseId, label, icon, stats }: { courseId: string; label:
 
 export default function DashboardPage() {
   const user = useAuthStore(s => s.user)
+  const router = useRouter()
   const hora = new Date().getHours()
   const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
   const tarefasConcluidas = mockTarefasHoje.filter(t => t.done).length
+
+  // Redirect novato sem plano pro wizard
+  useEffect(() => {
+    if (!user || user.role === 'ADMIN') return
+    api.get('/schedule').then(({ data }) => {
+      if (!data.plan) router.push('/dashboard/comecar')
+    }).catch(() => {})
+  }, [user])
 
   // Resolve cursos do usuário
   const userCourseIds: string[] = user?.courses === 'all'

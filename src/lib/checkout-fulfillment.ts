@@ -129,6 +129,24 @@ export async function fulfillPayment(paymentId: string): Promise<{ ok: boolean; 
       data: { expiresAt },
     })
 
+    // 5. Registra uso de cupom (se houver)
+    const meta = payment.metadata as any
+    const coupon = meta?.coupon
+    if (coupon?.id) {
+      await tx.couponRedemption.create({
+        data: {
+          couponId: coupon.id,
+          userId: payment.userId,
+          paymentId: paymentId,
+          amountDiscountCents: coupon.discountCents ?? 0,
+        },
+      })
+      await tx.coupon.update({
+        where: { id: coupon.id },
+        data: { usedCount: { increment: 1 } },
+      })
+    }
+
     return { enrolledCount }
   })
 
