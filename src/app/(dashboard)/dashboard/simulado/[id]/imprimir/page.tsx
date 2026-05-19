@@ -32,12 +32,18 @@ type ExamPrint = {
   minhaNota: { score: number; acertos: number; erros: number; brancos: number } | null
 }
 
+type PrintMode = 'caderno' | 'gabarito' | 'tudo'
+
 export default function ImprimirSimuladoPage() {
   const params = useParams<{ id: string }>()
   const [exam, setExam] = useState<ExamPrint | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showGabarito, setShowGabarito] = useState(true)
-  const [showExplicacoes, setShowExplicacoes] = useState(false)
+  const [mode, setMode] = useState<PrintMode>('tudo')
+
+  function printAs(m: PrintMode) {
+    setMode(m)
+    setTimeout(() => window.print(), 100)
+  }
 
   useEffect(() => {
     api.get(`/simulados/${params.id}/print`)
@@ -61,6 +67,16 @@ export default function ImprimirSimuladoPage() {
   const isCE = exam.examFormat === 'CE'
   const respMap = new Map((exam.minhasRespostas ?? []).map((r) => [r.questionId, r]))
 
+  // Modo controla o que mostra:
+  //   caderno   = capa + questões + folha de respostas em branco (sem gabarito)
+  //   gabarito  = capa + gabarito + questões com gabarito destacado + explicações
+  //   tudo      = capa + questões + folha respostas + gabarito + explicações
+  const showQuestoes = mode === 'caderno' || mode === 'tudo' || mode === 'gabarito'
+  const showFolhaRespostas = mode === 'caderno' || mode === 'tudo'
+  const showGabarito = mode === 'gabarito' || mode === 'tudo'
+  const showExplicacoes = mode === 'gabarito' || mode === 'tudo'
+  const showRespostaInline = mode === 'gabarito' // mostra gabarito embaixo de cada questão
+
   return (
     <>
       {/* Controles (escondidos no print) */}
@@ -68,18 +84,25 @@ export default function ImprimirSimuladoPage() {
         <Link href="/dashboard/simulados" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="w-3 h-3" /> Voltar
         </Link>
-        <div className="flex-1" />
-        <label className="text-xs inline-flex items-center gap-1.5">
-          <input type="checkbox" checked={showGabarito} onChange={(e) => setShowGabarito(e.target.checked)} /> Gabarito
-        </label>
-        <label className="text-xs inline-flex items-center gap-1.5">
-          <input type="checkbox" checked={showExplicacoes} onChange={(e) => setShowExplicacoes(e.target.checked)} /> Explicações
-        </label>
+        <div className="flex-1 min-w-0" />
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider hidden sm:block">Imprimir como:</div>
         <button
-          onClick={() => window.print()}
+          onClick={() => printAs('caderno')}
+          className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1"
+        >
+          <Printer className="w-3 h-3" /> 📄 Caderno
+        </button>
+        <button
+          onClick={() => printAs('gabarito')}
+          className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1"
+        >
+          <Printer className="w-3 h-3" /> 🔑 Gabarito comentado
+        </button>
+        <button
+          onClick={() => printAs('tudo')}
           className="rounded-lg bg-brand-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-brand-600 inline-flex items-center gap-1"
         >
-          <Printer className="w-3 h-3" /> Imprimir / Salvar PDF
+          <Printer className="w-3 h-3" /> 📚 Tudo
         </button>
       </div>
 
@@ -102,12 +125,14 @@ export default function ImprimirSimuladoPage() {
             </div>
           )}
           <p className="text-xs mt-4 italic">
-            Você tem {exam.durationMin} minutos. Não consulte materiais externos.
+            {mode === 'caderno' && 'Você tem ' + exam.durationMin + ' minutos. Não consulte materiais externos.'}
+            {mode === 'gabarito' && 'Gabarito comentado com fundamentação legal'}
+            {mode === 'tudo' && 'Caderno completo: questões + folha de respostas + gabarito'}
           </p>
         </section>
 
         {/* QUESTÕES agrupadas por BLOCO TEMÁTICO (estilo Ponto Juris/Cebraspe) */}
-        {Object.entries(
+        {showQuestoes && Object.entries(
           exam.questions.reduce<Record<string, Q[]>>((acc, q) => {
             const key = q.subjectName
             if (!acc[key]) acc[key] = []
@@ -142,7 +167,12 @@ export default function ImprimirSimuladoPage() {
                         ))}
                       </ol>
                     )}
-                    {minhaResp && (
+                    {showRespostaInline && (
+                      <div className="text-xs mt-2 font-bold bg-green-100 px-2 py-1 inline-block rounded">
+                        Gabarito: {q.gabarito}
+                      </div>
+                    )}
+                    {minhaResp && mode === 'tudo' && (
                       <div className="text-xs mt-2 italic">
                         Sua resposta: <strong>{minhaResp.selected ?? '—'}</strong>
                         {' · '}
@@ -162,6 +192,7 @@ export default function ImprimirSimuladoPage() {
         ))}
 
         {/* FOLHA DE RESPOSTAS */}
+        {showFolhaRespostas && (
         <section className="page-break mt-10 pt-10 border-t-2 border-black">
           <h2 className="font-black text-lg mb-3">Folha de respostas</h2>
           <p className="text-xs mb-4">Marque a alternativa correta de cada questão.</p>
@@ -180,6 +211,7 @@ export default function ImprimirSimuladoPage() {
             ))}
           </div>
         </section>
+        )}
 
         {/* GABARITO */}
         {showGabarito && (
