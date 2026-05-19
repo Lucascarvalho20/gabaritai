@@ -393,28 +393,31 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
         )}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold text-foreground text-sm">{plan.course.name}</p>
+          <div className="flex-1">
+            <p className="font-bold text-foreground text-base">{plan.course.name}</p>
             <p className="text-muted-foreground text-xs mt-0.5">
-              {plan.hoursPerDay}h/dia · {plan.totalHoursAvailable}h disponíveis · meta: {new Date(plan.endDate).toLocaleDateString('pt-BR')}
+              {plan.hoursPerDay}h/dia · prova em <strong>{Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))} dias</strong> ({new Date(plan.endDate).toLocaleDateString('pt-BR')})
+            </p>
+            <p className="text-muted-foreground text-[11px] mt-0.5">
+              💡 Mostra o que estudar até o último dia. Sua rotina mudou? Clica em <strong>"Recalcular"</strong> pra redistribuir.
             </p>
           </div>
           <div className="flex items-center gap-2">
             {plan.isFeasible ? (
-              <span className="badge-green text-sm py-1.5 px-3">No prazo ✓</span>
+              <span className="badge-green text-xs py-1.5 px-3">No prazo ✓</span>
             ) : (
-              <span className="badge-yellow text-sm py-1.5 px-3" title={`Déficit: ${plan.deficit}h`}>
+              <span className="badge-yellow text-xs py-1.5 px-3" title={`Déficit: ${plan.deficit}h`}>
                 Tempo apertado
               </span>
             )}
             <button
               onClick={doRecalculate}
               disabled={recalculating}
-              className="text-xs font-semibold inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-background border border-border hover:bg-muted"
-              title="Recalcular o cronograma a partir de hoje"
+              className="text-xs font-bold inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50"
+              title="Recalcular cronograma a partir de hoje (use quando sua rotina mudou)"
             >
               <RefreshCw className={cn('w-3 h-3', recalculating && 'animate-spin')} />
-              Recalcular
+              {recalculating ? 'Recalculando…' : 'Recalcular'}
             </button>
           </div>
         </div>

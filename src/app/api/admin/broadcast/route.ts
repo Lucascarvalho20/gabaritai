@@ -31,13 +31,24 @@ export async function POST(req: NextRequest) {
     where.plan = plan
   }
 
-  const users = await prisma.user.findMany({ where, select: { id: true, name: true, email: true } })
+  const users = await prisma.user.findMany({
+    where,
+    select: {
+      id: true, name: true, email: true,
+      notifyEmail: true, notifyTelegram: true, telegramChatId: true,
+    },
+  })
 
   if (dryRun) {
-    return NextResponse.json({ dryRun: true, wouldNotify: users.length })
+    return NextResponse.json({
+      dryRun: true,
+      wouldNotify: users.length,
+      withEmail: users.filter((u) => u.notifyEmail && u.email).length,
+      withTelegram: users.filter((u) => u.notifyTelegram && u.telegramChatId).length,
+    })
   }
 
-  // Cria notificação em batch
+  // 1. Cria notificação in-app pra TODOS
   await prisma.notification.createMany({
     data: users.map((u) => ({
       userId: u.id,
@@ -45,6 +56,37 @@ export async function POST(req: NextRequest) {
       body,
     })),
   })
+
+  // 2. Envia email pra quem optou (fire-and-forget)
+  const usersComEmail = users.filter((u) => u.notifyEmail && u.email)
+  if (usersComEmail.length > 0 && process.env.RESEND_API_KEY) {
+    import('@/lib/email').then(({ sendEmail }) => {
+      for (const u of usersComEmail) {
+        sendEmail({
+          to: u.email!,
+          subject: `[Gabaritai] ${title}`,
+          html: `<h2>${title}</h2><p>${body.replace(/\n/g, '<br>')}</p>`,
+        }).catch((err) => console.warn('[broadcast] email falhou pra', u.email, err.message))
+      }
+    }).catch(() => {})
+  }
+
+  // 3. Envia Telegram pra quem conectou bot
+  const usersComTelegram = users.filter((u) => u.notifyTelegram && u.telegramChatId)
+  if (usersComTelegram.length > 0 && process.env.TELEGRAM_BOT_TOKEN) {
+    const token = process.env.TELEGRAM_BOT_TOKEN
+    for (const u of usersComTelegram) {
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: u.telegramChatId,
+          text: `*${title}*\n\n${body}`,
+          parse_mode: 'Markdown',
+        }),
+      }).catch((err) => console.warn('[broadcast] telegram falhou', err))
+    }
+  }
 
   // Audita
   await prisma.auditLog.create({

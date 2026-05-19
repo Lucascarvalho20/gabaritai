@@ -83,7 +83,7 @@ export default function ImportarProvaPage() {
           <Upload className="w-6 h-6 text-purple-500" /> Importar prova oficial
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Cole o texto da prova (de PDF ou site da banca) → IA extrai todas as questões → você revisa → salvar.
+          3 jeitos de importar: <Link href="/admin/conteudo/importar-pdf" className="text-purple-500 font-bold hover:underline">📎 upload PDF (texto ou escaneado)</Link> · cola texto abaixo · <Link href="/admin/conteudo/importar-lote" className="text-purple-500 font-bold hover:underline">lote de até 20 provas</Link>
         </p>
       </div>
 
