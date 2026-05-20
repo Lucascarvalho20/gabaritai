@@ -1,0 +1,1092 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PREMIUM
+  LIFETIME
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String?  @unique
+  username       String?  @unique
+  password       String
+  role           Role     @default(STUDENT)
+  plan           Plan     @default(FREE)
+  avatar         String?
+  active         Boolean  @default(true)
+
+  cpfHash        String?  @unique
+  cpfEncrypted   String?
+  phone          String?
+  birthDate      DateTime?
+
+  // Acesso liberado pelo admin (testador/beta) — bypassa plan e enrollments
+  hasFullAccess  Boolean  @default(false)
+  isBetaTester   Boolean  @default(false)
+  accessNote     String?
+
+  // E-mail verification
+  emailVerified     Boolean   @default(false)
+  emailVerifyToken  String?   @unique
+  emailVerifyExpiry DateTime?
+
+  // Password reset
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
+
+  // 2FA TOTP (Google Authenticator)
+  totpSecret      String?
+  totpEnabled     Boolean   @default(false)
+  totpVerifiedAt  DateTime?
+
+  // Account lockout (anti brute-force)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+
+  // Tutorial / onboarding
+  tutorialCompleted Boolean  @default(false)
+  tutorialStep      Int      @default(0)
+
+  // Preferências de notificação (in-app sempre ON, email/telegram opt-in)
+  notifyEmail       Boolean  @default(true)
+  notifyTelegram    Boolean  @default(false)
+  notifyWhatsapp    Boolean  @default(false)
+  telegramChatId    String?  // chat_id pessoal do aluno (pra DM)
+  whatsappPhone     String?  // futuro: integração WhatsApp Business
+
+  // Soft-archive (assinatura expirou + 30 dias inativo)
+  archivedAt     DateTime?
+  archivedReason String?
+
+  // OAuth (Google, Apple, etc)
+  oauthProvider String?  // "google" | "apple" | null
+  oauthSub      String?  // ID externo do provider (sub claim)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  profile          UserProfile?
+  studySessions    StudySession[]
+  flashcardReviews FlashcardReview[]
+  questionAttempts QuestionAttempt[]
+  mockExamResults  MockExamResult[]
+  aiConversations  AiConversation[]
+  notifications    Notification[]
+  trials           TrialPeriod[]
+  enrollments      UserCourseEnrollment[]
+  studyPlans       StudyPlan[]
+  masteries        UserSubjectMastery[]
+  payments         Payment[]
+  loginAttempts    LoginAttempt[]
+  auditLogs        AuditLog[]
+
+  @@index([username])
+  @@index([email])
+  @@index([oauthProvider, oauthSub])
+  @@index([archivedAt])
+  @@map("users")
+}
+
+// ─── SECURITY ────────────────────────────────────────────────────────────────
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  identifier String   // email ou username tentado
+  ip         String
+  userAgent  String?
+  success    Boolean
+  reason     String?  // "invalid_password", "user_not_found", "account_locked", etc.
+  createdAt  DateTime @default(now())
+
+  @@index([ip, createdAt])
+  @@index([identifier, createdAt])
+  @@map("login_attempts")
+}
+
+enum AuditAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGIN_LOCKED
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  EMAIL_VERIFIED
+  USER_CREATED_BY_ADMIN
+  USER_UPDATED_BY_ADMIN
+  USER_DEACTIVATED
+  USER_REACTIVATED
+  FULL_ACCESS_GRANTED
+  FULL_ACCESS_REVOKED
+  ADMIN_IMPERSONATION
+  TOTP_ENABLED
+  TOTP_DISABLED
+  PAYMENT_RECEIVED
+  TRIAL_STARTED
+  TRIAL_BLOCKED_DUPLICATE
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  actorId   String?
+  actor     User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  targetId  String?     // user-id alvo (se aplicável)
+  action    AuditAction
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+// Alertas de concursos abertos puxados da API externa (concursos-api.deno.dev).
+// Admin revisa cada alerta e cria Edital completo manualmente.
+model ConcursoAlerta {
+  id            String   @id @default(cuid())
+  uf            String
+  orgao         String
+  vagas         String?
+  origem        String   // "concursos-api.deno.dev"
+  status        String   // "ABERTO" | "PREVISTO"
+  isRelevant    Boolean  @default(false) // bate com PM/PF/PRF/PC/PP/Bombeiro/GCM
+  linkedEdital  String?  // se admin criou Edital, link aqui
+  rawData       Json?
+  firstSeenAt   DateTime @default(now())
+  lastSeenAt    DateTime @default(now())
+  dismissed     Boolean  @default(false) // admin ocultou (não interessa)
+
+  @@unique([uf, orgao, status])
+  @@index([isRelevant, dismissed])
+  @@map("concurso_alertas")
+}
+
+// Lista de CPFs bloqueados — admin pode banir CPF problemático.
+// Quando alguém tenta cadastrar com CPF banido, register é rejeitado.
+model CpfBlocklist {
+  id         String   @id @default(cuid())
+  cpfHash    String   @unique
+  reason     String?
+  bannedById String?
+  createdAt  DateTime @default(now())
+
+  @@map("cpf_blocklist")
+}
+
+model UserProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concursoId    String?
+  concursoLabel String?
+  nivel         String?   @default("zero")
+  horasDia      String?   @default("3")
+  dataProva     DateTime?
+  meta          String?
+  streakDays    Int       @default(0)
+  totalStudyMin Int       @default(0)
+  lastStudyAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+model TrialPeriod {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String?
+  startedAt DateTime @default(now())
+  endsAt    DateTime
+  used      Boolean  @default(true)
+
+  @@index([userId])
+  @@map("trial_periods")
+}
+
+// ─── BANCAS & EDITAIS ────────────────────────────────────────────────────────
+
+enum EditalStatus {
+  PREVISTO
+  ABERTO
+  INSCRICOES_ENCERRADAS
+  AGUARDANDO_PROVA
+  PROVA_APLICADA
+  HOMOLOGADO
+  ENCERRADO
+}
+
+enum ExamFormat {
+  CE
+  ME_5
+  ME_4
+  MISTA
+}
+
+enum ConcursoArea {
+  POLICIAL
+  MILITAR
+  BOMBEIRO
+  GUARDA_MUNICIPAL
+  OUTRO
+}
+
+model Banca {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  style       String?
+  active      Boolean  @default(true)
+  editais     Edital[]
+  provas      Prova[]
+  createdAt   DateTime @default(now())
+
+  @@map("bancas")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  area        ConcursoArea @default(POLICIAL)
+  uf          String?
+  orgao       String?
+
+  // Cargo específico (Soldado, Oficial, Agente, Delegado, Escrivão, etc.)
+  cargo       String?
+  // Slug do "concurso pai" — agrupa cursos do mesmo órgão (ex: "pmdf" agrupa pmdf-soldado e pmdf-oficial)
+  parentSlug  String?
+
+  active      Boolean  @default(true)
+
+  courseSubjects CourseSubject[]
+  editais        Edital[]
+  enrollments    UserCourseEnrollment[]
+  studyPlans     StudyPlan[]
+  masteries      UserSubjectMastery[]
+  provas         Prova[]
+
+  createdAt   DateTime @default(now())
+
+  @@index([parentSlug])
+  @@index([orgao])
+  @@map("courses")
+}
+
+model Edital {
+  id               String        @id @default(cuid())
+  courseId         String
+  course           Course        @relation(fields: [courseId], references: [id])
+  bancaId          String?
+  banca            Banca?        @relation(fields: [bancaId], references: [id])
+
+  numero           String?
+  ano              Int
+  titulo           String
+  cargos           Json?
+  vagas            Int?
+  salario          Float?
+  escolaridade     String?
+
+  dataAbertura     DateTime?
+  dataInscricaoIni DateTime?
+  dataInscricaoFim DateTime?
+  dataProva        DateTime?
+
+  totalQuestoes    Int?
+  duracaoMin       Int?
+  hasRedacao       Boolean       @default(false)
+  wrongAnnulsRight Boolean       @default(false)
+  examFormat       ExamFormat?
+  taxaInscricao    Float?
+
+  status           EditalStatus  @default(PREVISTO)
+  isActive         Boolean       @default(false) // edital em vigor — usado como fonte da verdade pra banca/matérias/tempo
+  pdfUrl           String?
+  pdfHash          String?       // SHA-256 do PDF/conteúdo — pra detectar mudanças
+  sourceUrl        String?
+  sourceApi        String?
+  rawData          Json?
+
+  subjects         EditalSubject[]
+  provas           Prova[]
+  studyPlans       StudyPlan[]
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([courseId, status])
+  @@index([courseId, isActive])
+  @@map("editais")
+}
+
+// ─── CONTENT (SUBJECT GLOBAL) ─────────────────────────────────────────────────
+
+model Subject {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @unique
+  description String?
+  area        String?
+  active      Boolean  @default(true)
+
+  topics         Topic[]
+  questions      Question[]
+  flashcards     Flashcard[]
+  materials      Material[]
+  courseSubjects CourseSubject[]
+  editalSubjects EditalSubject[]
+  masteries      UserSubjectMastery[]
+
+  createdAt   DateTime @default(now())
+
+  @@map("subjects")
+}
+
+model CourseSubject {
+  id        String  @id @default(cuid())
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  weight    Float   @default(1.0)
+  order     Int     @default(0)
+
+  @@unique([courseId, subjectId])
+  @@map("course_subjects")
+}
+
+model EditalSubject {
+  id                String  @id @default(cuid())
+  editalId          String
+  edital            Edital  @relation(fields: [editalId], references: [id], onDelete: Cascade)
+  subjectId         String
+  subject           Subject @relation(fields: [subjectId], references: [id])
+  weight            Float   @default(1.0)
+  expectedQuestions Int?
+  programa          String? @db.Text
+  order             Int     @default(0)
+
+  @@unique([editalId, subjectId])
+  @@map("edital_subjects")
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  parentId  String?  // pra hierarquia subassunto (null = tópico raiz)
+  parent    Topic?   @relation("TopicParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Topic[]  @relation("TopicParent")
+  name      String
+  slug      String?
+  description String? @db.Text
+  weight    Float    @default(1.0) // peso relativo dentro da matéria
+  order     Int      @default(0)
+  materials Material[]
+  questions Question[]
+  flashcards Flashcard[]
+  studyPlanSessions StudyPlanSession[]
+  attempts  TopicAttempt[]
+  createdAt DateTime @default(now())
+
+  @@index([subjectId, parentId])
+  @@index([slug])
+  @@map("topics")
+}
+
+// Tracking de desempenho por TÓPICO (granular vs UserSubjectMastery)
+model TopicAttempt {
+  id              String   @id @default(cuid())
+  userId          String
+  topicId         String
+  topic           Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  totalAttempts   Int      @default(0)
+  correctAttempts Int      @default(0)
+  masteryScore    Float    @default(0)
+  lastAttemptAt   DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, topicId])
+  @@index([userId])
+  @@map("topic_attempts")
+}
+
+// ─── MATERIAIS (CONTEÚDO REAL) ───────────────────────────────────────────────
+
+enum MaterialType {
+  TEXTO
+  PDF
+  VIDEO
+  MAPA_MENTAL
+  RESUMO
+}
+
+model Material {
+  id          String       @id @default(cuid())
+  subjectId   String?
+  subject     Subject?     @relation(fields: [subjectId], references: [id])
+  topicId     String?
+  // Cache key pra reuso entre cursos: hash(subjectId + topicId + type)
+  cacheKey    String?      @unique
+  topic       Topic?       @relation(fields: [topicId], references: [id])
+  title       String
+  type        MaterialType @default(TEXTO)
+  content     String?      @db.Text
+  pdfUrl      String?
+  videoUrl    String?
+  source      String?
+  authorName  String?
+  active      Boolean      @default(true)
+  resumo      MaterialResumo?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([subjectId])
+  @@map("materials")
+}
+
+model MaterialResumo {
+  id          String   @id @default(cuid())
+  materialId  String   @unique
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  resumo      String   @db.Text
+  pontosChave Json?
+  generatedBy String
+  generatedAt DateTime @default(now())
+
+  @@map("material_resumos")
+}
+
+// ─── QUESTIONS ───────────────────────────────────────────────────────────────
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionSource {
+  AI_GENERATED
+  OFFICIAL
+  ADAPTED
+}
+
+model Question {
+  id                 String         @id @default(cuid())
+  subjectId          String?
+  subject            Subject?       @relation(fields: [subjectId], references: [id])
+  topicId            String?
+  topic              Topic?         @relation(fields: [topicId], references: [id])
+  provaId            String?
+  prova              Prova?         @relation(fields: [provaId], references: [id])
+  bancaSlug          String?
+  orgao              String?
+  ano                Int?
+  numeroQuestao      Int?
+  difficulty         Difficulty     @default(MEDIUM)
+  source             QuestionSource @default(AI_GENERATED)
+  enunciado          String         @db.Text
+  alternativas       Json
+  gabarito           String
+  gabaritoPreliminar String?
+  gabaritoOficial    String?
+  anulada            Boolean        @default(false)
+  explicacao         String         @db.Text
+  tags               String[]
+  active             Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+
+  attempts QuestionAttempt[]
+
+  @@index([subjectId, ano])
+  @@map("questions")
+}
+
+model QuestionAttempt {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  selected   String
+  correct    Boolean
+  timeMs     Int?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("question_attempts")
+}
+
+model Prova {
+  id          String   @id @default(cuid())
+  editalId    String?
+  edital      Edital?  @relation(fields: [editalId], references: [id])
+  bancaId     String?
+  banca       Banca?   @relation(fields: [bancaId], references: [id])
+  courseId    String?
+  course      Course?  @relation(fields: [courseId], references: [id])
+  ano         Int
+  titulo      String
+  etapa       String?
+  cargo       String?
+  pdfUrl      String?
+  gabaritoUrl String?
+  appliedAt   DateTime?
+  questions   Question[]
+  createdAt   DateTime @default(now())
+
+  @@map("provas")
+}
+
+// ─── FLASHCARDS ──────────────────────────────────────────────────────────────
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  subjectId String?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+  topicId   String?
+  topic     Topic?   @relation(fields: [topicId], references: [id])
+  userId    String?
+  // Cache key pra compartilhar entre alunos: hash(subjectId + topicId + frente)
+  cacheKey  String?  @unique
+  frente    String   @db.Text
+  verso     String   @db.Text
+  isAI      Boolean  @default(true)
+  isShared  Boolean  @default(true) // se false, é privado do user
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  reviews FlashcardReview[]
+
+  @@index([subjectId])
+  @@map("flashcards")
+}
+
+model FlashcardReview {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcardId String
+  flashcard   Flashcard @relation(fields: [flashcardId], references: [id])
+  quality     Int
+  interval    Int       @default(1)
+  easeFactor  Float     @default(2.5)
+  nextReview  DateTime
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, flashcardId])
+  @@map("flashcard_reviews")
+}
+
+// ─── STUDY SESSIONS & PLAN ───────────────────────────────────────────────────
+
+model StudySession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  durationMin Int
+  subjectId   String?
+  meta        Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@map("study_sessions")
+}
+
+model StudyPlan {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId            String
+  course              Course   @relation(fields: [courseId], references: [id])
+  editalId            String?
+  edital              Edital?  @relation(fields: [editalId], references: [id])
+
+  hoursPerDay         Float
+  daysPerWeek         Json
+  startDate           DateTime
+  endDate             DateTime
+
+  totalHoursNeeded    Float    @default(0)
+  totalHoursAvailable Float    @default(0)
+  isFeasible          Boolean  @default(true)
+  deficit             Float    @default(0)
+
+  active              Boolean  @default(true)
+  sessions            StudyPlanSession[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId, active])
+  @@map("study_plans")
+}
+
+enum StudySessionType {
+  ESTUDO
+  REVISAO
+  QUESTOES
+  SIMULADO
+  DESCANSO
+}
+
+enum StudySessionStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDO
+  PULADO
+}
+
+model StudyPlanSession {
+  id          String             @id @default(cuid())
+  studyPlanId String
+  studyPlan   StudyPlan          @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  subjectId   String?
+  topicId     String?
+  topic       Topic?             @relation(fields: [topicId], references: [id])
+  date        DateTime           @db.Date
+  startTime   String?
+  durationMin Int
+  type        StudySessionType   @default(ESTUDO)
+  status      StudySessionStatus @default(PENDENTE)
+  // Sub-checklist granular: { resumoLido: bool, questoesFeitas: int, flashcardsRevisados: int, simuladoFeito: bool }
+  checklist   Json?
+  notes       String?
+  completedAt DateTime?
+
+  @@index([studyPlanId, date])
+  @@map("study_plan_sessions")
+}
+
+// ─── MOCK EXAMS ──────────────────────────────────────────────────────────────
+
+enum MockExamType {
+  REAL          // simulado completo no formato da prova oficial
+  MINI          // simulado curto pra treino
+  PERSONALIZADO // criado pelo aluno/admin
+}
+
+model MockExam {
+  id           String        @id @default(cuid())
+  title        String
+  type         MockExamType  @default(MINI)
+  courseId     String?
+  editalId     String?
+  bancaSlug    String?
+  subjectId    String?       // mini-simulado de matéria específica
+  questions    Json          // array de questionIds OU questões inline
+  durationMin  Int           @default(60)
+  totalQuestoes Int          @default(20)
+  hasRedacao   Boolean       @default(false)
+  wrongAnnulsRight Boolean   @default(false)
+  examFormat   ExamFormat?
+  generatedBy  String?       // "AI:claude-sonnet" | "ADMIN" | "OFFICIAL"
+
+  // Scheduling compartilhado: 1 simulado por curso por janela — todos os alunos do curso fazem o mesmo
+  weekStart    DateTime?     // segunda-feira da semana ISO (00:00 BRT) que esse simulado representa
+  availableFrom DateTime?    // quando o simulado abre pro aluno fazer
+  availableUntil DateTime?   // quando expira (não pode mais começar)
+  scheduledDay String?       // "TUE" | "THU" | "SUN" — dia da semana esperado
+
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  results MockExamResult[]
+
+  @@index([type, courseId])
+  @@index([courseId, weekStart, scheduledDay])
+  @@map("mock_exams")
+}
+
+enum MockExamResultStatus {
+  IN_PROGRESS  // aluno começou e ainda não submeteu
+  SUBMITTED    // aluno finalizou
+  EXPIRED      // tempo acabou e auto-submeteu
+  ABANDONED    // saiu sem submeter
+}
+
+model MockExamResult {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExamId   String
+  mockExam     MockExam @relation(fields: [mockExamId], references: [id])
+  status       MockExamResultStatus @default(IN_PROGRESS)
+  score        Float    @default(0)
+  scoreRaw     Float?   // pontuação bruta (sem desconto)
+  acertos      Int      @default(0)
+  erros        Int      @default(0)
+  brancos      Int      @default(0)
+  answers      Json     @default("[]") // [{questionId, selected, correct, timeMs}]
+  redacaoText  String?  @db.Text
+  redacaoMin   Int?
+  redacaoScore Float?            // nota global 0-10
+  redacaoFeedback Json?          // {estrutura, coesao, gramatica, argumentacao, sugestoes[]}
+  timeMs       Int?
+
+  // Cronômetro: aluno só pode submeter dentro da janela [startedAt, expiresAt]
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime?         // startedAt + mockExam.durationMin
+  finishedAt   DateTime?
+
+  // Ranking opt-in — aluno escolhe se aparece na leaderboard semanal do curso
+  showInRanking Boolean @default(true)
+
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, mockExamId]) // 1 tentativa por aluno por simulado (compartilhado)
+  @@index([userId, mockExamId])
+  @@index([mockExamId, status, score])
+  @@map("mock_exam_results")
+}
+
+// Diff entre edital novo e anterior — detecta mudanças
+model EditalChangeLog {
+  id              String   @id @default(cuid())
+  newEditalId     String
+  previousEditalId String?
+  subjectId       String?  // se a mudança foi em uma matéria específica
+  changeType      String   // "MATERIA_ADICIONADA" | "MATERIA_REMOVIDA" | "PROGRAMA_ALTERADO" | "PESO_ALTERADO" | "FORMATO_ALTERADO"
+  description     String   @db.Text
+  diffData        Json?
+  reviewed        Boolean  @default(false)
+  reviewedAt      DateTime?
+  reviewedById    String?
+  createdAt       DateTime @default(now())
+
+  @@index([newEditalId, reviewed])
+  @@map("edital_change_logs")
+}
+
+// ─── PROGRESS / ENROLLMENT / MASTERY ─────────────────────────────────────────
+
+model UserCourseEnrollment {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id])
+  enrolledAt  DateTime  @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  source      String?
+  progress    Float     @default(0)
+  lastStudyAt DateTime?
+
+  @@unique([userId, courseId])
+  @@map("user_course_enrollments")
+}
+
+model UserSubjectMastery {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId        String
+  course          Course    @relation(fields: [courseId], references: [id])
+  subjectId       String
+  subject         Subject   @relation(fields: [subjectId], references: [id])
+  totalAttempts   Int       @default(0)
+  correctAttempts Int       @default(0)
+  masteryScore    Float     @default(0)
+  weakTopics      Json?
+  lastAttemptAt   DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, courseId, subjectId])
+  @@map("user_subject_mastery")
+}
+
+// ─── PAYMENTS ────────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  CANCELLED
+}
+
+enum PricingInterval {
+  MONTH
+  YEAR
+  LIFETIME
+  TRIAL
+}
+
+enum PricingType {
+  TRIAL
+  SINGLE_COURSE
+  COMBO
+  FULL_ACCESS
+  VITALICIO_PROMO
+}
+
+enum CoverageType {
+  SPECIFIC      // courses listados em coverageData
+  AREA          // todos os cursos de uma área (ex: POLICIAL)
+  ALL           // todos os cursos ativos
+}
+
+// Plano de assinatura — tabela editável pelo admin (não mais enum hardcoded).
+model PricingPlan {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  name            String
+  description     String?
+  type            PricingType
+  interval        PricingInterval
+  priceCents      Int             // em centavos (R$ 297,00 = 29700)
+  pixDiscount     Int             @default(0) // % de desconto via Pix
+  moneyBackDays   Int             @default(7)
+
+  coverageType    CoverageType
+  coverageData    Json?           // array de course slugs (SPECIFIC) ou area (AREA)
+  maxCourses      Int?            // null = ilimitado
+
+  features        Json            // array de strings ("IA ilimitada", "Mentor 24h", etc.)
+  badge           String?         // "Mais popular" / "Limitado" / "Recomendado"
+
+  // Limites pra vitalício promo
+  limitTotal      Int?            // null = sem limite
+  soldCount       Int             @default(0)
+
+  active          Boolean         @default(true)
+  isVisible       Boolean         @default(true) // false = oculto do checkout público
+  sortOrder       Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("pricing_plans")
+}
+
+// ─── COUPONS ────────────────────────────────────────────────────────────────
+enum CouponType {
+  PERCENT      // desconto em %
+  FIXED        // desconto em centavos
+}
+
+model Coupon {
+  id          String     @id @default(cuid())
+  code        String     @unique // ex: "BLACK50"
+  description String?
+  type        CouponType @default(PERCENT)
+  value       Int        // se PERCENT: 50 = 50%. Se FIXED: centavos (5000 = R$50)
+
+  // Restrições
+  minAmountCents Int?               // valor mínimo do plano pra aplicar
+  appliesToPlans Json?              // array de pricingPlanSlug. null = todos
+  maxUses        Int?               // null = ilimitado
+  usedCount      Int        @default(0)
+  maxPerUser     Int        @default(1)
+
+  validFrom   DateTime?
+  validUntil  DateTime?
+
+  active      Boolean    @default(true)
+  createdById String?
+  createdAt   DateTime   @default(now())
+
+  redemptions CouponRedemption[]
+
+  @@index([code, active])
+  @@map("coupons")
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId    String
+  paymentId String?
+  amountDiscountCents Int
+  createdAt DateTime @default(now())
+
+  @@index([couponId, userId])
+  @@map("coupon_redemptions")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  provider        String        // "mercadopago"
+  providerPaymentId String?     @unique
+  providerPreferenceId String?  @unique // ID da preference (criada antes do pagamento)
+
+  pricingPlanId   String?
+  pricingPlanSlug String?       // snapshot do slug (preserva mesmo se plano for editado)
+  courseSlug      String?       // pra planos SINGLE_COURSE/TRIAL — curso escolhido
+
+  amount          Float
+  currency        String        @default("BRL")
+  plan            Plan          // mapeamento legado (FREE/BASIC/PREMIUM/LIFETIME)
+  status          PaymentStatus @default(PENDING)
+  paymentMethod   String?       // "pix" | "credit_card" | "ticket" (boleto)
+  installments    Int?
+
+  rawPreference   Json?         // resposta da preference criada
+  rawWebhook      Json?         // último webhook recebido
+  metadata        Json?         // dados auxiliares (UTM, origem, etc.)
+
+  paidAt          DateTime?
+  expiresAt       DateTime?     // vencimento da assinatura (ano = +365d, mês = +30d, vitalício = null)
+  refundedAt      DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([providerPreferenceId])
+  @@map("payments")
+}
+
+// ─── AI ──────────────────────────────────────────────────────────────────────
+
+model AiConversation {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String         @db.Text
+  createdAt      DateTime       @default(now())
+
+  @@map("ai_messages")
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ─── IA CACHE + QUOTA ────────────────────────────────────────────────────────
+
+// Cache de geração IA pra reuso entre alunos.
+// Key: hash(tipo + subjectId + topicId + bancaSlug + extra)
+// Quando aluno X solicita resumo de "Constitucional - Direitos Fundamentais",
+// sistema procura no cache. Se acha, retorna. Se não, gera + salva.
+// Próximo aluno Y do mesmo tópico = zero custo IA.
+model AIGenerationCache {
+  id          String   @id @default(cuid())
+  cacheKey    String   @unique
+  kind        String   // "resumo" | "questao" | "flashcard" | "mapa_mental"
+  subjectId   String?
+  topicId     String?
+  bancaSlug   String?
+  content     Json     // conteúdo gerado
+  modelUsed   String?  // "claude" | "gemini" | "groq" | etc
+  hitCount    Int      @default(0) // quantas vezes foi reusado
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+
+  @@index([kind, subjectId, topicId])
+  @@map("ai_generation_cache")
+}
+
+// Quota diária de IA por usuário (anti-abuso).
+// Reseta meia-noite. Tipos: simulado_ia, flashcard_ia, redacao_ia, resumo_ia, mentor_chat.
+model DailyAIQuota {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date // dia (ano-mes-dia)
+  kind      String   // tipo de geração
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, kind])
+  @@index([userId, date])
+  @@map("daily_ai_quotas")
+}
+
+// Tracking de uso de features pra métricas do admin.
+// Cada vez que aluno usa uma ferramenta (questões/flashcards/simulado/etc), incrementa.
+model FeatureUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  feature   String   // "questao_oficial" | "questao_ia" | "flashcard" | "simulado_real" | "simulado_mini" | "mentor" | "resumo" | "mapa_mental" | "redacao"
+  count     Int      @default(1)
+  date      DateTime @db.Date
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, feature, date])
+  @@index([feature, date])
+  @@map("feature_usage")
+}
+
+// ─── CHAT ADMIN ↔ ALUNO ──────────────────────────────────────────────────────
+model ChatThread {
+  id        String   @id @default(cuid())
+  userId    String   // o aluno
+  subject   String?  // assunto opcional
+  isClosed  Boolean  @default(false)
+  unreadByAdmin Int  @default(0)
+  unreadByUser  Int  @default(0)
+  lastMessageAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  ChatMessage[]
+
+  @@index([userId, isClosed])
+  @@index([lastMessageAt])
+  @@map("chat_threads")
+}
+
+model ChatMessage {
+  id         String     @id @default(cuid())
+  threadId   String
+  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId   String     // userId que enviou
+  authorRole String     // "ADMIN" | "STUDENT"
+  body       String     @db.Text
+  readAt     DateTime?  // quando foi lida pelo destinatário
+  createdAt  DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("chat_messages")
+}
