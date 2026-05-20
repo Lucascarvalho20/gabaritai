@@ -4,6 +4,8 @@ import { exchangeCodeForProfile } from '@/lib/google-oauth'
 import { signToken } from '@/lib/jwt'
 import { getClientIp } from '@/lib/rate-limit'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/auth/google/callback?code=...&state=...
 // Recebe o code do Google, troca por profile, cria/loga user, seta cookie JWT.
 export async function GET(req: NextRequest) {
