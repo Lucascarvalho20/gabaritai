@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { callAIVision, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
 
-export const maxDuration = 600 // 10min — PDFs grandes podem demorar
+export const maxDuration = 300 // 10min — PDFs grandes podem demorar
 export const runtime = 'nodejs'
 
 // POST /api/admin/content/import-pdf-upload (multipart/form-data)

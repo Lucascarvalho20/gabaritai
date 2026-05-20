@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { callAIVision, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
 
-export const maxDuration = 600
+export const maxDuration = 300
 
 /**
  * Importa prova oficial direto de uma URL pública.
