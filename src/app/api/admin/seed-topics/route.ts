@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
 
-export const maxDuration = 600
+export const maxDuration = 300
 
 /**
  * Gera árvore de tópicos (assuntos + subassuntos) pra cada matéria.

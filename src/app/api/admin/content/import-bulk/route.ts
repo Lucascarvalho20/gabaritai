@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
 
-export const maxDuration = 600 // até 10 min — bulk pode ser pesado
+export const maxDuration = 300 // até 10 min — bulk pode ser pesado
 
 /**
  * Importa MÚLTIPLAS provas oficiais de uma vez.
