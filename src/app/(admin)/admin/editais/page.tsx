@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { FileText, Loader2, Sparkles, Check, CheckCircle2, Upload, AlertTriangle, Star, Trash2, Bot } from 'lucide-react'
@@ -29,6 +29,14 @@ type Edital = {
 }
 
 export default function AdminEditaisPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>}>
+      <AdminEditaisInner />
+    </Suspense>
+  )
+}
+
+function AdminEditaisInner() {
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get('tab') ?? 'ativos') as 'ativos' | 'todos' | 'rascunhos'
   const [tab, setTab] = useState<'ativos' | 'todos' | 'rascunhos'>(initialTab)
