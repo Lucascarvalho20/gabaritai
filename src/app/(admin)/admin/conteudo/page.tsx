@@ -29,12 +29,20 @@ export default function AdminConteudoPage() {
             Materiais, questões e importação de provas oficiais.
           </p>
         </div>
-        <Link
-          href="/admin/conteudo/importar"
-          className="rounded-xl bg-purple-500 text-white px-3.5 py-2 text-sm font-semibold hover:bg-purple-600 inline-flex items-center gap-1.5"
-        >
-          <Upload className="w-4 h-4" /> Importar PDF de prova
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/admin/conteudo/importar-questoes-lote"
+            className="rounded-xl bg-purple-500 text-white px-3.5 py-2 text-sm font-semibold hover:bg-purple-600 inline-flex items-center gap-1.5"
+          >
+            <Upload className="w-4 h-4" /> Importar provas em lote
+          </Link>
+          <Link
+            href="/admin/conteudo/importar"
+            className="rounded-xl border border-border bg-card px-3.5 py-2 text-sm font-semibold hover:bg-muted inline-flex items-center gap-1.5"
+          >
+            <Upload className="w-4 h-4" /> Importar 1 PDF
+          </Link>
+        </div>
       </div>
 
       <div className="card p-1 flex gap-1 w-fit">
