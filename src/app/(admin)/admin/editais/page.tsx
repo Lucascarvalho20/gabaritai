@@ -120,11 +120,18 @@ function AdminEditaisInner() {
           >
             {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />} Detectar agora
           </button>
-          <button
-            onClick={() => setShowImport(true)}
+          <Link
+            href="/admin/editais/extrair"
             className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-semibold hover:bg-brand-600 inline-flex items-center gap-2"
           >
-            <Upload className="w-4 h-4" /> Importar edital
+            <Sparkles className="w-4 h-4" /> Extrair edital (PDF)
+          </Link>
+          <button
+            onClick={() => setShowImport(true)}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted inline-flex items-center gap-2"
+            title="Cadastro manual (sem extração IA)"
+          >
+            <Upload className="w-4 h-4" /> Manual
           </button>
         </div>
       </div>
