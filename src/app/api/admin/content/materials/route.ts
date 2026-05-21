@@ -9,11 +9,19 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const subjectId = searchParams.get('subjectId') ?? undefined
+  const topicId = searchParams.get('topicId') ?? undefined
+  const type = searchParams.get('type') as MaterialType | null
+  const status = searchParams.get('status') ?? undefined
+  const origin = searchParams.get('origin') ?? undefined
   const q = searchParams.get('q') ?? undefined
 
   const materials = await prisma.material.findMany({
     where: {
       ...(subjectId && { subjectId }),
+      ...(topicId && { topicId }),
+      ...(type && { type }),
+      ...(status && { status: status as any }),
+      ...(origin && { origin }),
       ...(q && { title: { contains: q, mode: 'insensitive' as const } }),
     },
     include: { subject: { select: { id: true, name: true, slug: true } } },

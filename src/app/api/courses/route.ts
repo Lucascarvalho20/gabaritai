@@ -27,12 +27,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Filtro de edital: por padrão só cursos COM edital ativo aparecem.
+  // Admin e ?includeNoEdital=1 veem tudo.
+  const includeNoEdital = searchParams.get('includeNoEdital') === '1' || user?.role === 'ADMIN'
+
   const courses = await prisma.course.findMany({
     where: {
       active: true,
       ...(area && { area: area as any }),
       ...(uf && { uf }),
       ...(courseIdFilter ?? {}),
+      ...(!includeNoEdital && {
+        editais: { some: { isActive: true } },
+      }),
     },
     select: {
       id: true,
@@ -45,6 +52,11 @@ export async function GET(req: NextRequest) {
       cargo: true,
       parentSlug: true,
       _count: { select: { courseSubjects: true, editais: true } },
+      editais: {
+        where: { isActive: true },
+        select: { id: true, ano: true, titulo: true },
+        take: 1,
+      },
     },
     orderBy: [{ orgao: 'asc' }, { cargo: 'asc' }, { name: 'asc' }],
   })

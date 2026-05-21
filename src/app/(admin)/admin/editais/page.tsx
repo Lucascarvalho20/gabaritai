@@ -206,6 +206,12 @@ function AdminEditaisInner() {
                     </button>
                   )}
                   <Link
+                    href={`/admin/editais/${e.id}/conteudo`}
+                    className="rounded-lg bg-brand-500 text-white px-3 py-1.5 text-xs font-semibold hover:bg-brand-600 inline-flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" /> Curar conteúdo
+                  </Link>
+                  <Link
                     href={`/admin/editais/${e.id}`}
                     className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted"
                   >
