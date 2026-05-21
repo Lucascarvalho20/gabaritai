@@ -446,6 +446,15 @@ enum MaterialType {
   RESUMO
 }
 
+// Pipeline de curadoria: nada que esteja em DRAFT é exibido ao aluno.
+// PUBLISHED é o único status que o aluno enxerga por padrão.
+enum MaterialStatus {
+  DRAFT       // rascunho gerado pela IA, aguardando revisão do admin
+  REVIEWED    // admin já leu, ajustou se preciso, mas ainda não publicou
+  PUBLISHED   // visível pro aluno
+  REJECTED    // descartado — não regenerar
+}
+
 model Material {
   id          String       @id @default(cuid())
   subjectId   String?
@@ -462,11 +471,23 @@ model Material {
   source      String?
   authorName  String?
   active      Boolean      @default(true)
+
+  // Curadoria edital-first: status de revisão
+  status      MaterialStatus @default(DRAFT)
+  // Origem do conteúdo: 'ai' (IA), 'admin' (escrito pelo admin), 'import' (PDF/edital)
+  origin      String?
+  // Quem revisou e quando — pra rastreabilidade
+  reviewedAt  DateTime?
+  reviewedBy  String?      // userId do admin
+  // Fontes consultadas (URLs ou referências) quando gerado por IA
+  sourcesUsed Json?
+
   resumo      MaterialResumo?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   @@index([subjectId])
+  @@index([status])
   @@map("materials")
 }
 
