@@ -31,7 +31,7 @@ function LoginForm() {
   const [needs2FA, setNeeds2FA] = useState(false)
   const [totpCode, setTotpCode] = useState('')
 
-  const showDevPanel = searchParams.get('dev') === 'gabaritai'
+  const showDevPanel = searchParams.get('dev') !== 'off' // mostra por padrão (beta) — esconde com ?dev=off
 
   const { register, handleSubmit, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),

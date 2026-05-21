@@ -26,7 +26,6 @@ const NAV_ALUNO = [
   { href: '/dashboard/simulados', label: 'Simulados', icon: Target },
   { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA' },
   { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo' },
-  { href: '/dashboard/mapas-mentais', label: 'Mapas mentais', icon: Brain, badge: 'IA' },
   { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp },
   { href: '/dashboard/edital-verticalizado', label: 'Edital verticalizado', icon: FileText },
   { href: '/dashboard/chat', label: 'Mensagens', icon: Sparkles },
