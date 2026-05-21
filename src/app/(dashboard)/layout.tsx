@@ -80,12 +80,35 @@ function NavItem({ href, label, icon: Icon, badge, active }: { href: string; lab
   )
 }
 
-const MOCK_NOTIFICACOES = [
-  { id: 1, tipo: 'alerta', titulo: 'Simulado disponível!', desc: `Novo simulado semanal disponível para você.`, lido: false, tempo: '2h', href: '/dashboard/simulados' },
-  { id: 2, tipo: 'progresso', titulo: 'Meta diária atingida 🎯', desc: 'Você completou 80 questões hoje. Continue assim!', lido: false, tempo: '4h', href: '/dashboard/progresso' },
-  { id: 3, tipo: 'dica', titulo: 'Dica do Mentor IA', desc: 'Você está errando 38% em Raciocínio Lógico. Revise hoje!', lido: true, tempo: '1d', href: '/dashboard/mentor' },
-  { id: 4, tipo: 'progresso', titulo: 'Sequência de 12 dias! 🔥', desc: 'Parabéns! Você manteve 12 dias consecutivos de estudo.', lido: true, tempo: '2d', href: '/dashboard/progresso' },
-]
+type Notif = {
+  id: string
+  type: string          // 'INFO' | 'SUCCESS' | 'WARNING' | 'CHAT' (do schema Notification)
+  title: string
+  body: string | null
+  link: string | null
+  read: boolean
+  createdAt: string
+}
+
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(ms / 60000)
+  if (m < 1) return 'agora'
+  if (m < 60) return `${m}min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  const d = Math.floor(h / 24)
+  if (d < 30) return `${d}d`
+  const mo = Math.floor(d / 30)
+  return `${mo}mês`
+}
+
+function notifIcon(type: string): string {
+  if (type === 'SUCCESS') return '✅'
+  if (type === 'WARNING') return '⚠️'
+  if (type === 'CHAT') return '💬'
+  return '🔔'
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -93,14 +116,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [notifs, setNotifs] = useState(MOCK_NOTIFICACOES)
+  const [notifs, setNotifs] = useState<Notif[]>([])
   const isAdmin = user?.role === 'ADMIN'
   const isAdminArea = pathname.startsWith('/admin')
   // Admin vê nav de aluno quando está em /dashboard (modo vitalício)
   const navItems = isAdmin && isAdminArea ? NAV_ADMIN : NAV_ALUNO
-  const naoLidas = notifs.filter(n => !n.lido).length
+  const naoLidas = notifs.filter(n => !n.read).length
 
   useEffect(() => { setSidebarOpen(false); setNotifOpen(false) }, [pathname])
+
+  // Busca notificações reais do banco; revalida ao logar e a cada 60s
+  useEffect(() => {
+    if (!user) return
+    let alive = true
+    async function load() {
+      try {
+        const { api } = await import('@/lib/api')
+        const { data } = await api.get('/me/notifications')
+        if (alive) setNotifs(data.notifications ?? [])
+      } catch {
+        // silencioso — não bloqueia a UI se falhar
+      }
+    }
+    load()
+    const id = setInterval(load, 60_000)
+    return () => { alive = false; clearInterval(id) }
+  }, [user?.id])
+
+  async function markAllRead() {
+    try {
+      const { api } = await import('@/lib/api')
+      await api.patch('/me/notifications')
+      setNotifs((ns) => ns.map((n) => ({ ...n, read: true })))
+    } catch {
+      toast.error('Não foi possível marcar como lidas')
+    }
+  }
 
   function handleLogout() {
     logout()
@@ -219,7 +270,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <span className="font-bold text-foreground text-sm">Notificações</span>
                       {naoLidas > 0 && (
                         <button
-                          onClick={() => setNotifs(ns => ns.map(n => ({ ...n, lido: true })))}
+                          onClick={markAllRead}
                           className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
                         >
                           Marcar todas como lidas
@@ -227,22 +278,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )}
                     </div>
                     <div className="divide-y divide-border max-h-80 overflow-y-auto">
-                      {notifs.map(n => (
+                      {notifs.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-muted-foreground">
+                          🔕 Nada novo por aqui.
+                          <p className="mt-1 opacity-75">Quando algo importante acontecer, aparece aqui.</p>
+                        </div>
+                      ) : notifs.map(n => (
                         <Link
                           key={n.id}
-                          href={n.href}
-                          onClick={() => { setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, lido: true } : x)); setNotifOpen(false) }}
-                          className={`block p-4 hover:bg-muted/50 transition-colors ${!n.lido ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
+                          href={n.link ?? '#'}
+                          onClick={() => { setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x)); setNotifOpen(false) }}
+                          className={`block p-4 hover:bg-muted/50 transition-colors ${!n.read ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-lg shrink-0">{n.tipo === 'alerta' ? '🔔' : n.tipo === 'progresso' ? '📈' : '💡'}</span>
+                            <span className="text-lg shrink-0">{notifIcon(n.type)}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-foreground">{n.titulo}</span>
-                                {!n.lido && <span className="w-1.5 h-1.5 bg-brand-500 rounded-full shrink-0" />}
+                                <span className="text-xs font-semibold text-foreground">{n.title}</span>
+                                {!n.read && <span className="w-1.5 h-1.5 bg-brand-500 rounded-full shrink-0" />}
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.desc}</p>
-                              <span className="text-xs text-muted-foreground/60 mt-1 block">{n.tempo} atrás</span>
+                              {n.body && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.body}</p>}
+                              <span className="text-xs text-muted-foreground/60 mt-1 block">{timeAgo(n.createdAt)} atrás</span>
                             </div>
                           </div>
                         </Link>
