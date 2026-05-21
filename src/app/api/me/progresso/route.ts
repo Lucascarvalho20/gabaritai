@@ -107,6 +107,26 @@ export async function GET(req: NextRequest) {
     include: { course: { select: { id: true, slug: true, name: true, cargo: true } } },
   })
 
+  // ─── Aliases pro dashboard novo ─────────────────────────────────────────
+  // byMateria: lista por matéria com base nas masteries (só matérias com atividade)
+  const byMateria = masteries
+    .filter((m) => m.totalAttempts > 0)
+    .map((m) => ({
+      subjectId: m.subjectId,
+      name: m.subject.name,
+      total: m.totalAttempts,
+      correct: m.correctAttempts,
+      pct: m.totalAttempts > 0 ? Math.round((m.correctAttempts / m.totalAttempts) * 100) : 0,
+    }))
+    .sort((a, b) => b.total - a.total)
+
+  // weekly: últimos 7 dias do series14d, em formato compacto
+  const weekly = series14d.slice(-7).map((d) => ({
+    dia: d.label.split(',')[0]?.slice(0, 3) ?? d.label,
+    total: d.total,
+    acertos: d.total > 0 ? Math.round(((d as any).correct ?? 0) / d.total * 100) : 0,
+  }))
+
   return NextResponse.json({
     overview: {
       totalAttempts,
@@ -148,5 +168,8 @@ export async function GET(req: NextRequest) {
     })),
     flashcardStats: { total: totalFlashcards, ...fcCounts, aReviewHoje: fcAReviewHoje },
     cursos: enrollments.map((e) => e.course),
+    // Aliases pro dashboard novo (consumo simplificado)
+    byMateria,
+    weekly,
   })
 }

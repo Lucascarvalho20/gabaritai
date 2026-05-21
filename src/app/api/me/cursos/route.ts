@@ -3,7 +3,8 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/me/cursos
-// Cursos do aluno + % de progresso (questões respondidas / disponíveis, mastery médio)
+// Retorna cursos do aluno com TODAS as métricas reais necessárias pro dashboard.
+// Nada de inventar — se não tem dado, retorna 0 / null.
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
@@ -21,21 +22,36 @@ export async function GET(req: NextRequest) {
     orderBy: { enrolledAt: 'desc' },
   })
 
-  // Pra cada curso, calcula:
-  //   - mastery médio (média de UserSubjectMastery)
-  //   - simulados feitos
-  //   - última atividade
   const data = await Promise.all(
     enrollments.map(async (e) => {
+      // Mastery por matéria deste curso (cada linha = uma matéria do curso)
       const masteries = await prisma.userSubjectMastery.findMany({
         where: { userId: user.id, courseId: e.courseId },
-        select: { masteryScore: true, totalAttempts: true, correctAttempts: true },
+        select: {
+          masteryScore: true, totalAttempts: true, correctAttempts: true,
+          subject: { select: { id: true, name: true } },
+        },
       })
-      const avgMastery = masteries.length
-        ? Math.round(masteries.reduce((s, m) => s + m.masteryScore, 0) / masteries.length)
-        : 0
+
       const totalAttempts = masteries.reduce((s, m) => s + m.totalAttempts, 0)
       const totalCorrect = masteries.reduce((s, m) => s + m.correctAttempts, 0)
+      const accuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0
+
+      // Progresso geral = média do masteryScore (0-100) das matérias com atividade
+      const masteriesComAtividade = masteries.filter((m) => m.totalAttempts > 0)
+      const progress = masteriesComAtividade.length
+        ? Math.round(masteriesComAtividade.reduce((s, m) => s + m.masteryScore, 0) / masteriesComAtividade.length)
+        : 0
+
+      // Ponto fraco = matéria com pior acerto (% e mínimo 5 questões pra significância)
+      let topFraqueza: { name: string; pct: number } | null = null
+      for (const m of masteriesComAtividade) {
+        if (m.totalAttempts < 5) continue
+        const pct = Math.round((m.correctAttempts / m.totalAttempts) * 100)
+        if (!topFraqueza || pct < topFraqueza.pct) {
+          topFraqueza = { name: m.subject.name, pct }
+        }
+      }
 
       const simulados = await prisma.mockExamResult.count({
         where: {
@@ -45,19 +61,27 @@ export async function GET(req: NextRequest) {
         },
       })
 
-      // Progresso: combinação de mastery + sessions completadas / total esperado
-      const progress = avgMastery // simplificação
+      // Tem edital ativo cadastrado pelo admin?
+      const editalAtivo = await prisma.edital.findFirst({
+        where: { courseId: e.courseId, isActive: true },
+        select: { id: true },
+      })
 
       return {
-        ...e.course,
-        enrolledAt: e.enrolledAt,
-        expiresAt: e.expiresAt,
-        lastStudyAt: e.lastStudyAt,
+        courseId: e.course.id,
+        slug: e.course.slug,
+        name: e.course.name,
+        cargo: e.course.cargo,
+        orgao: e.course.orgao,
+        area: e.course.area,
         progress,
-        avgMastery,
         totalAttempts,
         totalCorrect,
-        simuladosFeitos: simulados,
+        accuracy,
+        simulados,
+        hasActiveEdital: !!editalAtivo,
+        lastActivityAt: e.lastStudyAt ? e.lastStudyAt.toISOString() : null,
+        topFraqueza,
       }
     }),
   )
