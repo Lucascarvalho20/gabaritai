@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/me/cursos
-// Retorna cursos do aluno com TODAS as métricas reais necessárias pro dashboard.
-// Nada de inventar — se não tem dado, retorna 0 / null.
+// GET /api/me/cursos[?includeNoEdital=1]
+// Retorna cursos do aluno com TODAS as métricas reais. Nada inventado.
+//
+// Por padrão (aluno comum): retorna SÓ cursos com edital ativo cadastrado.
+// Admin ou ?includeNoEdital=1: retorna tudo, com flag hasActiveEdital.
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  const includeNoEdital = req.nextUrl.searchParams.get('includeNoEdital') === '1' || user.role === 'ADMIN'
 
   const enrollments = await prisma.userCourseEnrollment.findMany({
     where: { userId: user.id, isActive: true },
@@ -86,5 +90,6 @@ export async function GET(req: NextRequest) {
     }),
   )
 
-  return NextResponse.json({ cursos: data })
+  const visible = includeNoEdital ? data : data.filter((c) => c.hasActiveEdital)
+  return NextResponse.json({ cursos: visible, total: data.length, hidden: data.length - visible.length })
 }
