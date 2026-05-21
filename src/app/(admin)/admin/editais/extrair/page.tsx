@@ -47,6 +47,11 @@ export default function ExtrairEditalPage() {
   const [pdfHash, setPdfHash] = useState<string>('')
   const [saving, setSaving] = useState(false)
 
+  // Diff (quando já existe edital ativo)
+  const [diff, setDiff] = useState<any | null>(null)
+  const [keepRemoved, setKeepRemoved] = useState<Record<string, boolean>>({}) // topicId → true se admin marca pra MANTER
+  const [renameAccepted, setRenameAccepted] = useState<Record<string, boolean>>({}) // oldTopicId → false se admin diz que NÃO é rename
+
   useEffect(() => {
     api.get('/courses').then(({ data }) => {
       const flat: Course[] = []
@@ -94,6 +99,17 @@ export default function ExtrairEditalPage() {
     if (!titulo) return toast.error('Informe o título do edital')
     setSaving(true)
     try {
+      // 1. Verifica se já existe edital ativo → faz diff antes de salvar
+      const diffRes = await api.post('/admin/editais/diff', {
+        courseId, materias: extracted,
+      })
+      if (diffRes.data.hasCurrentEdital) {
+        // tem edital atual → mostra diff pro admin decidir
+        setDiff(diffRes.data)
+        setSaving(false)
+        return
+      }
+      // 2. Sem edital ativo → save direto (primeira vez do curso)
       const { data } = await api.post('/admin/editais/save-structure', {
         courseId, ano, banca: banca || undefined, numero: numero || undefined,
         titulo, pdfHash, materias: extracted,
@@ -102,6 +118,34 @@ export default function ExtrairEditalPage() {
       router.push('/admin/editais')
     } catch (err: any) {
       toast.error(err.response?.data?.message ?? 'Erro ao salvar')
+    } finally { setSaving(false) }
+  }
+
+  async function applyDiff() {
+    if (!diff || !extracted) return
+    setSaving(true)
+    try {
+      // Constrói decisions a partir do estado das checkboxes
+      const removed = diff.diff.removed.map((r: any) => ({
+        topicId: r.topicId,
+        action: keepRemoved[r.topicId] ? 'keep' : 'archive',
+      }))
+      const renames = diff.diff.renamed_suspected.map((r: any) => ({
+        oldTopicId: r.oldTopicId,
+        oldName: r.oldName,
+        newName: r.newName,
+        isRename: renameAccepted[r.oldTopicId] !== false, // default = accept
+      }))
+
+      const { data } = await api.post('/admin/editais/apply-diff', {
+        courseId, ano, banca: banca || undefined, numero: numero || undefined,
+        titulo, pdfHash, materias: extracted,
+        decisions: { removed, renames },
+      })
+      toast.success(`Edital atualizado! +${data.summary.added} novos · ${data.summary.removed} arquivados · ${data.summary.merged} fundidos`)
+      router.push('/admin/editais')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message ?? 'Erro ao aplicar diff')
     } finally { setSaving(false) }
   }
 
@@ -237,11 +281,130 @@ export default function ExtrairEditalPage() {
             </div>
             <button onClick={handleSave} disabled={saving || !titulo}
               className="rounded-xl bg-green-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</> : <><Save className="w-4 h-4" /> Salvar edital + estrutura</>}
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando…</> : <><Save className="w-4 h-4" /> Salvar edital + estrutura</>}
             </button>
             <p className="text-[10px] text-muted-foreground">
-              Vai criar: o Edital, matérias que não existem ainda, e todos os tópicos. Editais antigos do mesmo curso ficam inativos.
+              Se já existir edital ativo deste curso, vou comparar e te mostrar o diff antes de aplicar.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* DIFF VIEW — só aparece quando já existe edital ativo */}
+      {diff && (
+        <div className="card p-5 space-y-4 border-l-4 border-l-amber-500 animate-fade-in">
+          <div>
+            <h2 className="font-bold text-lg flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" /> Já existe edital ativo
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              "{diff.currentEditalTitulo}" será substituído. Revise as mudanças abaixo antes de aplicar:
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-2 text-center">
+              <div className="font-bold text-green-700 dark:text-green-300">{diff.stats.adicionados}</div>
+              <div className="text-muted-foreground">novos</div>
+            </div>
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-center">
+              <div className="font-bold text-red-700 dark:text-red-300">{diff.stats.removidos}</div>
+              <div className="text-muted-foreground">removidos</div>
+            </div>
+            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-2 text-center">
+              <div className="font-bold text-yellow-700 dark:text-yellow-300">{diff.stats.renomeados_provaveis}</div>
+              <div className="text-muted-foreground">renomeações?</div>
+            </div>
+            <div className="rounded-lg bg-muted p-2 text-center">
+              <div className="font-bold">{diff.stats.inalterados}</div>
+              <div className="text-muted-foreground">inalterados</div>
+            </div>
+          </div>
+
+          {/* Renames suspeitos */}
+          {diff.diff.renamed_suspected.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold">🟡 Possíveis renomeações</h3>
+              <p className="text-xs text-muted-foreground">
+                Detectei pares antigo→novo parecidos. Marque ✅ se é o mesmo tópico só com nome diferente (conteúdo migra),
+                ou ❌ se são tópicos diferentes (antigo será arquivado, novo criado vazio).
+              </p>
+              {diff.diff.renamed_suspected.map((r: any) => {
+                const accepted = renameAccepted[r.oldTopicId] !== false
+                return (
+                  <div key={r.oldTopicId} className="rounded-lg border border-border p-3 text-xs space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-red-600 dark:text-red-400 line-through truncate">{r.oldName}</div>
+                        <div className="text-green-600 dark:text-green-400 font-semibold truncate">→ {r.newName}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">similaridade: {Math.round(r.similarity * 100)}%</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setRenameAccepted((s) => ({ ...s, [r.oldTopicId]: true }))}
+                          className={`px-2 py-1 rounded text-xs ${accepted ? 'bg-green-500 text-white' : 'border border-border'}`}>
+                          ✅ Mesmo
+                        </button>
+                        <button onClick={() => setRenameAccepted((s) => ({ ...s, [r.oldTopicId]: false }))}
+                          className={`px-2 py-1 rounded text-xs ${!accepted ? 'bg-red-500 text-white' : 'border border-border'}`}>
+                          ❌ Diferente
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Adicionados */}
+          {diff.diff.added.length > 0 && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold">🟢 Tópicos novos ({diff.diff.added.length})</h3>
+              <p className="text-xs text-muted-foreground">Serão criados em DRAFT. Você precisa popular conteúdo.</p>
+              <div className="max-h-40 overflow-y-auto space-y-0.5">
+                {diff.diff.added.map((a: any) => (
+                  <div key={a.where} className="text-xs px-2 py-1 rounded bg-green-50/50 dark:bg-green-900/10 text-green-700 dark:text-green-300">
+                    + {a.where}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Removidos */}
+          {diff.diff.removed.length > 0 && (
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold">🔴 Tópicos removidos ({diff.diff.removed.length})</h3>
+              <p className="text-xs text-muted-foreground">
+                Por padrão, conteúdo (Materials/Flashcards) será ARQUIVADO. Questões oficiais ficam ativas (patrimônio).
+                Marque "manter" se acha que o tópico ainda é relevante.
+              </p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {diff.diff.removed.map((r: any) => (
+                  <div key={r.topicId} className="flex items-center justify-between gap-2 text-xs px-2 py-1.5 rounded bg-red-50/50 dark:bg-red-900/10">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-red-700 dark:text-red-300">- {r.name}</span>
+                      {r.hasContent && <span className="ml-1 text-[10px] text-muted-foreground">(tem conteúdo)</span>}
+                    </div>
+                    <label className="flex items-center gap-1 shrink-0">
+                      <input type="checkbox" checked={!!keepRemoved[r.topicId]}
+                        onChange={(e) => setKeepRemoved((s) => ({ ...s, [r.topicId]: e.target.checked }))} />
+                      <span>manter</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Aplicar */}
+          <div className="border-t border-border pt-3 flex gap-2">
+            <button onClick={() => setDiff(null)} className="btn-ghost btn-md">Voltar</button>
+            <button onClick={applyDiff} disabled={saving}
+              className="rounded-xl bg-amber-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Aplicando…</> : <><Check className="w-4 h-4" /> Aplicar mudanças e ativar edital novo</>}
+            </button>
           </div>
         </div>
       )}

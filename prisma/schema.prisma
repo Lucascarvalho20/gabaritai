@@ -407,6 +407,10 @@ model Topic {
   description String? @db.Text
   weight    Float    @default(1.0) // peso relativo dentro da matéria
   order     Int      @default(0)
+  // Versionamento de edital
+  archivedAt     DateTime? // se != null, tópico foi removido de um edital novo
+  archivedReason String?   // ex: "edital 2026 removeu este tópico"
+  mergedIntoId   String?   // se admin marcou como renomeação, aponta pro novo tópico
   materials Material[]
   questions Question[]
   flashcards Flashcard[]
@@ -416,6 +420,7 @@ model Topic {
 
   @@index([subjectId, parentId])
   @@index([slug])
+  @@index([archivedAt])
   @@map("topics")
 }
 
@@ -453,6 +458,8 @@ enum MaterialStatus {
   REVIEWED    // admin já leu, ajustou se preciso, mas ainda não publicou
   PUBLISHED   // visível pro aluno
   REJECTED    // descartado — não regenerar
+  ARCHIVED    // arquivado por mudança de edital — preservado mas oculto
+  NEEDS_REGEN // edital mudou ou fonte foi atualizada — admin precisa regenerar
 }
 
 model Material {
