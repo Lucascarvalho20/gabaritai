@@ -133,6 +133,7 @@ function TopicEditor({ topic, onChange }: { topic: { id: string; name: string };
   const [generating, setGenerating] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState('')
+  const [manualMode, setManualMode] = useState(false) // true = criar manual sem passar pela IA
 
   async function loadData() {
     setLoadingData(true)
@@ -175,11 +176,23 @@ function TopicEditor({ topic, onChange }: { topic: { id: string; name: string };
   }
 
   async function saveEdit(publish: boolean) {
-    if (!resumo) return
     try {
-      await api.patch(`/admin/materials/${resumo.id}/review`, { action: 'edit', content: editContent, publish })
-      toast.success(publish ? 'Editado e publicado!' : 'Edição salva')
+      // Modo manual sem resumo prévio: usa endpoint manual-summary
+      if (manualMode || !resumo) {
+        if (editContent.trim().length < 50) {
+          return toast.error('Conteúdo muito curto (mín 50 caracteres)')
+        }
+        await api.post(`/admin/topics/${topic.id}/manual-summary`, {
+          content: editContent, publish, source: 'admin redação',
+        })
+        toast.success(publish ? 'Resumo manual publicado!' : 'Salvo como rascunho revisado')
+      } else {
+        // Edição de resumo IA existente
+        await api.patch(`/admin/materials/${resumo.id}/review`, { action: 'edit', content: editContent, publish })
+        toast.success(publish ? 'Editado e publicado!' : 'Edição salva')
+      }
       setEditing(false)
+      setManualMode(false)
       loadData()
       onChange()
     } catch (e: any) {
@@ -231,13 +244,50 @@ function TopicEditor({ topic, onChange }: { topic: { id: string; name: string };
           )}
         </div>
 
-        {!resumo ? (
+        {editing ? (
+          <div className="space-y-2">
+            {manualMode && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 p-3 text-xs text-blue-700 dark:text-blue-200">
+                ✍️ <strong>Modo manual.</strong> Cole o resumo do NotebookLM ou escreva direto em markdown.
+                Será publicado com sua autoria, sem precisar revisão extra.
+              </div>
+            )}
+            <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
+              className="w-full min-h-[400px] rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
+              placeholder={manualMode
+                ? "## Princípios Fundamentais\n\nConteúdo em markdown… (cole do NotebookLM ou escreva aqui)"
+                : "Markdown do resumo…"} />
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => saveEdit(true)} className="btn-primary btn-sm">
+                <Check className="w-3 h-3" /> Salvar e publicar
+              </button>
+              <button onClick={() => saveEdit(false)} className="btn-outline btn-sm">
+                Salvar como rascunho revisado
+              </button>
+              <button onClick={() => { setEditing(false); setManualMode(false) }} className="btn-ghost btn-sm">
+                Cancelar
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {editContent.length} caracteres · {editContent.split(/\s+/).filter(Boolean).length} palavras
+            </p>
+          </div>
+        ) : !resumo ? (
           <div className="rounded-lg border border-dashed border-border p-6 text-center space-y-3">
-            <p className="text-xs text-muted-foreground">Nenhum resumo gerado ainda.</p>
-            <button onClick={generateSummary} disabled={generating}
-              className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
-              {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando…</> : <><Sparkles className="w-4 h-4" /> Gerar resumo via IA</>}
-            </button>
+            <p className="text-xs text-muted-foreground">Nenhum resumo cadastrado ainda. Escolha:</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button onClick={generateSummary} disabled={generating}
+                className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
+                {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando…</> : <><Sparkles className="w-4 h-4" /> Gerar via IA</>}
+              </button>
+              <button onClick={() => { setEditContent(''); setEditing(true); setManualMode(true) }}
+                className="rounded-xl border border-border bg-card hover:bg-muted px-4 py-2 text-sm font-bold inline-flex items-center gap-2">
+                <Edit2 className="w-4 h-4" /> Escrever manual / Colar do NotebookLM
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Resumo via IA fica em DRAFT esperando sua revisão. Manual já vai publicado direto.
+            </p>
           </div>
         ) : (
           <>
@@ -250,44 +300,36 @@ function TopicEditor({ topic, onChange }: { topic: { id: string; name: string };
               </div>
             )}
 
-            {editing ? (
-              <div className="space-y-2">
-                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full min-h-[400px] rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono"
-                  placeholder="Markdown do resumo…" />
-                <div className="flex gap-2">
-                  <button onClick={() => saveEdit(false)} className="btn-outline btn-sm">Salvar (revisado)</button>
-                  <button onClick={() => saveEdit(true)} className="btn-primary btn-sm">Salvar e publicar</button>
-                  <button onClick={() => setEditing(false)} className="btn-ghost btn-sm">Cancelar</button>
-                </div>
+            <div className="space-y-3">
+              <div className="prose prose-sm dark:prose-invert max-w-none border border-border rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+                <ReactMarkdown>{resumo.content ?? ''}</ReactMarkdown>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="prose prose-sm dark:prose-invert max-w-none border border-border rounded-lg p-4 max-h-[60vh] overflow-y-auto">
-                  <ReactMarkdown>{resumo.content ?? ''}</ReactMarkdown>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {resumo.status !== 'PUBLISHED' && (
-                    <button onClick={() => review('approve')}
-                      className="rounded-lg bg-green-500 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Aprovar e publicar
-                    </button>
-                  )}
-                  <button onClick={() => { setEditContent(resumo.content ?? ''); setEditing(true) }}
-                    className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
-                    <Edit2 className="w-3 h-3" /> Editar
+              <div className="flex flex-wrap gap-2">
+                {resumo.status !== 'PUBLISHED' && (
+                  <button onClick={() => review('approve')}
+                    className="rounded-lg bg-green-500 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Aprovar e publicar
                   </button>
-                  <button onClick={() => review('reject')}
-                    className="rounded-lg border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
-                    <X className="w-3 h-3" /> Rejeitar
-                  </button>
-                  <button onClick={generateSummary} disabled={generating}
-                    className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1 disabled:opacity-50">
-                    {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Regerar
-                  </button>
-                </div>
+                )}
+                <button onClick={() => { setEditContent(resumo.content ?? ''); setEditing(true); setManualMode(false) }}
+                  className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
+                  <Edit2 className="w-3 h-3" /> Editar
+                </button>
+                <button onClick={() => { setEditContent(''); setEditing(true); setManualMode(true) }}
+                  className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1"
+                  title="Substituir por resumo manual (NotebookLM ou redação própria)">
+                  ✍️ Escrever do zero
+                </button>
+                <button onClick={() => review('reject')}
+                  className="rounded-lg border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1">
+                  <X className="w-3 h-3" /> Rejeitar
+                </button>
+                <button onClick={generateSummary} disabled={generating}
+                  className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1 disabled:opacity-50">
+                  {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Regerar via IA
+                </button>
               </div>
-            )}
+            </div>
           </>
         )}
       </section>
