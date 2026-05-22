@@ -98,15 +98,43 @@ export async function POST(req: NextRequest) {
     }).catch(() => null) // ignora se a constraint composta não existir nesse schema
 
     // 3. Tópicos (recursivamente, com hierarquia parent)
+    // Dedupe difusa: além de match exato, procura por nome similar na MESMA matéria
+    // (token Jaccard >= 0.7). Se achar, reusa em vez de criar novo — evita duplicação
+    // entre cursos que descrevem mesmo conteúdo com nomes ligeiramente diferentes.
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ').trim()
+    function jaccard(a: string, b: string): number {
+      const aT = new Set(norm(a).split(' ').filter((t) => t.length > 2))
+      const bT = new Set(norm(b).split(' ').filter((t) => t.length > 2))
+      if (aT.size === 0 || bT.size === 0) return norm(a) === norm(b) ? 1 : 0
+      const inter = [...aT].filter((t) => bT.has(t)).length
+      const uni = new Set([...aT, ...bT]).size
+      return inter / uni
+    }
+
     const topicIds: string[] = []
     async function createTopics(items: any[], parentId: string | null) {
       for (let ti = 0; ti < items.length; ti++) {
         const t = items[ti]
         if (!t.nome) continue
-        // dedupe por (subjectId, name, parentId)
-        const existing = await prisma.topic.findFirst({
-          where: { subjectId, name: t.nome, parentId: parentId ?? null },
+        // dedupe exata (subjectId, name, parentId)
+        let existing = await prisma.topic.findFirst({
+          where: { subjectId, name: t.nome, parentId: parentId ?? null, archivedAt: null },
         })
+        // dedupe difusa: procura nome similar dentro da matéria
+        if (!existing) {
+          const siblings = await prisma.topic.findMany({
+            where: { subjectId, parentId: parentId ?? null, archivedAt: null },
+            select: { id: true, name: true },
+          })
+          for (const s of siblings) {
+            if (jaccard(s.name, t.nome) >= 0.7) {
+              existing = await prisma.topic.findUnique({ where: { id: s.id } })
+              break
+            }
+          }
+        }
         const topic = existing
           ? existing
           : await prisma.topic.create({
