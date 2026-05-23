@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { FileText, Loader2, Sparkles, Check, CheckCircle2, Upload, AlertTriangle, Star, Trash2, Bot } from 'lucide-react'
+import { FileText, Loader2, Sparkles, Star, Trash2, Bot, Plus } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -42,7 +42,6 @@ function AdminEditaisInner() {
   const [tab, setTab] = useState<'ativos' | 'todos' | 'rascunhos'>(initialTab)
   const [editais, setEditais] = useState<Edital[]>([])
   const [loading, setLoading] = useState(true)
-  const [showImport, setShowImport] = useState(false)
   const [detecting, setDetecting] = useState(false)
 
   async function load() {
@@ -121,18 +120,11 @@ function AdminEditaisInner() {
             {detecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />} Detectar agora
           </button>
           <Link
-            href="/admin/editais/extrair"
+            href="/admin/editais/manual"
             className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-semibold hover:bg-brand-600 inline-flex items-center gap-2"
           >
-            <Sparkles className="w-4 h-4" /> Extrair edital (PDF)
+            <Plus className="w-4 h-4" /> Cadastrar edital
           </Link>
-          <button
-            onClick={() => setShowImport(true)}
-            className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted inline-flex items-center gap-2"
-            title="Cadastro manual (sem extração IA)"
-          >
-            <Upload className="w-4 h-4" /> Manual
-          </button>
         </div>
       </div>
 
@@ -165,9 +157,9 @@ function AdminEditaisInner() {
              tab === 'ativos' ? 'Nenhum edital ativo. Ative um da aba "Todos" ou cadastre novo.' :
              'Nenhum edital cadastrado.'}
           </p>
-          <button onClick={() => setShowImport(true)} className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-semibold">
+          <Link href="/admin/editais/manual" className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-semibold inline-block">
             Cadastrar manualmente
-          </button>
+          </Link>
         </div>
       ) : (
         <div className="space-y-2">
@@ -231,163 +223,7 @@ function AdminEditaisInner() {
         </div>
       )}
 
-      {showImport && <ImportModal onClose={() => { setShowImport(false); load() }} />}
     </div>
   )
 }
 
-function ImportModal({ onClose }: { onClose: () => void }) {
-  const [courses, setCourses] = useState<Array<{ id: string; slug: string; name: string; cargo: string | null }>>([])
-  const [courseSlug, setCourseSlug] = useState('')
-  const [text, setText] = useState('')
-  const [preview, setPreview] = useState<any>(null)
-  const [previewing, setPreviewing] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [activateAfter, setActivateAfter] = useState(true)
-
-  useEffect(() => {
-    api.get('/courses?all=true').then(({ data }) => setCourses(data.courses ?? []))
-  }, [])
-
-  async function doPreview() {
-    if (text.length < 200) return toast.error('Texto muito curto')
-    if (!courseSlug) return toast.error('Selecione o curso')
-    setPreviewing(true)
-    setPreview(null)
-    try {
-      const { data } = await api.post('/admin/editais', { courseSlug, rawText: text, dryRun: true })
-      setPreview(data.preview)
-      toast.success('Extraído! Revise antes de salvar')
-    } catch (e: any) {
-      toast.error(e.response?.data?.message ?? 'Erro na extração')
-    } finally {
-      setPreviewing(false)
-    }
-  }
-
-  async function save() {
-    if (!preview) return
-    setSaving(true)
-    try {
-      const { data } = await api.post('/admin/editais', { courseSlug, manual: preview })
-      if (activateAfter && data.edital?.id) {
-        await api.post(`/admin/editais/${data.edital.id}/activate`)
-      }
-      toast.success(`Edital criado · ${data.subjectsCreated} matérias vinculadas`)
-      onClose()
-    } catch (e: any) {
-      toast.error(e.response?.data?.message ?? 'Erro ao salvar')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
-        <h2 className="font-bold text-lg flex items-center gap-2">
-          <Upload className="w-5 h-5 text-brand-500" /> Importar edital
-        </h2>
-
-        <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 text-xs text-yellow-800 dark:text-yellow-200 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>
-            Cole o texto do edital → IA extrai banca, matérias, peso, qtd questões, programa, datas. Você revisa antes de salvar.
-          </span>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold">Curso</label>
-          <select
-            value={courseSlug}
-            onChange={(e) => setCourseSlug(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">— escolha —</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.slug}>{c.name}{c.cargo ? ` (${c.cargo})` : ''}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold">Texto do edital</label>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={10}
-            placeholder="Cole aqui o texto completo do edital (matérias, programa, número de questões, tempo de prova, etc.)..."
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono"
-          />
-          <div className="text-[10px] text-muted-foreground mt-1 text-right">{text.length} caracteres</div>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={doPreview}
-            disabled={previewing || text.length < 200 || !courseSlug}
-            className="rounded-xl bg-purple-500 text-white px-4 py-2 text-sm font-semibold hover:bg-purple-600 disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            {previewing ? <><Loader2 className="w-4 h-4 animate-spin" /> Extraindo…</> : <><Sparkles className="w-4 h-4" /> Extrair com IA</>}
-          </button>
-        </div>
-
-        {preview && (
-          <div className="card p-3 bg-muted/30 space-y-2">
-            <h3 className="font-semibold text-sm flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-green-500" /> Revisar antes de salvar
-            </h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Field label="Banca" value={preview.bancaName} />
-              <Field label="Ano" value={preview.ano} />
-              <Field label="Vagas" value={preview.vagas} />
-              <Field label="Questões" value={preview.totalQuestoes} />
-              <Field label="Duração" value={preview.duracaoMin ? `${preview.duracaoMin} min` : '—'} />
-              <Field label="Formato" value={preview.examFormat} />
-              <Field label="Redação" value={preview.hasRedacao ? 'sim' : 'não'} />
-              <Field label="Errada anula" value={preview.wrongAnnulsRight ? 'sim' : 'não'} />
-            </div>
-            {Array.isArray(preview.subjects) && preview.subjects.length > 0 && (
-              <div className="mt-2">
-                <div className="text-xs font-semibold mb-1">Matérias detectadas ({preview.subjects.length}):</div>
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {preview.subjects.map((s: any, i: number) => (
-                    <div key={i} className="text-[11px] border border-border rounded p-1.5">
-                      <strong>{s.name}</strong> · {s.expectedQuestions ?? '?'}q · peso {s.weight ?? 1}
-                      {s.programa && <div className="text-muted-foreground line-clamp-2 mt-0.5">{s.programa}</div>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <label className="flex items-center gap-2 text-xs mt-3">
-              <input type="checkbox" checked={activateAfter} onChange={(e) => setActivateAfter(e.target.checked)} />
-              Marcar como edital ATIVO desse curso (sistema passa a usar este como referência)
-            </label>
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={save}
-                disabled={saving}
-                className="flex-1 rounded-xl bg-green-500 text-white py-2 text-sm font-semibold hover:bg-green-600 disabled:opacity-50 inline-flex items-center justify-center gap-1"
-              >
-                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</> : <><Check className="w-4 h-4" /> Salvar edital</>}
-              </button>
-              <button onClick={onClose} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function Field({ label, value }: { label: string; value: any }) {
-  return (
-    <div className="flex justify-between border-b border-border pb-1">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{value ?? '—'}</span>
-    </div>
-  )
-}
