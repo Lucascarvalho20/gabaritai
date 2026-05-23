@@ -7,25 +7,21 @@ export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 /**
- * Extrai a ESTRUTURA do edital (matérias + tópicos), não as questões.
+ * Extrai a ESTRUTURA COMPLETA do edital — multi-cargo + metadados completos.
  *
- * Diferente de /api/admin/content/import-from-url que pega questões,
- * esse aqui lê o "anexo de conteúdo programático" do edital e devolve
- * a árvore Matéria → Tópico literal, para o admin revisar.
+ * O PDF entra UMA vez. A IA varre tudo e devolve:
+ *   - editalGeral: numero, ano, órgão, banca, datas, taxa
+ *   - cargos[]: cada cargo com vagas, salário, escolaridade, total de questões,
+ *               duração, redação, formato (CE/ME), regra de anulação E a árvore
+ *               matéria→tópico daquele cargo.
  *
- * IA é forçada a NÃO inventar — só extrair o que estiver no PDF.
+ * Depois o servidor cruza cada cargo com os Course cadastrados (match por nome/cargo)
+ * pra UI sugerir "esse cargo é o seu PF-Agente?".
  *
- * Body multipart: { pdf: File, courseId?: string, ano?: number, banca?: string }
- * OU JSON: { pdfBase64, courseId, ano, banca, dryRun }
+ * Admin escolhe quais cargos importar e ajusta o que precisar.
  *
- * Retorna:
- *   {
- *     extracted: [{ materia, topicos: [{ nome, ordem }] }, ...],
- *     pdfHash: string,
- *     pdfSizeKb: number,
- *   }
- *
- * Não persiste nada — apenas extrai. A persistência fica no endpoint /save.
+ * Body multipart: { pdf: File }
+ * OU JSON: { pdfBase64 }
  */
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req)
@@ -33,9 +29,6 @@ export async function POST(req: NextRequest) {
 
   const contentType = req.headers.get('content-type') ?? ''
   let pdfBuffer: ArrayBuffer
-  let courseId: string | undefined
-  let ano: number | undefined
-  let banca: string | undefined
 
   try {
     if (contentType.includes('multipart/form-data')) {
@@ -43,16 +36,10 @@ export async function POST(req: NextRequest) {
       const file = form.get('pdf') as File | null
       if (!file) return NextResponse.json({ message: 'Anexe o PDF do edital' }, { status: 400 })
       pdfBuffer = await file.arrayBuffer()
-      courseId = (form.get('courseId') as string) || undefined
-      ano = form.get('ano') ? Number(form.get('ano')) : undefined
-      banca = (form.get('banca') as string) || undefined
     } else {
       const body = await req.json()
       if (!body.pdfBase64) return NextResponse.json({ message: 'pdfBase64 obrigatório' }, { status: 400 })
       pdfBuffer = Buffer.from(body.pdfBase64, 'base64').buffer as ArrayBuffer
-      courseId = body.courseId
-      ano = body.ano
-      banca = body.banca
     }
   } catch (err: any) {
     return NextResponse.json({ message: `PDF inválido: ${err.message}` }, { status: 400 })
@@ -67,47 +54,124 @@ export async function POST(req: NextRequest) {
 
   const base64 = Buffer.from(pdfBuffer).toString('base64')
 
-  const prompt = `Você é um extrator estruturado de editais de concurso brasileiro.
+  const prompt = `Você é um EXTRATOR ESPECIALISTA de editais de concurso público brasileiro. Sua função é ler o edital anexo e devolver um JSON estruturado com TUDO que está nele — sem inventar nada que não esteja no documento.
 
-Analise o PDF anexo (edital ${banca ?? ''} ${ano ?? ''}) e extraia EXATAMENTE a estrutura do conteúdo programático.
+ESTE EDITAL PODE TER MÚLTIPLOS CARGOS (perito + delegado + agente + escrivão no mesmo PDF é comum em PF, PC). Você DEVE identificar e listar TODOS os cargos descritos, separadamente, mesmo que compartilhem o mesmo conteúdo programático.
 
-REGRAS RÍGIDAS:
-1. NÃO invente matérias ou tópicos. Se algo não estiver no PDF, deixe de fora.
-2. Use os nomes EXATOS como aparecem no edital (preserve maiúsculas, acentos, numeração).
-3. Procure a seção "ANEXO" / "CONTEÚDO PROGRAMÁTICO" / "PROGRAMA" — é onde estão as matérias.
-4. Ignore tabelas de cargos, vagas, salários — só queremos o conteúdo a estudar.
-5. Se houver subitens hierárquicos (ex: 1. Direito Constitucional / 1.1 Princípios / 1.2 Direitos), preserve a hierarquia em "subtopicos".
-6. Se houver múltiplos cargos com programas diferentes, retorne todos juntos (vamos filtrar depois).
+═══════════════════════════════════════════════════════════════
+O QUE VOCÊ DEVE EXTRAIR
+═══════════════════════════════════════════════════════════════
 
-Retorne APENAS JSON, sem markdown, neste formato:
+A) editalGeral — dados que valem pra TODOS os cargos:
+   - numero: ex "001/2026" ou "EDITAL Nº 1 — CONCURSO PÚBLICO DA POLÍCIA FEDERAL/2026"
+   - ano: ano do edital (Int)
+   - orgao: ex "Polícia Federal", "Polícia Civil do DF"
+   - banca: nome da banca organizadora — ex "Cebraspe", "FGV", "FCC", "Vunesp"
+   - dataAbertura: data de publicação do edital (ISO yyyy-mm-dd ou null)
+   - dataInscricaoIni: data de início das inscrições (ISO ou null)
+   - dataInscricaoFim: data de fim das inscrições (ISO ou null)
+   - dataProva: data da prova objetiva (ISO ou null)
+   - taxaInscricao: valor da taxa em reais (Float, ex 180.00 — null se isento ou não declarado)
+
+B) cargos[] — para CADA cargo descrito no edital:
+   - nome: nome COMPLETO do cargo como aparece no edital (ex "Agente de Polícia Federal", "Delegado de Polícia Federal", "Perito Criminal Federal — Área 1 (Engenharia Civil)")
+   - vagas: número de vagas pra esse cargo (Int — soma ampla concorrência + cotas se aparecer só total)
+   - salario: remuneração mensal inicial (Float em reais)
+   - escolaridade: ex "Superior em qualquer área", "Médio", "Superior em Direito"
+   - totalQuestoes: total de questões da prova objetiva pra esse cargo (Int)
+   - duracaoMin: duração da prova em MINUTOS (Int — converta "4 horas" em 240)
+   - hasRedacao: true se o cargo tem prova discursiva/redação obrigatória, false caso contrário
+   - examFormat: formato das questões objetivas. Use APENAS um destes códigos:
+       * "CE"     → certo/errado (estilo Cebraspe clássico)
+       * "ME_5"   → múltipla escolha com 5 alternativas (A,B,C,D,E)
+       * "ME_4"   → múltipla escolha com 4 alternativas (A,B,C,D)
+       * "MISTA"  → mistura CE + múltipla escolha
+       * null     → se não conseguir identificar
+   - wrongAnnulsRight: true se "item errado ANULA item certo" (penalização) — typical Cebraspe. false caso contrário.
+   - regraAnulacaoTexto: texto LITERAL do edital sobre regra de pontuação/anulação (1-2 frases) — null se não houver
+   - materias: árvore do conteúdo programático DESTE cargo (ver formato abaixo)
+
+C) materias[] (dentro de cada cargo):
+   Array de objetos, na ORDEM em que aparecem no edital. Cada objeto:
+   {
+     "nome": "Direito Constitucional",          // nome EXATO como no edital
+     "ordem": 1,                                // posição no edital
+     "qtdQuestoes": 20,                         // qtas questões dessa matéria (Int ou null se não informado)
+     "peso": 1.5,                               // peso/multiplicador (Float, default 1, null se não informado)
+     "topicos": [
+       {
+         "nome": "Princípios Fundamentais",
+         "ordem": 1,
+         "subtopicos": [
+           { "nome": "Soberania, cidadania, dignidade", "ordem": 1 }
+         ]
+       }
+     ]
+   }
+   Preserve HIERARQUIA: se edital diz "1. Direito Constitucional / 1.1 Princípios / 1.1.1 Soberania", retorne 3 níveis (matéria→tópico→subtópico).
+
+═══════════════════════════════════════════════════════════════
+REGRAS RÍGIDAS
+═══════════════════════════════════════════════════════════════
+
+1. NÃO INVENTE. Se o campo não está no edital, retorne null (não chute).
+2. NOMES EXATOS. Preserve acentuação, capitalização e numeração do edital.
+3. MULTI-CARGO: se o conteúdo programático é IDÊNTICO entre cargos, ainda assim liste cada cargo separadamente em "cargos[]" — só repete o array de materias.
+4. CARGOS DE ÁREAS: "Perito Criminal Federal — Área 1, 2, 3..." são cargos DIFERENTES, liste todos.
+5. SE O PDF NÃO FOR EDITAL: retorne { "erro": "explicação" }.
+
+═══════════════════════════════════════════════════════════════
+FORMATO DE RESPOSTA
+═══════════════════════════════════════════════════════════════
+
+Responda APENAS o JSON puro (sem markdown, sem texto antes ou depois):
+
 {
-  "materias": [
+  "editalGeral": {
+    "numero": "...",
+    "ano": 2026,
+    "orgao": "...",
+    "banca": "...",
+    "dataAbertura": "2026-01-15",
+    "dataInscricaoIni": null,
+    "dataInscricaoFim": null,
+    "dataProva": null,
+    "taxaInscricao": 180.00
+  },
+  "cargos": [
     {
-      "nome": "Direito Constitucional",
-      "ordem": 1,
-      "topicos": [
+      "nome": "Agente de Polícia Federal",
+      "vagas": 100,
+      "salario": 12522.50,
+      "escolaridade": "Superior em qualquer área",
+      "totalQuestoes": 120,
+      "duracaoMin": 240,
+      "hasRedacao": true,
+      "examFormat": "CE",
+      "wrongAnnulsRight": true,
+      "regraAnulacaoTexto": "Cada item errado anulará um item certo.",
+      "materias": [
         {
-          "nome": "Princípios Fundamentais",
+          "nome": "Direito Constitucional",
           "ordem": 1,
-          "subtopicos": [
-            { "nome": "Soberania, cidadania, dignidade", "ordem": 1 }
+          "qtdQuestoes": 20,
+          "peso": 1,
+          "topicos": [
+            { "nome": "Princípios Fundamentais", "ordem": 1, "subtopicos": [] }
           ]
         }
       ]
     }
   ]
-}
+}`
 
-Se o PDF não for um edital ou não tiver conteúdo programático, retorne { "materias": [], "erro": "explicação" }.`
-
-  let extracted: { materias: Array<any>; erro?: string }
-
+  let extracted: any
   try {
     const raw = await callAIVision({
       prompt,
       imageBase64: base64,
       mimeType: 'application/pdf',
-      maxTokens: 16000,
+      maxTokens: 32000,
     })
     extracted = parseAIJson(raw)
   } catch (err: any) {
@@ -117,12 +181,66 @@ Se o PDF não for um edital ou não tiver conteúdo programático, retorne { "ma
     )
   }
 
-  if (!extracted.materias || !Array.isArray(extracted.materias)) {
+  if (extracted.erro) {
+    return NextResponse.json({ message: 'IA: ' + extracted.erro }, { status: 422 })
+  }
+  if (!Array.isArray(extracted.cargos) || extracted.cargos.length === 0) {
     return NextResponse.json(
-      { message: 'IA não conseguiu extrair estrutura. ' + (extracted.erro ?? '') },
+      { message: 'IA não identificou nenhum cargo no PDF. Verifique se o PDF é o edital oficial.' },
       { status: 422 },
     )
   }
+
+  // ── Cruza cargos detectados com Courses cadastrados ─────────────────────
+  const knownCourses = await prisma.course.findMany({
+    where: { active: true },
+    select: { id: true, name: true, cargo: true, orgao: true, slug: true, parentSlug: true },
+    orderBy: { name: 'asc' },
+  })
+
+  const norm = (s: string | null | undefined) =>
+    (s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ').trim()
+
+  function jaccard(a: string, b: string): number {
+    const aT = new Set(norm(a).split(' ').filter((t) => t.length > 2))
+    const bT = new Set(norm(b).split(' ').filter((t) => t.length > 2))
+    if (aT.size === 0 || bT.size === 0) return norm(a) === norm(b) ? 1 : 0
+    const inter = [...aT].filter((t) => bT.has(t)).length
+    const uni = new Set([...aT, ...bT]).size
+    return inter / uni
+  }
+
+  const orgaoFromEdital = extracted.editalGeral?.orgao ?? ''
+  const cargosWithMatches = extracted.cargos.map((c: any) => {
+    const cargoTokens = norm(c.nome)
+    const orgaoTokens = norm(orgaoFromEdital)
+    const ranked = knownCourses
+      .map((kc) => {
+        // similaridade composta: nome do cargo (peso 2) + órgão (peso 1)
+        const cargoSim = Math.max(
+          jaccard(cargoTokens, kc.cargo ?? ''),
+          jaccard(cargoTokens, kc.name),
+        )
+        const orgaoSim = orgaoTokens && kc.orgao ? jaccard(orgaoTokens, kc.orgao) : 0
+        const score = cargoSim * 0.7 + orgaoSim * 0.3
+        return { course: kc, score, cargoSim, orgaoSim }
+      })
+      .filter((r) => r.score >= 0.3)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+    return {
+      ...c,
+      courseMatches: ranked.map((r) => ({
+        courseId: r.course.id,
+        courseName: r.course.name,
+        cargo: r.course.cargo,
+        orgao: r.course.orgao,
+        score: Math.round(r.score * 100) / 100,
+      })),
+      suggestedCourseId: ranked[0]?.score >= 0.6 ? ranked[0].course.id : null,
+    }
+  })
 
   // Hash do PDF pra auditoria + detectar duplicatas
   const crypto = await import('crypto')
@@ -134,24 +252,30 @@ Se o PDF não for um edital ou não tiver conteúdo programático, retorne { "ma
     orderBy: { name: 'asc' },
   })
 
-  // Conta tópicos pra estatística
-  let totalTopicos = 0
-  for (const m of extracted.materias) {
-    if (m.topicos) totalTopicos += m.topicos.length
-  }
+  // Stats
+  const totalMaterias = cargosWithMatches.reduce(
+    (acc: number, c: any) => acc + (c.materias?.length ?? 0),
+    0,
+  )
+  const totalTopicos = cargosWithMatches.reduce(
+    (acc: number, c: any) =>
+      acc + (c.materias?.reduce((a: number, m: any) => a + (m.topicos?.length ?? 0), 0) ?? 0),
+    0,
+  )
 
   return NextResponse.json({
     ok: true,
-    courseId: courseId ?? null,
-    ano: ano ?? null,
-    banca: banca ?? null,
     pdfHash,
     pdfSizeKb: Math.round(pdfBuffer.byteLength / 1024),
-    extracted: extracted.materias,
+    editalGeral: extracted.editalGeral ?? {},
+    cargos: cargosWithMatches,
+    knownCourses,
+    knownSubjects,
     stats: {
-      materias: extracted.materias.length,
+      cargos: cargosWithMatches.length,
+      cargosComMatch: cargosWithMatches.filter((c: any) => c.suggestedCourseId).length,
+      materias: totalMaterias,
       topicos: totalTopicos,
     },
-    knownSubjects, // pra UI sugerir match
   })
 }

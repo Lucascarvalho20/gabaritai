@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, Loader2, Plus, Trash2, ChevronRight, ChevronDown, Save, AlertTriangle, Check, FileText } from 'lucide-react'
+import {
+  Upload, Loader2, Plus, Trash2, ChevronRight, ChevronDown,
+  Save, AlertTriangle, Check, FileText, Sparkles, X, FilePlus2,
+} from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
@@ -11,82 +14,121 @@ type Topico = { nome: string; ordem?: number; subtopicos?: Subtopico[] }
 type Materia = {
   nome: string
   ordem?: number
-  subjectId?: string // match com matéria global existente
+  qtdQuestoes?: number | null
+  peso?: number | null
+  subjectId?: string
   topicos: Topico[]
 }
-
+type CargoMatch = {
+  courseId: string
+  courseName: string
+  cargo: string | null
+  orgao: string | null
+  score: number
+}
+type CargoExtracted = {
+  nome: string
+  vagas: number | null
+  salario: number | null
+  escolaridade: string | null
+  totalQuestoes: number | null
+  duracaoMin: number | null
+  hasRedacao: boolean
+  examFormat: 'CE' | 'ME_5' | 'ME_4' | 'MISTA' | null
+  wrongAnnulsRight: boolean
+  regraAnulacaoTexto: string | null
+  materias: Materia[]
+  courseMatches: CargoMatch[]
+  suggestedCourseId: string | null
+}
+type EditalGeral = {
+  numero: string | null
+  ano: number | null
+  orgao: string | null
+  banca: string | null
+  dataAbertura: string | null
+  dataInscricaoIni: string | null
+  dataInscricaoFim: string | null
+  dataProva: string | null
+  taxaInscricao: number | null
+}
 type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null }
 type KnownSubject = { id: string; name: string; slug: string }
-
 type ExtractResponse = {
   ok: true
-  courseId: string | null
-  ano: number | null
-  banca: string | null
   pdfHash: string
   pdfSizeKb: number
-  extracted: Materia[]
-  stats: { materias: number; topicos: number }
+  editalGeral: EditalGeral
+  cargos: CargoExtracted[]
+  knownCourses: Course[]
   knownSubjects: KnownSubject[]
+  stats: { cargos: number; cargosComMatch: number; materias: number; topicos: number }
+}
+
+type CargoUi = {
+  ext: CargoExtracted
+  edited: CargoExtracted              // copy for in-place edits
+  action: 'import' | 'ignore' | 'create-new-course'
+  selectedCourseId: string | null
+  newCourseName: string
+  newCourseOrgao: string
+  newCourseParentSlug: string
+  expanded: boolean
+  saving: boolean
+  saved: boolean
+  savedEditalId?: string
 }
 
 export default function ExtrairEditalPage() {
   const router = useRouter()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [knownSubjects, setKnownSubjects] = useState<KnownSubject[]>([])
-
-  const [courseId, setCourseId] = useState('')
-  const [ano, setAno] = useState(new Date().getFullYear())
-  const [banca, setBanca] = useState('')
-  const [titulo, setTitulo] = useState('')
-  const [numero, setNumero] = useState('')
-
   const [file, setFile] = useState<File | null>(null)
   const [extracting, setExtracting] = useState(false)
-  const [extracted, setExtracted] = useState<Materia[] | null>(null)
-  const [pdfHash, setPdfHash] = useState<string>('')
-  const [saving, setSaving] = useState(false)
-
-  // Diff (quando já existe edital ativo)
-  const [diff, setDiff] = useState<any | null>(null)
-  const [keepRemoved, setKeepRemoved] = useState<Record<string, boolean>>({}) // topicId → true se admin marca pra MANTER
-  const [renameAccepted, setRenameAccepted] = useState<Record<string, boolean>>({}) // oldTopicId → false se admin diz que NÃO é rename
-
-  useEffect(() => {
-    api.get('/courses').then(({ data }) => {
-      const flat: Course[] = []
-      for (const g of data.groups ?? []) flat.push(...g.cargos)
-      setCourses(flat)
-    }).catch(() => {})
-  }, [])
+  const [pdfHash, setPdfHash] = useState('')
+  const [editalGeral, setEditalGeral] = useState<EditalGeral | null>(null)
+  const [knownCourses, setKnownCourses] = useState<Course[]>([])
+  const [knownSubjects, setKnownSubjects] = useState<KnownSubject[]>([])
+  const [cargosUi, setCargosUi] = useState<CargoUi[]>([])
 
   async function handleExtract() {
     if (!file) return toast.error('Anexe o PDF do edital')
-    if (!courseId) return toast.error('Selecione o curso')
     setExtracting(true)
     try {
       const form = new FormData()
       form.append('pdf', file)
-      form.append('courseId', courseId)
-      form.append('ano', String(ano))
-      if (banca) form.append('banca', banca)
-      const { data } = await api.post<ExtractResponse>('/admin/editais/extract-structure', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      setExtracted(data.extracted)
+      const { data } = await api.post<ExtractResponse>(
+        '/admin/editais/extract-structure',
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      setEditalGeral(data.editalGeral)
+      setKnownCourses(data.knownCourses)
       setKnownSubjects(data.knownSubjects)
       setPdfHash(data.pdfHash)
-      // Auto-match: pra cada matéria extraída, tenta match por nome com matéria global
-      const auto = data.extracted.map((m) => {
-        const found = data.knownSubjects.find((s) => s.name.toLowerCase() === m.nome.toLowerCase())
-        return { ...m, subjectId: found?.id }
+
+      // Auto-match matérias contra subjects globais
+      const cargosUi: CargoUi[] = data.cargos.map((c, idx) => {
+        const matEdited = (c.materias ?? []).map((m) => {
+          const found = data.knownSubjects.find((s) => s.name.toLowerCase() === m.nome.toLowerCase())
+          return { ...m, subjectId: found?.id }
+        })
+        return {
+          ext: c,
+          edited: { ...c, materias: matEdited },
+          action: c.suggestedCourseId ? 'import' : 'ignore',
+          selectedCourseId: c.suggestedCourseId,
+          newCourseName: c.nome,
+          newCourseOrgao: data.editalGeral?.orgao ?? '',
+          newCourseParentSlug: '',
+          expanded: idx === 0,
+          saving: false,
+          saved: false,
+        }
       })
-      setExtracted(auto)
-      if (!titulo) {
-        const course = courses.find((c) => c.id === courseId)
-        setTitulo(`${course?.name ?? 'Edital'} — ${ano}`)
-      }
-      toast.success(`Extraído: ${data.stats.materias} matérias, ${data.stats.topicos} tópicos`)
+      setCargosUi(cargosUi)
+
+      toast.success(
+        `${data.stats.cargos} cargo(s) detectados · ${data.stats.materias} matérias · ${data.stats.topicos} tópicos`,
+      )
     } catch (err: any) {
       toast.error(err.response?.data?.message ?? 'Erro na extração')
     } finally {
@@ -94,94 +136,97 @@ export default function ExtrairEditalPage() {
     }
   }
 
-  async function handleSave() {
-    if (!extracted) return
-    if (!titulo) return toast.error('Informe o título do edital')
-    setSaving(true)
-    try {
-      // 1. Verifica se já existe edital ativo → faz diff antes de salvar
-      const diffRes = await api.post('/admin/editais/diff', {
-        courseId, materias: extracted,
-      })
-      if (diffRes.data.hasCurrentEdital) {
-        // tem edital atual → mostra diff pro admin decidir
-        setDiff(diffRes.data)
-        setSaving(false)
+  function updateCargoUi(idx: number, patch: Partial<CargoUi>) {
+    setCargosUi((prev) => {
+      const copy = [...prev]
+      copy[idx] = { ...copy[idx], ...patch }
+      return copy
+    })
+  }
+
+  function updateCargoEdited(idx: number, patch: Partial<CargoExtracted>) {
+    setCargosUi((prev) => {
+      const copy = [...prev]
+      copy[idx] = { ...copy[idx], edited: { ...copy[idx].edited, ...patch } }
+      return copy
+    })
+  }
+
+  async function saveCargo(idx: number) {
+    const c = cargosUi[idx]
+    if (!c) return
+    if (c.action === 'ignore') return toast.error('Cargo marcado como ignorar')
+
+    let courseId = c.selectedCourseId
+
+    // Cria curso novo se for o caso
+    if (c.action === 'create-new-course') {
+      if (!c.newCourseName.trim()) return toast.error('Informe o nome do curso novo')
+      updateCargoUi(idx, { saving: true })
+      try {
+        const { data } = await api.post('/admin/courses/quick-create', {
+          name: c.newCourseName.trim(),
+          cargo: c.edited.nome,
+          orgao: c.newCourseOrgao || editalGeral?.orgao || null,
+          parentSlug: c.newCourseParentSlug || null,
+        })
+        courseId = data.course.id
+        // anexa o curso novo à lista local pra UI mostrar
+        setKnownCourses((prev) => [...prev, data.course])
+        updateCargoUi(idx, { selectedCourseId: courseId, action: 'import' })
+      } catch (err: any) {
+        toast.error(err.response?.data?.message ?? 'Falha ao criar curso')
+        updateCargoUi(idx, { saving: false })
         return
       }
-      // 2. Sem edital ativo → save direto (primeira vez do curso)
-      const { data } = await api.post('/admin/editais/save-structure', {
-        courseId, ano, banca: banca || undefined, numero: numero || undefined,
-        titulo, pdfHash, materias: extracted,
-      })
-      toast.success(`Salvo! ${data.materiasSalvas} matérias, ${data.topicosSalvos} tópicos`)
-      router.push('/admin/editais')
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? 'Erro ao salvar')
-    } finally { setSaving(false) }
-  }
+    } else {
+      if (!courseId) return toast.error('Escolha um curso pra esse cargo')
+      updateCargoUi(idx, { saving: true })
+    }
 
-  async function applyDiff() {
-    if (!diff || !extracted) return
-    setSaving(true)
     try {
-      // Constrói decisions a partir do estado das checkboxes
-      const removed = diff.diff.removed.map((r: any) => ({
-        topicId: r.topicId,
-        action: keepRemoved[r.topicId] ? 'keep' : 'archive',
-      }))
-      const renames = diff.diff.renamed_suspected.map((r: any) => ({
-        oldTopicId: r.oldTopicId,
-        oldName: r.oldName,
-        newName: r.newName,
-        isRename: renameAccepted[r.oldTopicId] !== false, // default = accept
-      }))
-
-      const { data } = await api.post('/admin/editais/apply-diff', {
-        courseId, ano, banca: banca || undefined, numero: numero || undefined,
-        titulo, pdfHash, materias: extracted,
-        decisions: { removed, renames },
+      const courseLabel = knownCourses.find((kc) => kc.id === courseId)?.name ?? c.edited.nome
+      const titulo = `${courseLabel} — ${editalGeral?.ano ?? new Date().getFullYear()}`
+      const { data } = await api.post('/admin/editais/save-structure', {
+        courseId,
+        ano: editalGeral?.ano ?? new Date().getFullYear(),
+        banca: editalGeral?.banca ?? undefined,
+        numero: editalGeral?.numero ?? undefined,
+        titulo,
+        pdfHash,
+        cargoNome: c.edited.nome,
+        vagas: c.edited.vagas,
+        salario: c.edited.salario,
+        escolaridade: c.edited.escolaridade,
+        totalQuestoes: c.edited.totalQuestoes,
+        duracaoMin: c.edited.duracaoMin,
+        hasRedacao: c.edited.hasRedacao,
+        wrongAnnulsRight: c.edited.wrongAnnulsRight,
+        examFormat: c.edited.examFormat,
+        regraAnulacaoTexto: c.edited.regraAnulacaoTexto,
+        dataAbertura: editalGeral?.dataAbertura,
+        dataInscricaoIni: editalGeral?.dataInscricaoIni,
+        dataInscricaoFim: editalGeral?.dataInscricaoFim,
+        dataProva: editalGeral?.dataProva,
+        taxaInscricao: editalGeral?.taxaInscricao,
+        materias: c.edited.materias,
       })
-      toast.success(`Edital atualizado! +${data.summary.added} novos · ${data.summary.removed} arquivados · ${data.summary.merged} fundidos`)
-      router.push('/admin/editais')
+      toast.success(
+        `✅ ${courseLabel} — ${data.materiasSalvas} matérias, ${data.topicosSalvos} tópicos`,
+      )
+      updateCargoUi(idx, {
+        saving: false,
+        saved: true,
+        savedEditalId: data.editalId,
+      })
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? 'Erro ao aplicar diff')
-    } finally { setSaving(false) }
+      toast.error(err.response?.data?.message ?? 'Falha ao salvar')
+      updateCargoUi(idx, { saving: false })
+    }
   }
 
-  // Edits sobre a árvore
-  function updateMateria(idx: number, patch: Partial<Materia>) {
-    if (!extracted) return
-    const copy = [...extracted]
-    copy[idx] = { ...copy[idx], ...patch }
-    setExtracted(copy)
-  }
-  function removeMateria(idx: number) {
-    if (!extracted) return
-    setExtracted(extracted.filter((_, i) => i !== idx))
-  }
-  function addMateria() {
-    setExtracted([...(extracted ?? []), { nome: 'Nova matéria', topicos: [] }])
-  }
-
-  function updateTopico(mi: number, ti: number, patch: Partial<Topico>) {
-    if (!extracted) return
-    const copy = [...extracted]
-    copy[mi].topicos[ti] = { ...copy[mi].topicos[ti], ...patch }
-    setExtracted(copy)
-  }
-  function removeTopico(mi: number, ti: number) {
-    if (!extracted) return
-    const copy = [...extracted]
-    copy[mi].topicos = copy[mi].topicos.filter((_, i) => i !== ti)
-    setExtracted(copy)
-  }
-  function addTopico(mi: number) {
-    if (!extracted) return
-    const copy = [...extracted]
-    copy[mi].topicos.push({ nome: 'Novo tópico' })
-    setExtracted(copy)
-  }
+  const allImportable = cargosUi.filter((c) => c.action !== 'ignore' && !c.saved)
+  const allSaved = cargosUi.length > 0 && cargosUi.every((c) => c.saved || c.action === 'ignore')
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -190,223 +235,349 @@ export default function ExtrairEditalPage() {
           <FileText className="w-6 h-6 text-brand-500" /> Extrair edital
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Sobe o PDF do edital oficial. IA extrai a estrutura (matérias + tópicos) <strong>exatamente como está no edital</strong>. Você revisa e salva.
+          Sobe o PDF do edital oficial. A IA detecta TODOS os cargos, vagas, duração, redação, banca e
+          conteúdo programático. Você confere e importa só os cargos que estão no site.
         </p>
       </div>
 
-      {/* Passo 1: Form de upload */}
-      <div className="card p-5 space-y-4">
-        <h2 className="font-bold">1) Dados do edital</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold">Curso *</label>
-            <select value={courseId} onChange={(e) => setCourseId(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              <option value="">— escolha —</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-bold">Ano *</label>
-            <input type="number" value={ano} onChange={(e) => setAno(parseInt(e.target.value, 10))}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs font-bold">Banca</label>
-            <input value={banca} onChange={(e) => setBanca(e.target.value)} placeholder="cebraspe, fgv, fcc..."
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs font-bold">Número (opcional)</label>
-            <input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="001/2026"
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-bold">PDF do edital *</label>
-          <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="mt-1 w-full text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-border file:bg-card file:text-sm" />
-          {file && <p className="text-xs text-muted-foreground mt-1">{file.name} — {Math.round(file.size / 1024)} KB</p>}
-        </div>
-
-        <button onClick={handleExtract} disabled={extracting || !file || !courseId}
-          className="rounded-xl bg-brand-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
-          {extracting ? <><Loader2 className="w-4 h-4 animate-spin" /> Extraindo ({Math.round((file?.size ?? 0) / 1024)} KB)…</> : <><Upload className="w-4 h-4" /> Extrair estrutura</>}
-        </button>
-        <p className="text-[10px] text-muted-foreground">Pode levar 30-90s pra PDFs grandes. IA é instruída a NÃO inventar tópicos.</p>
-      </div>
-
-      {/* Passo 2: Revisar árvore */}
-      {extracted && (
+      {/* ── Passo 1: Upload ────────────────────────────────────────────── */}
+      {!editalGeral && (
         <div className="card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold">2) Revisar estrutura ({extracted.length} matérias)</h2>
-            <button onClick={addMateria} className="text-xs rounded-lg border border-border px-2 py-1 inline-flex items-center gap-1 hover:bg-muted">
-              <Plus className="w-3 h-3" /> Matéria
-            </button>
-          </div>
-
-          <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 text-xs text-yellow-700 dark:text-yellow-200 flex gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div>
-              Revise antes de salvar. Confira: nomes batem com o edital? Sobrou lixo (cabeçalho, tabela de vagas)?
-              Faltou matéria? Edite aqui mesmo. <strong>Você é a última palavra</strong> — IA pode ter errado.
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {extracted.map((m, mi) => (
-              <MateriaCard
-                key={mi}
-                materia={m}
-                knownSubjects={knownSubjects}
-                onUpdate={(patch) => updateMateria(mi, patch)}
-                onRemove={() => removeMateria(mi)}
-                onUpdateTopico={(ti, patch) => updateTopico(mi, ti, patch)}
-                onRemoveTopico={(ti) => removeTopico(mi, ti)}
-                onAddTopico={() => addTopico(mi)}
-              />
-            ))}
-          </div>
-
-          {/* Passo 3: Título + Salvar */}
-          <div className="border-t border-border pt-4 space-y-3">
-            <h2 className="font-bold">3) Salvar</h2>
-            <div>
-              <label className="text-xs font-bold">Título do edital *</label>
-              <input value={titulo} onChange={(e) => setTitulo(e.target.value)}
-                placeholder="ex: PF Agente — 2026"
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-            </div>
-            <button onClick={handleSave} disabled={saving || !titulo}
-              className="rounded-xl bg-green-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando…</> : <><Save className="w-4 h-4" /> Salvar edital + estrutura</>}
-            </button>
-            <p className="text-[10px] text-muted-foreground">
-              Se já existir edital ativo deste curso, vou comparar e te mostrar o diff antes de aplicar.
+          <h2 className="font-bold">1) PDF do edital</h2>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border file:border-border file:bg-card file:text-sm"
+          />
+          {file && (
+            <p className="text-xs text-muted-foreground">
+              {file.name} — {Math.round(file.size / 1024)} KB
             </p>
+          )}
+          <button
+            onClick={handleExtract}
+            disabled={extracting || !file}
+            className="rounded-xl bg-brand-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50"
+          >
+            {extracting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Lendo edital… (30-90s)</>
+            ) : (
+              <><Sparkles className="w-4 h-4" /> Extrair com IA</>
+            )}
+          </button>
+          <p className="text-[10px] text-muted-foreground">
+            Funciona com editais multi-cargo (PF, PC). A IA identifica perito, agente, escrivão etc separadamente.
+          </p>
+        </div>
+      )}
+
+      {/* ── Passo 2: Edital geral ──────────────────────────────────────── */}
+      {editalGeral && (
+        <div className="card p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-500" /> Edital identificado
+            </h2>
+            <button
+              onClick={() => { setEditalGeral(null); setCargosUi([]); setFile(null) }}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <X className="w-3 h-3" /> Subir outro PDF
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <InputBox label="Órgão" value={editalGeral.orgao ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, orgao: v })} />
+            <InputBox label="Banca" value={editalGeral.banca ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, banca: v })} />
+            <InputBox label="Número" value={editalGeral.numero ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, numero: v })} />
+            <InputBox label="Ano" type="number" value={String(editalGeral.ano ?? '')}
+              onChange={(v) => setEditalGeral({ ...editalGeral, ano: Number(v) || null })} />
+            <InputBox label="Data abertura" type="date" value={editalGeral.dataAbertura ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, dataAbertura: v || null })} />
+            <InputBox label="Inscrição início" type="date" value={editalGeral.dataInscricaoIni ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, dataInscricaoIni: v || null })} />
+            <InputBox label="Inscrição fim" type="date" value={editalGeral.dataInscricaoFim ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, dataInscricaoFim: v || null })} />
+            <InputBox label="Data prova" type="date" value={editalGeral.dataProva ?? ''}
+              onChange={(v) => setEditalGeral({ ...editalGeral, dataProva: v || null })} />
           </div>
         </div>
       )}
 
-      {/* DIFF VIEW — só aparece quando já existe edital ativo */}
-      {diff && (
-        <div className="card p-5 space-y-4 border-l-4 border-l-amber-500 animate-fade-in">
-          <div>
-            <h2 className="font-bold text-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" /> Já existe edital ativo
+      {/* ── Passo 3: Cargos detectados ─────────────────────────────────── */}
+      {cargosUi.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold">
+              Cargos detectados ({cargosUi.length})
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              "{diff.currentEditalTitulo}" será substituído. Revise as mudanças abaixo antes de aplicar:
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-2 text-xs">
-            <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-2 text-center">
-              <div className="font-bold text-green-700 dark:text-green-300">{diff.stats.adicionados}</div>
-              <div className="text-muted-foreground">novos</div>
-            </div>
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2 text-center">
-              <div className="font-bold text-red-700 dark:text-red-300">{diff.stats.removidos}</div>
-              <div className="text-muted-foreground">removidos</div>
-            </div>
-            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-2 text-center">
-              <div className="font-bold text-yellow-700 dark:text-yellow-300">{diff.stats.renomeados_provaveis}</div>
-              <div className="text-muted-foreground">renomeações?</div>
-            </div>
-            <div className="rounded-lg bg-muted p-2 text-center">
-              <div className="font-bold">{diff.stats.inalterados}</div>
-              <div className="text-muted-foreground">inalterados</div>
+            <div className="text-xs text-muted-foreground">
+              {cargosUi.filter((c) => c.action !== 'ignore').length} pra importar ·{' '}
+              {cargosUi.filter((c) => c.saved).length} salvos
             </div>
           </div>
 
-          {/* Renames suspeitos */}
-          {diff.diff.renamed_suspected.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold">🟡 Possíveis renomeações</h3>
-              <p className="text-xs text-muted-foreground">
-                Detectei pares antigo→novo parecidos. Marque ✅ se é o mesmo tópico só com nome diferente (conteúdo migra),
-                ou ❌ se são tópicos diferentes (antigo será arquivado, novo criado vazio).
-              </p>
-              {diff.diff.renamed_suspected.map((r: any) => {
-                const accepted = renameAccepted[r.oldTopicId] !== false
-                return (
-                  <div key={r.oldTopicId} className="rounded-lg border border-border p-3 text-xs space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-red-600 dark:text-red-400 line-through truncate">{r.oldName}</div>
-                        <div className="text-green-600 dark:text-green-400 font-semibold truncate">→ {r.newName}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">similaridade: {Math.round(r.similarity * 100)}%</div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => setRenameAccepted((s) => ({ ...s, [r.oldTopicId]: true }))}
-                          className={`px-2 py-1 rounded text-xs ${accepted ? 'bg-green-500 text-white' : 'border border-border'}`}>
-                          ✅ Mesmo
-                        </button>
-                        <button onClick={() => setRenameAccepted((s) => ({ ...s, [r.oldTopicId]: false }))}
-                          className={`px-2 py-1 rounded text-xs ${!accepted ? 'bg-red-500 text-white' : 'border border-border'}`}>
-                          ❌ Diferente
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          {cargosUi.map((c, idx) => (
+            <CargoCard
+              key={idx}
+              ui={c}
+              knownCourses={knownCourses}
+              knownSubjects={knownSubjects}
+              onUpdateUi={(patch) => updateCargoUi(idx, patch)}
+              onUpdateEdited={(patch) => updateCargoEdited(idx, patch)}
+              onSave={() => saveCargo(idx)}
+            />
+          ))}
 
-          {/* Adicionados */}
-          {diff.diff.added.length > 0 && (
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold">🟢 Tópicos novos ({diff.diff.added.length})</h3>
-              <p className="text-xs text-muted-foreground">Serão criados em DRAFT. Você precisa popular conteúdo.</p>
-              <div className="max-h-40 overflow-y-auto space-y-0.5">
-                {diff.diff.added.map((a: any) => (
-                  <div key={a.where} className="text-xs px-2 py-1 rounded bg-green-50/50 dark:bg-green-900/10 text-green-700 dark:text-green-300">
-                    + {a.where}
-                  </div>
-                ))}
+          {allSaved && (
+            <div className="card p-5 border-l-4 border-l-green-500 text-sm space-y-2">
+              <div className="font-bold text-green-700 dark:text-green-300">
+                ✅ Todos os cargos foram processados
               </div>
+              <button onClick={() => router.push('/admin/editais')} className="btn-primary btn-md">
+                Ver editais
+              </button>
             </div>
           )}
-
-          {/* Removidos */}
-          {diff.diff.removed.length > 0 && (
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold">🔴 Tópicos removidos ({diff.diff.removed.length})</h3>
-              <p className="text-xs text-muted-foreground">
-                Por padrão, conteúdo (Materials/Flashcards) será ARQUIVADO. Questões oficiais ficam ativas (patrimônio).
-                Marque "manter" se acha que o tópico ainda é relevante.
-              </p>
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                {diff.diff.removed.map((r: any) => (
-                  <div key={r.topicId} className="flex items-center justify-between gap-2 text-xs px-2 py-1.5 rounded bg-red-50/50 dark:bg-red-900/10">
-                    <div className="flex-1 min-w-0">
-                      <span className="text-red-700 dark:text-red-300">- {r.name}</span>
-                      {r.hasContent && <span className="ml-1 text-[10px] text-muted-foreground">(tem conteúdo)</span>}
-                    </div>
-                    <label className="flex items-center gap-1 shrink-0">
-                      <input type="checkbox" checked={!!keepRemoved[r.topicId]}
-                        onChange={(e) => setKeepRemoved((s) => ({ ...s, [r.topicId]: e.target.checked }))} />
-                      <span>manter</span>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Aplicar */}
-          <div className="border-t border-border pt-3 flex gap-2">
-            <button onClick={() => setDiff(null)} className="btn-ghost btn-md">Voltar</button>
-            <button onClick={applyDiff} disabled={saving}
-              className="rounded-xl bg-amber-500 text-white px-5 py-2.5 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Aplicando…</> : <><Check className="w-4 h-4" /> Aplicar mudanças e ativar edital novo</>}
-            </button>
-          </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+function InputBox({
+  label, value, onChange, type = 'text',
+}: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div>
+      <label className="text-[10px] font-bold uppercase text-muted-foreground">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-0.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+      />
+    </div>
+  )
+}
+
+function CargoCard({
+  ui, knownCourses, knownSubjects, onUpdateUi, onUpdateEdited, onSave,
+}: {
+  ui: CargoUi
+  knownCourses: Course[]
+  knownSubjects: KnownSubject[]
+  onUpdateUi: (patch: Partial<CargoUi>) => void
+  onUpdateEdited: (patch: Partial<CargoExtracted>) => void
+  onSave: () => void
+}) {
+  const c = ui.edited
+  const ignored = ui.action === 'ignore'
+  return (
+    <div className={`card p-4 space-y-3 ${ignored ? 'opacity-50' : ''} ${ui.saved ? 'border-l-4 border-l-green-500' : ''}`}>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onUpdateUi({ expanded: !ui.expanded })}
+          className="p-1 hover:bg-muted rounded"
+        >
+          {ui.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </button>
+        <input
+          value={c.nome}
+          onChange={(e) => onUpdateEdited({ nome: e.target.value })}
+          disabled={ignored || ui.saved}
+          className="flex-1 bg-transparent font-bold text-sm border-none outline-none"
+        />
+        {ui.saved && (
+          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+            <Check className="w-3 h-3" /> Salvo
+          </span>
+        )}
+        {!ui.saved && (
+          <select
+            value={ui.action}
+            onChange={(e) => onUpdateUi({ action: e.target.value as any })}
+            className="text-xs rounded-md border border-border bg-background px-2 py-1"
+          >
+            <option value="import">Importar</option>
+            <option value="create-new-course">Criar curso novo</option>
+            <option value="ignore">Ignorar</option>
+          </select>
+        )}
+      </div>
+
+      {ui.expanded && !ignored && (
+        <>
+          {/* Course match */}
+          {ui.action === 'import' && (
+            <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                Vincular a este curso do site
+              </label>
+              <select
+                value={ui.selectedCourseId ?? ''}
+                onChange={(e) => onUpdateUi({ selectedCourseId: e.target.value || null })}
+                disabled={ui.saved}
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+              >
+                <option value="">— escolha um curso —</option>
+                {c.courseMatches.length > 0 && (
+                  <optgroup label="Sugestões IA">
+                    {c.courseMatches.map((m) => (
+                      <option key={m.courseId} value={m.courseId}>
+                        {m.courseName} ({Math.round(m.score * 100)}% match)
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Todos os cursos">
+                  {knownCourses.map((kc) => (
+                    <option key={kc.id} value={kc.id}>{kc.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+              {c.courseMatches.length === 0 && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                  ⚠ Nenhum curso parecido encontrado. Considere "Criar curso novo".
+                </p>
+              )}
+            </div>
+          )}
+
+          {ui.action === 'create-new-course' && (
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-300">
+                <FilePlus2 className="w-3.5 h-3.5" /> Criar curso novo
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <InputBox label="Nome do curso" value={ui.newCourseName}
+                  onChange={(v) => onUpdateUi({ newCourseName: v })} />
+                <InputBox label="Órgão" value={ui.newCourseOrgao}
+                  onChange={(v) => onUpdateUi({ newCourseOrgao: v })} />
+                <InputBox label="Concurso pai (slug)" value={ui.newCourseParentSlug}
+                  onChange={(v) => onUpdateUi({ newCourseParentSlug: v })} />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Concurso pai agrupa cargos do mesmo edital (ex: "pf" pra agente+escrivão+delegado).
+              </p>
+            </div>
+          )}
+
+          {/* Metadados do cargo */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold uppercase text-muted-foreground">Informações do cargo</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <InputBox label="Vagas" type="number" value={String(c.vagas ?? '')}
+                onChange={(v) => onUpdateEdited({ vagas: v ? Number(v) : null })} />
+              <InputBox label="Salário (R$)" type="number" value={String(c.salario ?? '')}
+                onChange={(v) => onUpdateEdited({ salario: v ? Number(v) : null })} />
+              <InputBox label="Escolaridade" value={c.escolaridade ?? ''}
+                onChange={(v) => onUpdateEdited({ escolaridade: v || null })} />
+              <InputBox label="Total questões" type="number" value={String(c.totalQuestoes ?? '')}
+                onChange={(v) => onUpdateEdited({ totalQuestoes: v ? Number(v) : null })} />
+              <InputBox label="Duração (min)" type="number" value={String(c.duracaoMin ?? '')}
+                onChange={(v) => onUpdateEdited({ duracaoMin: v ? Number(v) : null })} />
+              <div>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Formato</label>
+                <select
+                  value={c.examFormat ?? ''}
+                  onChange={(e) => onUpdateEdited({ examFormat: (e.target.value || null) as any })}
+                  className="mt-0.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                >
+                  <option value="">—</option>
+                  <option value="CE">Certo/Errado</option>
+                  <option value="ME_5">Múltipla 5 alternativas</option>
+                  <option value="ME_4">Múltipla 4 alternativas</option>
+                  <option value="MISTA">Mista</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-1.5 mt-4">
+                <input type="checkbox" checked={c.hasRedacao}
+                  onChange={(e) => onUpdateEdited({ hasRedacao: e.target.checked })} />
+                <span>Tem redação</span>
+              </label>
+              <label className="flex items-center gap-1.5 mt-4">
+                <input type="checkbox" checked={c.wrongAnnulsRight}
+                  onChange={(e) => onUpdateEdited({ wrongAnnulsRight: e.target.checked })} />
+                <span>Errada anula certa</span>
+              </label>
+            </div>
+            {c.regraAnulacaoTexto && (
+              <div className="text-[10px] text-muted-foreground italic px-2 py-1 rounded bg-muted/30">
+                "{c.regraAnulacaoTexto}"
+              </div>
+            )}
+          </div>
+
+          {/* Matérias */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold uppercase text-muted-foreground">
+              Conteúdo programático ({c.materias.length} matérias)
+            </h4>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {c.materias.map((m, mi) => (
+                <MateriaCard
+                  key={mi}
+                  materia={m}
+                  knownSubjects={knownSubjects}
+                  onUpdate={(patch) => {
+                    const copy = [...c.materias]
+                    copy[mi] = { ...copy[mi], ...patch }
+                    onUpdateEdited({ materias: copy })
+                  }}
+                  onRemove={() => {
+                    onUpdateEdited({ materias: c.materias.filter((_, i) => i !== mi) })
+                  }}
+                  onUpdateTopico={(ti, patch) => {
+                    const copy = [...c.materias]
+                    copy[mi].topicos[ti] = { ...copy[mi].topicos[ti], ...patch }
+                    onUpdateEdited({ materias: copy })
+                  }}
+                  onRemoveTopico={(ti) => {
+                    const copy = [...c.materias]
+                    copy[mi].topicos = copy[mi].topicos.filter((_, i) => i !== ti)
+                    onUpdateEdited({ materias: copy })
+                  }}
+                  onAddTopico={() => {
+                    const copy = [...c.materias]
+                    copy[mi].topicos.push({ nome: 'Novo tópico' })
+                    onUpdateEdited({ materias: copy })
+                  }}
+                />
+              ))}
+              <button
+                onClick={() => onUpdateEdited({
+                  materias: [...c.materias, { nome: 'Nova matéria', topicos: [] }],
+                })}
+                className="text-xs text-brand-500 hover:underline inline-flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Adicionar matéria
+              </button>
+            </div>
+          </div>
+
+          {/* Save button */}
+          {!ui.saved && (
+            <div className="border-t border-border pt-3">
+              <button
+                onClick={onSave}
+                disabled={ui.saving || (ui.action === 'import' && !ui.selectedCourseId)}
+                className="rounded-xl bg-green-500 text-white px-5 py-2 text-sm font-bold inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {ui.saving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</>
+                  : <><Save className="w-4 h-4" /> Salvar este cargo</>}
+              </button>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Salva como edital ativo. Edital anterior do mesmo curso é desativado mas conteúdo (resumos, questões) é preservado.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -423,46 +594,69 @@ function MateriaCard({
   onRemoveTopico: (ti: number) => void
   onAddTopico: () => void
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const matched = knownSubjects.find((s) => s.id === materia.subjectId)
   return (
-    <div className="rounded-xl border border-border bg-card/50">
-      <div className="flex items-center gap-2 p-3">
+    <div className="rounded-lg border border-border bg-card/30">
+      <div className="flex items-center gap-2 p-2">
         <button onClick={() => setExpanded((v) => !v)} className="p-0.5 hover:bg-muted rounded">
-          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
         <input value={materia.nome} onChange={(e) => onUpdate({ nome: e.target.value })}
-          className="flex-1 bg-transparent font-bold text-sm border-none outline-none" />
-        <select value={materia.subjectId ?? ''} onChange={(e) => onUpdate({ subjectId: e.target.value || undefined })}
-          className="text-xs rounded-md border border-border bg-background px-2 py-1 max-w-[200px]">
-          <option value="">⚡ Criar nova</option>
+          className="flex-1 bg-transparent font-semibold text-xs border-none outline-none" />
+        <input
+          type="number"
+          placeholder="qts"
+          value={materia.qtdQuestoes ?? ''}
+          onChange={(e) => onUpdate({ qtdQuestoes: e.target.value ? Number(e.target.value) : null })}
+          className="w-12 bg-muted/40 rounded px-1.5 py-0.5 text-[10px] text-center"
+          title="Qtd questões"
+        />
+        <input
+          type="number"
+          step="0.1"
+          placeholder="peso"
+          value={materia.peso ?? ''}
+          onChange={(e) => onUpdate({ peso: e.target.value ? Number(e.target.value) : null })}
+          className="w-12 bg-muted/40 rounded px-1.5 py-0.5 text-[10px] text-center"
+          title="Peso"
+        />
+        <select
+          value={materia.subjectId ?? ''}
+          onChange={(e) => onUpdate({ subjectId: e.target.value || undefined })}
+          className="text-[10px] rounded-md border border-border bg-background px-1.5 py-0.5 max-w-[140px]"
+        >
+          <option value="">⚡ Nova</option>
           {knownSubjects.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
-        {matched && <Check className="w-4 h-4 text-green-500" />}
-        <span className="text-xs text-muted-foreground">{materia.topicos.length} tópicos</span>
-        <button onClick={onRemove} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded">
-          <Trash2 className="w-3.5 h-3.5" />
+        {matched && <Check className="w-3 h-3 text-green-500" />}
+        <span className="text-[10px] text-muted-foreground">{materia.topicos.length}</span>
+        <button onClick={onRemove} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-0.5 rounded">
+          <Trash2 className="w-3 h-3" />
         </button>
       </div>
       {expanded && (
-        <div className="px-3 pb-3 space-y-1 border-t border-border pt-2">
+        <div className="px-2 pb-2 space-y-0.5 border-t border-border pt-1.5">
           {materia.topicos.map((t, ti) => (
-            <div key={ti} className="flex items-center gap-1.5 group">
-              <span className="text-muted-foreground text-xs w-6 text-right">{ti + 1}.</span>
-              <input value={t.nome} onChange={(e) => onUpdateTopico(ti, { nome: e.target.value })}
-                className="flex-1 bg-transparent text-sm border-b border-transparent hover:border-border focus:border-brand-500 outline-none py-0.5" />
+            <div key={ti} className="flex items-center gap-1 group">
+              <span className="text-muted-foreground text-[10px] w-5 text-right">{ti + 1}.</span>
+              <input
+                value={t.nome}
+                onChange={(e) => onUpdateTopico(ti, { nome: e.target.value })}
+                className="flex-1 bg-transparent text-xs border-b border-transparent hover:border-border focus:border-brand-500 outline-none py-0.5"
+              />
               {Array.isArray(t.subtopicos) && t.subtopicos.length > 0 && (
-                <span className="text-[10px] text-muted-foreground">+{t.subtopicos.length} sub</span>
+                <span className="text-[10px] text-muted-foreground">+{t.subtopicos.length}</span>
               )}
               <button onClick={() => onRemoveTopico(ti)} className="text-red-500 opacity-0 group-hover:opacity-100 p-0.5">
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-2.5 h-2.5" />
               </button>
             </div>
           ))}
-          <button onClick={onAddTopico} className="text-xs text-brand-500 hover:underline inline-flex items-center gap-1 mt-1">
-            <Plus className="w-3 h-3" /> Adicionar tópico
+          <button onClick={onAddTopico} className="text-[10px] text-brand-500 hover:underline inline-flex items-center gap-0.5 mt-1">
+            <Plus className="w-2.5 h-2.5" /> tópico
           </button>
         </div>
       )}

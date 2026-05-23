@@ -45,7 +45,13 @@ export async function POST(req: NextRequest) {
   if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
 
   const body = await req.json()
-  const { courseId, ano, banca, numero, titulo, pdfHash, pdfUrl, materias, decisions } = body
+  const {
+    courseId, ano, banca, numero, titulo, pdfHash, pdfUrl, materias, decisions,
+    cargoNome, vagas, salario, escolaridade,
+    totalQuestoes, duracaoMin, hasRedacao, wrongAnnulsRight, examFormat,
+    regraAnulacaoTexto,
+    dataAbertura, dataInscricaoIni, dataInscricaoFim, dataProva, taxaInscricao,
+  } = body
 
   if (!courseId || !ano || !titulo || !Array.isArray(materias) || !decisions) {
     return NextResponse.json({ message: 'Body inválido' }, { status: 400 })
@@ -86,13 +92,41 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 2. Cria edital novo
+  // Mapeia examFormat string → enum Prisma
+  const examFormatEnum = (() => {
+    const v = String(examFormat ?? '').toUpperCase()
+    if (v === 'CE' || v === 'ME_5' || v === 'ME_4' || v === 'MISTA') return v
+    return null
+  })()
+
+  const parseDate = (v: any): Date | null => {
+    if (!v) return null
+    const d = new Date(v)
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  // 2. Cria edital novo com TODOS os metadados
   const newEdital = await prisma.edital.create({
     data: {
       courseId, bancaId, ano, titulo,
       numero: numero ?? null,
       pdfHash: pdfHash ?? null,
       pdfUrl: pdfUrl ?? null,
+      cargos: cargoNome ? [{ nome: cargoNome }] : undefined,
+      vagas: vagas ?? null,
+      salario: salario ?? null,
+      escolaridade: escolaridade ?? null,
+      totalQuestoes: totalQuestoes ?? null,
+      duracaoMin: duracaoMin ?? null,
+      hasRedacao: hasRedacao ?? false,
+      wrongAnnulsRight: wrongAnnulsRight ?? false,
+      examFormat: examFormatEnum as any,
+      taxaInscricao: taxaInscricao ?? null,
+      dataAbertura: parseDate(dataAbertura),
+      dataInscricaoIni: parseDate(dataInscricaoIni),
+      dataInscricaoFim: parseDate(dataInscricaoFim),
+      dataProva: parseDate(dataProva),
+      rawData: regraAnulacaoTexto ? { regraAnulacaoTexto } : undefined,
       status: 'HOMOLOGADO',
       isActive: true,
     },
@@ -103,6 +137,9 @@ export async function POST(req: NextRequest) {
   const newTopicIds = new Map<string, string>()
   const newPath = (subject: string, topic: string, sub?: string, gc?: string) =>
     [subject, topic, sub, gc].filter(Boolean).join(' → ')
+
+  // Coleta subjectIds + dados pra criar EditalSubject depois
+  const subjectsForEdital: Array<{ subjectId: string; weight: number; expectedQuestions: number | null; order: number }> = []
 
   for (let mi = 0; mi < materias.length; mi++) {
     const m = materias[mi]
@@ -119,9 +156,16 @@ export async function POST(req: NextRequest) {
     // CourseSubject (re-cria os vinculos do edital atual)
     await prisma.courseSubject.upsert({
       where: { courseId_subjectId: { courseId, subjectId } },
-      update: {},
-      create: { courseId, subjectId, order: m.ordem ?? mi },
+      update: { weight: m.peso ?? 1, order: m.ordem ?? mi },
+      create: { courseId, subjectId, order: m.ordem ?? mi, weight: m.peso ?? 1 },
     }).catch(() => null)
+
+    subjectsForEdital.push({
+      subjectId,
+      weight: m.peso ?? 1,
+      expectedQuestions: m.qtdQuestoes ?? null,
+      order: m.ordem ?? mi,
+    })
 
     // Tópicos (re-cria, dedupe por nome+parent)
     async function createTopics(items: any[], parentId: string | null, parentPath: string[]) {
@@ -145,6 +189,21 @@ export async function POST(req: NextRequest) {
       }
     }
     await createTopics(m.topicos ?? [], null, [m.nome])
+  }
+
+  // 3b. Vincula EditalSubject com peso + qtdQuestões específicos
+  for (const es of subjectsForEdital) {
+    await prisma.editalSubject.upsert({
+      where: { editalId_subjectId: { editalId: newEdital.id, subjectId: es.subjectId } },
+      update: { weight: es.weight, expectedQuestions: es.expectedQuestions, order: es.order },
+      create: {
+        editalId: newEdital.id,
+        subjectId: es.subjectId,
+        weight: es.weight,
+        expectedQuestions: es.expectedQuestions,
+        order: es.order,
+      },
+    }).catch(() => null)
   }
 
   // 4. Pra renames marcados como tal: move conteúdo do tópico antigo → tópico novo
