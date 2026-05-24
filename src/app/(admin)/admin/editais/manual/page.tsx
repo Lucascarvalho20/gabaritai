@@ -66,6 +66,7 @@ export default function ManualEditalPage() {
   // Texto colado + árvore parseada
   const [text, setText] = useState(SAMPLE)
   const [editedMaterias, setEditedMaterias] = useState<Materia[] | null>(null)
+  const [cargoIndex, setCargoIndex] = useState(0)   // índice do cargo a importar (se multi)
   const [saving, setSaving] = useState(false)
 
   // Diff (mostrado quando já existe edital ativo pro curso)
@@ -82,10 +83,15 @@ export default function ManualEditalPage() {
 
   // Re-parse cada vez que texto mudar — preview sempre fresca
   const parseResult = useMemo(() => parseEditalText(text), [text])
+  const cargos = parseResult.cargos
+  const activeCargo = cargos[cargoIndex] ?? cargos[0]
+  const isMultiCargo = cargos.length > 1
 
-  // Quando o texto muda E ainda não há override, usa o resultado do parse
-  // (o override só existe se o admin começar a editar a árvore direto)
-  const materiasParaSalvar = editedMaterias ?? parseResult.materias
+  // Materias a salvar = override (se o admin editou inline) OU do cargo selecionado
+  const materiasParaSalvar = editedMaterias ?? activeCargo?.materias ?? []
+
+  // Quando muda o índice do cargo OU o texto, descarta edits manuais (eles eram pro cargo anterior)
+  useEffect(() => { setEditedMaterias(null) }, [cargoIndex, text])
 
   async function handleCreateCourse() {
     if (!newCourseName.trim()) return toast.error('Informe o nome do curso')
@@ -314,12 +320,11 @@ export default function ManualEditalPage() {
         <h2 className="font-bold text-sm">4) Matérias e tópicos</h2>
 
         <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 text-xs space-y-1">
-          <div className="font-semibold text-blue-700 dark:text-blue-300">Como digitar:</div>
+          <div className="font-semibold text-blue-700 dark:text-blue-300">Aceita 2 formatos (pode misturar):</div>
           <div className="text-blue-600 dark:text-blue-200 space-y-0.5">
-            <div>• <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">## Nome da matéria</code> abre uma nova matéria</div>
-            <div>• <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">1. Tópico</code> ou <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">- Tópico</code> adiciona tópico</div>
-            <div>• <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">1.1. Subtópico</code> cria hierarquia</div>
-            <div>• Linhas em branco ignoradas</div>
+            <div><strong>Formato estruturado:</strong> <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">## Matéria</code> → <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">1. Tópico</code> → <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">1.1. Subtópico</code></div>
+            <div><strong>Formato cru do edital:</strong> <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">DIREITO PENAL: 1 Conceito. 1.1 Princípios. 2 Crimes...</code> (cola direto do PDF)</div>
+            <div><strong>Multi-cargo:</strong> separe blocos com <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">CARGO 1: DELEGADO</code>, <code className="bg-blue-100 dark:bg-blue-800/40 px-1 rounded">CARGO 2: ESCRIVÃO</code> etc. O sistema separa e você escolhe qual importar.</div>
           </div>
         </div>
 
@@ -329,6 +334,38 @@ export default function ManualEditalPage() {
           rows={16}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono"
         />
+
+        {/* Seletor de cargo (só aparece se múltiplos cargos detectados) */}
+        {isMultiCargo && (
+          <div className="rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 p-3 space-y-2">
+            <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1">
+              <FileText className="w-3 h-3" /> {cargos.length} cargos detectados — escolha qual importar agora:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {cargos.map((c, i) => {
+                const total = c.materias.reduce((a, m) => a + m.topicos.length, 0)
+                const isActive = i === cargoIndex
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCargoIndex(i)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition ${
+                      isActive
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-white dark:bg-card border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100'
+                    }`}
+                  >
+                    {c.nome ?? `Cargo ${i + 1}`}
+                    <span className="ml-1 opacity-70">({c.materias.length}m · {total}t)</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-purple-600 dark:text-purple-300">
+              Salve um cargo de cada vez — depois troque o curso no topo, volte aqui, clique no próximo cargo e salve de novo.
+            </p>
+          </div>
+        )}
 
         {parseResult.warnings.length > 0 && (
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 p-2 text-xs space-y-1">
