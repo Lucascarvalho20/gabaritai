@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   BookOpen, Target, Zap, Shield, Clock, FileText, ArrowRight,
-  CheckCircle2, Award, BarChart3, Menu, X, Sun, Moon, Star,
+  CheckCircle2, Award, BarChart3, Menu, X, Sun, Moon, Star, Eye,
   TrendingUp, Calendar, GraduationCap, Trophy, Lock, ChevronDown,
   NotebookPen, ListChecks, Sparkles, Layers,
 } from 'lucide-react'
@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils'
 import { Reveal, StaggerGroup, StaggerItem, fadeInUp } from '@/lib/motion-helpers'
 import { EmailCapture } from '@/components/EmailCapture'
 import { TimeBudgetCalculator } from '@/components/TimeBudgetCalculator'
+import { ComparisonSection } from '@/components/ComparisonSection'
+import { RemindersSection } from '@/components/RemindersSection'
 
 // ─── DADOS ────────────────────────────────────────────────────────────────────
 
@@ -196,11 +198,11 @@ function Nav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Logo size="md" />
         <nav className="hidden md:flex items-center gap-7 text-sm">
+          <Link href="/demo" className="text-muted-foreground hover:text-foreground transition-colors">Demo</Link>
           <Link href="/metodo" className="text-muted-foreground hover:text-foreground transition-colors">Método</Link>
           <Link href="/cursos" className="text-muted-foreground hover:text-foreground transition-colors">Concursos</Link>
           <Link href="/planos" className="text-muted-foreground hover:text-foreground transition-colors">Planos</Link>
           <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
-          <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -225,11 +227,11 @@ function Nav() {
           className="md:hidden border-t border-border bg-card"
         >
           <nav className="px-4 py-3 flex flex-col gap-1 text-sm">
+            <Link href="/demo" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Demo</Link>
             <Link href="/metodo" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Método</Link>
             <Link href="/cursos" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Concursos</Link>
             <Link href="/planos" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Planos</Link>
             <Link href="/blog" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Blog</Link>
-            <a href="#faq" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">FAQ</a>
             <div className="border-t border-border my-2" />
             <Link href="/login" onClick={() => setOpen(false)} className="py-2.5 font-semibold">Entrar</Link>
             <Link href="/planos" onClick={() => setOpen(false)} className="mt-1 py-2.5 text-center font-bold bg-brand-500 text-white rounded-xl">
@@ -382,10 +384,10 @@ function Hero() {
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/cursos"
+                href="/demo"
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-sm font-semibold transition-colors"
               >
-                Ver todos os concursos
+                <Eye className="w-3.5 h-3.5" /> Ver demo sem cadastrar
               </Link>
             </motion.div>
 
@@ -928,6 +930,8 @@ export default function LandingPage() {
       <TimeBudgetCalculator />
       <Diferenciais />
       <ComoFunciona />
+      <RemindersSection />
+      <ComparisonSection />
       <Concursos />
       <Depoimentos />
       <Planos />
