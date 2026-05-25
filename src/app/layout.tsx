@@ -7,24 +7,24 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'GabaritAI — Mentoria Inteligente para Concursos',
-    template: '%s | GabaritAI',
+    default: 'Gabaritai — Mentoria de estudos para concursos',
+    template: '%s | Gabaritai',
   },
-  description: 'Plataforma de mentoria com IA adaptativa para concursos públicos. Carreiras policiais, bancos públicos, TJDFT e muito mais. Estude de forma personalizada e aumente suas chances de aprovação.',
-  keywords: ['concursos públicos', 'PMDF', 'Polícia Federal', 'Banco do Brasil', 'TJDFT', 'CNU', 'mentoria IA', 'flashcards', 'simulados'],
-  authors: [{ name: 'GabaritAI' }],
+  description: 'Plataforma de mentoria para concursos militares e policiais. Cronograma adaptativo, simulados reais cronometrados e edital verticalizado para acelerar sua aprovação.',
+  keywords: ['concursos públicos', 'PMDF', 'Polícia Federal', 'PRF', 'PCDF', 'TJDFT', 'CNU', 'mentoria concursos', 'flashcards', 'simulados', 'edital verticalizado'],
+  authors: [{ name: 'Gabaritai' }],
   manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    siteName: 'GabaritAI',
-    title: 'GabaritAI — Mentoria Inteligente para Concursos',
-    description: 'Estude de forma personalizada com IA adaptativa e aumente suas chances de aprovação.',
+    siteName: 'Gabaritai',
+    title: 'Gabaritai — Mentoria de estudos para concursos',
+    description: 'Cronograma adaptativo, simulados reais e edital verticalizado para acelerar sua aprovação.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GabaritAI',
-    description: 'Mentoria inteligente para concursos públicos.',
+    title: 'Gabaritai',
+    description: 'Mentoria de estudos para concursos militares e policiais.',
   },
   robots: { index: true, follow: true },
 }
