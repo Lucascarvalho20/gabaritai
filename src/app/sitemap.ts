@@ -1,5 +1,6 @@
 import { type MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
+import { getAllPosts } from '@/lib/blog-posts'
 
 /**
  * Sitemap dinâmico. Inclui:
@@ -21,10 +22,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/`, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
     { url: `${BASE_URL}/cursos`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/planos`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${BASE_URL}/metodo`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/historias`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/sobre`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ]
+
+  // Posts do blog
+  const blogRoutes: MetadataRoute.Sitemap = getAllPosts().map((p) => ({
+    url: `${BASE_URL}/blog/${p.slug}`,
+    lastModified: new Date(p.publishedAt),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }))
 
   // Cursos com edital ativo — agrupados por parentSlug
   let dynamicRoutes: MetadataRoute.Sitemap = []
@@ -73,5 +84,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn('[sitemap] DB indisponível:', err)
   }
 
-  return [...staticRoutes, ...dynamicRoutes]
+  return [...staticRoutes, ...blogRoutes, ...dynamicRoutes]
 }

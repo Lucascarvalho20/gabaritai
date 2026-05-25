@@ -182,6 +182,28 @@ model ConcursoAlerta {
   @@map("concurso_alertas")
 }
 
+// Lead capturado fora do funil de cadastro: alguém deixou email pra
+// receber edital verticalizado, ficar sabendo de prova nova, etc.
+// Usado pra construir mailing list e medir interesse por concurso.
+model Lead {
+  id            String   @id @default(cuid())
+  email         String
+  source        String   // "hero-edital-pdf" | "calculator" | "blog-cta" | ...
+  context       String?  // texto livre — slug do curso de interesse, etc.
+  courseSlug    String?  // curso de interesse, se conhecido
+  parentSlug    String?  // concurso pai (pf, pmdf...) se conhecido
+  userAgent     String?
+  ipHash        String?  // SHA-256 do IP — não armazena IP cru
+  convertedAt   DateTime? // quando o lead virou User cadastrado
+  unsubscribedAt DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([email])
+  @@index([source, createdAt])
+  @@index([courseSlug])
+  @@map("leads")
+}
+
 // Lista de CPFs bloqueados — admin pode banir CPF problemático.
 // Quando alguém tenta cadastrar com CPF banido, register é rejeitado.
 model CpfBlocklist {
