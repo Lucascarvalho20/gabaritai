@@ -1,199 +1,343 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { type Metadata } from 'next'
 import Link from 'next/link'
-import { Loader2, ArrowLeft, BookOpen, Calendar, Award, MapPin, Brain, Target, Zap, CheckCircle2, ChevronRight, Trophy } from 'lucide-react'
+import { notFound } from 'next/navigation'
+import {
+  ArrowLeft, MapPin, BookOpen, Calendar, Brain, Target, Zap, Trophy,
+  Award, ChevronRight, CheckCircle2,
+} from 'lucide-react'
+import { prisma } from '@/lib/prisma'
 import { Logo } from '@/components/ui/logo'
+import { CountdownToProva } from '@/components/CountdownToProva'
+import { EditalHighlight } from '@/components/EditalHighlight'
 import { cn } from '@/lib/utils'
 
-type Course = { id: string; slug: string; name: string; cargo: string | null; uf: string | null; orgao: string | null; description: string | null }
-type Subject = { id: string; slug: string; name: string; weight: number }
-type Edital = { id: string; titulo: string; ano: number; isActive: boolean; vagas: number | null; banca: { name: string; slug: string } | null }
+export const revalidate = 300 // 5min — revalida automaticamente em background
 
-type Group = {
-  parentSlug: string
-  orgao: string | null
-  area: string
-  uf: string | null
-  label: string
-  cargos: Course[]
+type Props = {
+  params: { parentSlug: string }
+  searchParams: { cargo?: string }
 }
 
-export default function ConcursoDetalhePage() {
-  const params = useParams<{ parentSlug: string }>()
-  const [group, setGroup] = useState<Group | null>(null)
-  const [activeCargo, setActiveCargo] = useState<Course | null>(null)
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [editais, setEditais] = useState<Edital[]>([])
-  const [loading, setLoading] = useState(true)
+// ── Data fetching ─────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    fetch('/api/courses?all=true')
-      .then((r) => r.json())
-      .then((data) => {
-        const g = (data.groups ?? []).find((x: Group) => x.parentSlug === params.parentSlug)
-        if (!g) return
-        setGroup(g)
-        setActiveCargo(g.cargos[0])
-      })
-      .finally(() => setLoading(false))
-  }, [params.parentSlug])
-
-  useEffect(() => {
-    if (!activeCargo) return
-    fetch(`/api/courses/${activeCargo.slug}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setSubjects(data.subjects ?? [])
-        setEditais(data.activeEditais ?? data.editais ?? [])
-      })
-  }, [activeCargo])
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
+async function loadGroup(parentSlug: string) {
+  // Busca todos os cursos com esse parentSlug (ex: parentSlug='pf' pega
+  // PF-Agente, PF-Escrivão, PF-Delegado, etc.) OU um curso cujo próprio
+  // slug é parentSlug (caso concurso de 1 cargo único).
+  const cursos = await prisma.course.findMany({
+    where: {
+      active: true,
+      OR: [{ parentSlug }, { slug: parentSlug }],
+    },
+    orderBy: [{ cargo: 'asc' }, { name: 'asc' }],
+    include: {
+      editais: {
+        where: { isActive: true },
+        include: {
+          banca: { select: { name: true, slug: true } },
+          subjects: {
+            include: { subject: { select: { name: true, slug: true } } },
+            orderBy: { order: 'asc' },
+          },
+        },
+        take: 1,
+      },
+      courseSubjects: {
+        include: { subject: { select: { name: true, slug: true } } },
+        orderBy: { order: 'asc' },
+      },
+    },
+  })
+  if (cursos.length === 0) return null
+  return {
+    parentSlug,
+    label: cursos[0].orgao ?? cursos[0].name.split('—')[0].trim(),
+    orgao: cursos[0].orgao,
+    uf: cursos[0].uf,
+    area: cursos[0].area,
+    cargos: cursos,
   }
-  if (!group) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <p className="text-muted-foreground">Concurso não encontrado.</p>
-        <Link href="/cursos" className="text-brand-500 font-semibold text-sm">← Voltar pros cursos</Link>
-      </div>
-    )
-  }
+}
 
-  const editalAtivo = editais.find((e) => e.isActive) ?? editais[0]
+// ── SEO metadata por concurso ─────────────────────────────────────────────────
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const group = await loadGroup(params.parentSlug)
+  if (!group) return { title: 'Concurso não encontrado' }
+
+  const cargoAtivo =
+    group.cargos.find((c) => c.slug === searchParams.cargo) ?? group.cargos[0]
+  const edital = cargoAtivo.editais[0]
+
+  const cargoNome = cargoAtivo.cargo ?? cargoAtivo.name
+  const ufStr = group.uf ? ` (${group.uf})` : ''
+  const ano = edital?.ano ?? new Date().getFullYear()
+  const orgao = group.orgao ?? group.label
+
+  const title = `${orgao} ${cargoNome} ${ano}${ufStr} — Edital, matérias e plano de estudos`
+  const descParts: string[] = []
+  if (edital?.vagas) descParts.push(`${edital.vagas} vagas`)
+  if (edital?.salario) {
+    descParts.push(`salário ${edital.salario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}`)
+  }
+  if (edital?.banca?.name) descParts.push(`banca ${edital.banca.name}`)
+  if (edital?.totalQuestoes) descParts.push(`${edital.totalQuestoes} questões`)
+  if (edital?.hasRedacao) descParts.push('com redação')
+
+  const descMid = descParts.length > 0 ? `${descParts.join(' · ')}. ` : ''
+  const description =
+    `Concurso ${orgao} ${cargoNome} ${ano}: ${descMid}Veja edital verticalizado, matérias com peso, cronograma de estudo e simule a prova no formato real. Plataforma de mentoria pra concurseiros sérios.`
+
+  return {
+    title,
+    description,
+    keywords: [
+      `concurso ${orgao}`,
+      `${orgao} ${cargoNome}`,
+      `edital ${orgao} ${ano}`,
+      `${orgao} matérias`,
+      `${orgao} simulado`,
+      'concurso público',
+      cargoNome.toLowerCase(),
+      edital?.banca?.name ?? 'Cebraspe',
+    ],
+    openGraph: {
+      title: `${orgao} ${cargoNome} ${ano}`,
+      description,
+      type: 'website',
+      locale: 'pt_BR',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${orgao} ${cargoNome} ${ano}`,
+      description,
+    },
+    alternates: {
+      canonical: `/cursos/${params.parentSlug}${searchParams.cargo ? `?cargo=${searchParams.cargo}` : ''}`,
+    },
+  }
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default async function ConcursoPage({ params, searchParams }: Props) {
+  const group = await loadGroup(params.parentSlug)
+  if (!group) notFound()
+
+  const cargoAtivo =
+    group.cargos.find((c) => c.slug === searchParams.cargo) ?? group.cargos[0]
+  const edital = cargoAtivo.editais[0]
+
+  // Matérias: do edital ativo (com peso específico) OU fallback pro courseSubjects
+  const materias =
+    edital?.subjects && edital.subjects.length > 0
+      ? edital.subjects.map((es) => ({
+          name: es.subject.name,
+          slug: es.subject.slug,
+          weight: es.weight,
+          expectedQuestions: es.expectedQuestions,
+        }))
+      : cargoAtivo.courseSubjects.map((cs) => ({
+          name: cs.subject.name,
+          slug: cs.subject.slug,
+          weight: cs.weight,
+          expectedQuestions: null,
+        }))
+
+  const cargoNome = cargoAtivo.cargo ?? cargoAtivo.name
+
+  // ── JSON-LD structured data (schema.org Course) ────────────────────────────
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: `${group.label} ${cargoNome}${edital?.ano ? ` ${edital.ano}` : ''}`,
+    description: cargoAtivo.description ?? `Plano de estudos completo para o concurso ${group.label} ${cargoNome}.`,
+    provider: {
+      '@type': 'Organization',
+      name: 'Gabaritai',
+      url: 'https://gabaritai-red.vercel.app',
+    },
+    educationalLevel: cargoAtivo.area,
+    courseMode: 'online',
+    ...(edital?.dataProva && { startDate: edital.dataProva.toISOString() }),
+    ...(materias.length > 0 && {
+      syllabusSections: materias.map((m, i) => ({
+        '@type': 'Syllabus',
+        name: m.name,
+        position: i + 1,
+      })),
+    }),
+  }
 
   return (
     <div className="min-h-screen bg-background">
+      {/* JSON-LD pro Google entender o conteúdo */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Header */}
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/"><Logo size="md" /></Link>
           <div className="flex items-center gap-2">
             <Link href="/login" className="hidden sm:block text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-muted">Entrar</Link>
-            <Link href="/planos" className="text-sm font-bold px-4 py-2 rounded-xl bg-brand-500 text-white hover:bg-brand-600">
+            <Link href="/planos" className="text-sm font-semibold px-4 py-2 rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition-colors">
               Começar grátis
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <Link href="/cursos" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
-          <ArrowLeft className="w-3 h-3" /> Voltar pros cursos
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
+        <Link href="/cursos" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <ArrowLeft className="w-3 h-3" /> Todos os concursos
         </Link>
 
-        {/* Hero do concurso */}
-        <div className="card p-6 sm:p-8 bg-gradient-to-br from-brand-500/5 to-purple-500/5 border-brand-500/20">
-          <div className="flex items-start justify-between flex-wrap gap-3">
+        {/* ── Hero + countdown ──────────────────────────────────────────── */}
+        <section className="space-y-5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black">{group.label}</h1>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                {group.label} {cargoNome}
+                {edital?.ano && <span className="text-muted-foreground"> · {edital.ano}</span>}
+              </h1>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                {group.orgao && <span>{group.orgao}</span>}
+                {group.orgao && group.orgao !== group.label && <span>{group.orgao}</span>}
                 {group.uf && <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {group.uf}</span>}
-                <span>· {group.cargos.length} cargo{group.cargos.length > 1 ? 's' : ''}</span>
+                <span>· {group.cargos.length} cargo{group.cargos.length > 1 ? 's' : ''} cobertos</span>
               </div>
             </div>
-            {editalAtivo && (
-              <div className="px-3 py-2 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 text-xs">
-                <div className="font-bold text-green-700 dark:text-green-300 inline-flex items-center gap-1"><Award className="w-3.5 h-3.5" /> Edital {editalAtivo.ano}</div>
-                {editalAtivo.banca && <div className="text-green-600 dark:text-green-400 mt-0.5">Banca: {editalAtivo.banca.name}</div>}
-                {editalAtivo.vagas && <div className="text-green-600 dark:text-green-400">{editalAtivo.vagas} vagas</div>}
-              </div>
+            {edital?.dataProva && (
+              <CountdownToProva date={edital.dataProva} />
             )}
           </div>
-        </div>
 
-        {/* Seleção de cargo */}
+          {/* Edital highlight */}
+          {edital && <EditalHighlight edital={edital} />}
+        </section>
+
+        {/* ── Seletor de cargo (links pra ?cargo=slug — SSR friendly) ──── */}
         {group.cargos.length > 1 && (
-          <div className="mt-6">
-            <h2 className="text-sm font-bold mb-2">Escolha o cargo</h2>
+          <section>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Outros cargos do mesmo concurso</h2>
             <div className="flex flex-wrap gap-2">
-              {group.cargos.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveCargo(c)}
-                  className={cn(
-                    'px-4 py-2 rounded-xl text-sm font-bold transition border-2',
-                    activeCargo?.id === c.id
-                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
-                      : 'border-border bg-card hover:bg-muted',
-                  )}
-                >
-                  {c.cargo ?? c.name}
-                </button>
-              ))}
+              {group.cargos.map((c) => {
+                const isActive = c.id === cargoAtivo.id
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/cursos/${params.parentSlug}?cargo=${c.slug}`}
+                    scroll={false}
+                    className={cn(
+                      'px-4 py-2 rounded-xl text-sm font-semibold transition-colors border',
+                      isActive
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
+                        : 'border-border bg-card hover:bg-muted text-foreground',
+                    )}
+                  >
+                    {c.cargo ?? c.name}
+                  </Link>
+                )
+              })}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Matérias */}
-        {subjects.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-black mb-3">📚 Matérias cobradas ({subjects.length})</h2>
+        {/* ── Matérias com peso ─────────────────────────────────────────── */}
+        {materias.length > 0 && (
+          <section>
+            <div className="flex items-end justify-between mb-4">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-brand-600" />
+                Matérias e peso no edital
+              </h2>
+              <span className="text-xs text-muted-foreground">{materias.length} matérias</span>
+            </div>
             <div className="grid sm:grid-cols-2 gap-2">
-              {subjects.map((s) => (
-                <div key={s.id} className="card p-3 flex items-center justify-between">
-                  <span className="font-semibold text-sm">{s.name}</span>
-                  <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    peso {s.weight}
-                  </span>
-                </div>
-              ))}
+              {materias
+                .sort((a, b) => b.weight - a.weight)
+                .map((s) => {
+                  // Calcula peso relativo pra barra
+                  const max = Math.max(...materias.map((m) => m.weight))
+                  const pct = max > 0 ? (s.weight / max) * 100 : 0
+                  return (
+                    <div key={s.slug} className="card p-3.5">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="font-semibold text-sm">{s.name}</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+                          {s.expectedQuestions ? `${s.expectedQuestions} q` : `peso ${s.weight}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-brand-500 to-emerald-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 italic">
-              Pesos extraídos do edital. Nosso algoritmo distribui as horas de estudo proporcionalmente.
+            <p className="text-[10px] text-muted-foreground mt-3 italic">
+              Pesos extraídos do último edital. Nosso cronograma distribui suas horas de estudo proporcionalmente —
+              quem cai mais, você estuda mais.
             </p>
-          </div>
+          </section>
         )}
 
-        {/* O que tem incluso */}
-        <div className="mt-8">
-          <h2 className="text-xl font-black mb-3">✨ O que você tem nesse curso</h2>
+        {/* ── O que está incluso ────────────────────────────────────────── */}
+        <section>
+          <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            O que você tem nesse curso
+          </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { icon: Calendar, title: 'Cronograma adaptativo', desc: 'Distribui matérias por peso do edital. Se ajusta semanalmente.' },
-              { icon: Brain, title: 'Mentor IA exclusivo', desc: 'Conhece seu edital, seu progresso e te orienta 24/7.' },
-              { icon: Target, title: '3 simulados por semana', desc: 'Mini terça e quinta · simulado real domingo (cronometrado).' },
-              { icon: Zap, title: 'Flashcards SRS', desc: 'Repetição espaçada baseada em ciência (SuperMemo).' },
-              { icon: Trophy, title: 'Correção redação IA', desc: 'Manda redação → IA dá nota e feedback em segundos.' },
-              { icon: Award, title: 'Detecção edital novo', desc: 'Quando muda, seu cronograma atualiza automático.' },
+              { icon: Calendar, title: 'Cronograma adaptativo', desc: 'Distribui matérias por peso do edital. Se ajusta semanalmente ao seu desempenho.' },
+              { icon: Brain, title: 'Mentor 24h', desc: 'Conhece seu edital, seu progresso e te orienta como um professor particular.' },
+              { icon: Target, title: '3 simulados por semana', desc: 'Mini terça e quinta · simulado real domingo, cronometrado no formato da banca.' },
+              { icon: Zap, title: 'Flashcards SRS', desc: 'Repetição espaçada baseada em ciência (SuperMemo SM-2).' },
+              { icon: Award, title: 'Correção de redação', desc: 'Manda sua redação e recebe nota global + por critério em segundos.' },
+              { icon: CheckCircle2, title: 'Detecção de edital novo', desc: 'Quando muda, seu cronograma atualiza automático — sem começar do zero.' },
             ].map((b) => {
               const Icon = b.icon
               return (
-                <div key={b.title} className="card p-4">
-                  <Icon className="w-5 h-5 text-brand-500 mb-2" />
-                  <div className="font-bold text-sm">{b.title}</div>
+                <div key={b.title} className="card p-4 hover:border-brand-500/40 transition-colors">
+                  <Icon className="w-5 h-5 text-brand-600 dark:text-brand-400 mb-2" />
+                  <div className="font-semibold text-sm">{b.title}</div>
                   <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{b.desc}</div>
                 </div>
               )
             })}
           </div>
-        </div>
+        </section>
 
-        {/* CTA */}
-        <div className="mt-10 card p-6 sm:p-8 text-center bg-gradient-to-br from-brand-500/10 via-purple-500/10 to-transparent border-brand-500/30">
-          <h3 className="text-2xl sm:text-3xl font-black">
-            Pronto pra começar {activeCargo?.cargo ?? 'este curso'}?
+        {/* ── CTA final ─────────────────────────────────────────────────── */}
+        <section className="card p-6 sm:p-10 text-center bg-gradient-to-br from-brand-500/8 via-card to-emerald-500/5 border-brand-500/30">
+          <h3 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Comece sua preparação pro {group.label} {cargoNome}
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            3 dias grátis. Sem cartão. Cancela quando quiser.
+          <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
+            3 dias grátis. Sem cartão. Cronograma montado em 5 minutos no formato exato do edital.
           </p>
-          <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
+          <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
             <Link
-              href={`/checkout/trial?curso=${activeCargo?.slug}`}
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 rounded-xl bg-brand-500 text-white text-sm font-bold hover:bg-brand-600 shadow-lg shadow-brand-500/25"
+              href={`/checkout/trial?curso=${cargoAtivo.slug}`}
+              className="group inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 shadow-lg shadow-brand-500/25 hover:-translate-y-0.5 transition-all"
             >
-              Começar grátis <ChevronRight className="w-4 h-4" />
+              Começar grátis
+              <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/planos"
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 rounded-xl border border-border bg-card hover:bg-muted text-sm font-bold"
+              className="inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-xl border border-border bg-card hover:bg-muted text-sm font-semibold transition-colors"
             >
               Ver todos os planos
             </Link>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   )
