@@ -50,3 +50,13 @@ export async function requireAdmin(req: NextRequest) {
   return { user, status: 200, message: 'OK' }
 }
 
+/**
+ * Mesmo que getUserFromRequest mas exige usuário autenticado (qualquer role).
+ * Padroniza retorno pra endpoints que só pedem login.
+ */
+export async function requireUser(req: NextRequest) {
+  const user = await getUserFromRequest(req)
+  if (!user) return { user: null, status: 401, message: 'Não autenticado' }
+  return { user, status: 200, message: 'OK' }
+}
+
