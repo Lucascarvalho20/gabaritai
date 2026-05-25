@@ -13,6 +13,8 @@ import {
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
 import { Reveal, StaggerGroup, StaggerItem, fadeInUp } from '@/lib/motion-helpers'
+import { EmailCapture } from '@/components/EmailCapture'
+import { TimeBudgetCalculator } from '@/components/TimeBudgetCalculator'
 
 // ─── DADOS ────────────────────────────────────────────────────────────────────
 
@@ -105,27 +107,24 @@ const CONCURSOS_DISPONIVEIS = [
 
 const BANCAS = ['Cebraspe', 'FGV', 'FCC', 'VUNESP', 'IDECAN', 'Quadrix', 'IBFC', 'AOCP', 'IADES']
 
-const DEPOIMENTOS = [
+// Lista de "pilares de confiança" — substituem testemunhal fabricado.
+// Quando tivermos aprovados reais, este array vira `APROVADOS`
+// (nome completo, foto, posição na prova, screenshot da nomeação).
+const PILARES = [
   {
-    nome: 'Mateus Lima',
-    cargo: 'Aprovado PMDF Soldado · 2024',
-    iniciais: 'ML',
-    cor: 'bg-blue-500',
-    texto: 'Estudei 8 meses pelo Gabaritai. O simulado de domingo me fez sentir a prova antes da prova. Passei em 47º lugar.',
+    icon: 'method',
+    titulo: 'Método antes de hype',
+    desc: 'Sem promessa fácil. O sistema é construído sobre repetição espaçada (SuperMemo SM-2), simulado no formato exato da banca e curadoria humana de cada matéria.',
   },
   {
-    nome: 'Ana Carolina',
-    cargo: 'Aprovada PCDF Escrivã · 2024',
-    iniciais: 'AC',
-    cor: 'bg-emerald-500',
-    texto: 'O mentor me ajudou a refazer minha redação umas 30 vezes até ter nota máxima. Hoje sou escrivã.',
+    icon: 'transparency',
+    titulo: 'Transparência total',
+    desc: '7 dias de garantia incondicional. Sem fidelidade. Pague no Pix com 5% de desconto. Cancela em 2 cliques, sem ligação pra reter.',
   },
   {
-    nome: 'Roberto Silva',
-    cargo: 'Aprovado PF Agente · 2024',
-    iniciais: 'RS',
-    cor: 'bg-amber-500',
-    texto: 'Outras plataformas me afogaram em conteúdo. Aqui o cronograma me disse exatamente o que estudar a cada dia.',
+    icon: 'guarantee',
+    titulo: 'Conteúdo sempre atualizado',
+    desc: 'Quando sai edital novo, seu cronograma atualiza automaticamente. Você nunca estuda matéria que foi removida nem perde matéria que entrou.',
   },
 ]
 
@@ -196,11 +195,11 @@ function Nav() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Logo size="md" />
-        <nav className="hidden md:flex items-center gap-8 text-sm">
-          <a href="#diferenciais" className="text-muted-foreground hover:text-foreground transition-colors">Diferenciais</a>
-          <a href="#como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</a>
+        <nav className="hidden md:flex items-center gap-7 text-sm">
+          <Link href="/metodo" className="text-muted-foreground hover:text-foreground transition-colors">Método</Link>
           <Link href="/cursos" className="text-muted-foreground hover:text-foreground transition-colors">Concursos</Link>
           <Link href="/planos" className="text-muted-foreground hover:text-foreground transition-colors">Planos</Link>
+          <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
           <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
         </nav>
         <div className="flex items-center gap-2">
@@ -226,10 +225,10 @@ function Nav() {
           className="md:hidden border-t border-border bg-card"
         >
           <nav className="px-4 py-3 flex flex-col gap-1 text-sm">
-            <a href="#diferenciais" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Diferenciais</a>
-            <a href="#como-funciona" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Como funciona</a>
+            <Link href="/metodo" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Método</Link>
             <Link href="/cursos" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Concursos</Link>
             <Link href="/planos" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Planos</Link>
+            <Link href="/blog" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">Blog</Link>
             <a href="#faq" onClick={() => setOpen(false)} className="py-2.5 hover:text-brand-500">FAQ</a>
             <div className="border-t border-border my-2" />
             <Link href="/login" onClick={() => setOpen(false)} className="py-2.5 font-semibold">Entrar</Link>
@@ -364,25 +363,35 @@ function Hero() {
               Mentoria de estudos para concurseiros sérios: cronograma diário que se adapta, simulados reais cronometrados (Cebraspe, FGV, FCC), banco de questões oficiais, flashcards SRS e <strong className="text-foreground">edital verticalizado</strong> com o que mais cai.
             </motion.p>
 
-            <motion.div variants={fadeInUp} className="mt-7 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+            <motion.div variants={fadeInUp} className="mt-7 max-w-md mx-auto lg:mx-0">
+              <EmailCapture
+                source="hero-edital-pdf"
+                placeholder="seu@email.com"
+                cta="Receber edital em PDF"
+                successMessage="Pronto! Em alguns minutos chega no seu email."
+                hint="Edital verticalizado com matérias, peso e o que mais cai · sem spam"
+              />
+            </motion.div>
+
+            <motion.div variants={fadeInUp} className="mt-5 flex flex-col sm:flex-row gap-2.5 justify-center lg:justify-start">
               <Link
                 href="/planos"
-                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
+                className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 hover:shadow-lg"
               >
                 Começar 3 dias grátis
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/cursos"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-border bg-card hover:bg-muted font-semibold transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-sm font-semibold transition-colors"
               >
-                Ver concursos
+                Ver todos os concursos
               </Link>
             </motion.div>
 
-            <motion.div variants={fadeInUp} className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 justify-center lg:justify-start text-xs text-muted-foreground">
+            <motion.div variants={fadeInUp} className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 justify-center lg:justify-start text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> 7 dias garantia</span>
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Cancela quando quiser</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Sem fidelidade</span>
               <span className="inline-flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Pagamento seguro</span>
             </motion.div>
           </motion.div>
@@ -569,33 +578,45 @@ function Concursos() {
 function Depoimentos() {
   return (
     <section className="py-16 sm:py-24 bg-muted/30 border-y border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Aprovados de verdade</h2>
-          <p className="mt-3 text-muted-foreground">Histórias reais de quem chegou lá.</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-900/15 text-emerald-700 dark:text-emerald-300 text-xs font-semibold mb-4">
+            <Shield className="w-3.5 h-3.5" /> Plataforma nova · honestidade primeiro
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+            Sem depoimentos forjados
+          </h2>
+          <p className="mt-3 text-muted-foreground text-base leading-relaxed">
+            O Gabaritai é uma plataforma nova. Em vez de inventar histórias de aprovados,
+            preferimos te mostrar exatamente <strong className="text-foreground">o que sustenta o produto</strong>.
+            Quando tivermos aprovados reais, eles entram aqui com nome, posição na prova e o
+            print da nomeação — não antes.
+          </p>
         </Reveal>
 
-        <StaggerGroup className="grid sm:grid-cols-3 gap-4">
-          {DEPOIMENTOS.map((d, i) => (
-            <StaggerItem key={i}>
-              <div className="card p-5 h-full flex flex-col">
-                <div className="flex gap-0.5 mb-3">
-                  {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+        <StaggerGroup className="grid sm:grid-cols-3 gap-4 mb-10">
+          {PILARES.map((p) => (
+            <StaggerItem key={p.titulo}>
+              <div className="card p-5 h-full">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                  <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <p className="text-sm leading-relaxed mb-4 flex-1">"{d.texto}"</p>
-                <div className="flex items-center gap-3 pt-3 border-t border-border">
-                  <div className={cn('w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold', d.cor)}>
-                    {d.iniciais}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm">{d.nome}</div>
-                    <div className="text-[10px] text-muted-foreground">{d.cargo}</div>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-base mb-1.5">{p.titulo}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
               </div>
             </StaggerItem>
           ))}
         </StaggerGroup>
+
+        <Reveal className="text-center">
+          <Link
+            href="/historias"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700 group"
+          >
+            Quer ser o primeiro aprovado destacado?
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        </Reveal>
       </div>
     </section>
   )
@@ -830,6 +851,7 @@ export default function LandingPage() {
       <Nav />
       <Hero />
       <Stats />
+      <TimeBudgetCalculator />
       <Diferenciais />
       <ComoFunciona />
       <Concursos />
