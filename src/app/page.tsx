@@ -623,53 +623,63 @@ function Depoimentos() {
 }
 
 // ── Planos: 3 niveis × 2 ciclos (mensal/anual) ─────────────────────────────
+//
+// Regra do limite de cursos:
+//  - Plano "1 curso": maxCourses=1, troca livre (cancela o ativo e ativa outro)
+//  - Plano "2 cursos": maxCourses=2, mesma regra de troca
+//  - Plano "Todos": maxCourses=null, sem limite
+//
+// Tentou ativar curso além do limite? UI bloqueia + sugere upgrade.
+// Configuração concreta dos limites vive em PricingPlan.maxCourses no banco
+// (campo já existe). Backend de access control deve respeitar isso.
 const PLANOS = {
   '1-curso': {
     nome: '1 curso',
-    desc: 'Pra quem foca num cargo só (com troca livre)',
-    cursos: 1,
+    desc: 'Pra quem foca num cargo só',
+    limite: '1 curso ativo · troca livre',
     highlight: false,
     features: [
-      '1 curso à escolha (troca quando quiser)',
+      '1 curso ativo por vez',
+      'Troca de concurso quando quiser',
       'Cronograma adaptativo',
       'Mentor 24h',
       '3 simulados por semana',
       'Flashcards SRS',
       'Correção de redação',
     ],
-    mensal: { price: 39, slug: 'mensal-1-curso' },
-    anual: { price: 297, mensalEquiv: 24.75, economia: 38, slug: 'anual-1-curso' },
+    mensal: { priceLabel: '24,99', slug: 'mensal-1-curso' },
+    anual: { priceLabel: '197', mensalEquivLabel: '16,42', economia: 34, slug: 'anual-1-curso' },
   },
   '2-cursos': {
     nome: '2 cursos',
-    desc: 'Pra quem está prestando 2 concursos simultâneos',
-    cursos: 2,
+    desc: 'Pra quem está prestando 2 concursos juntos',
+    limite: 'Até 2 cursos simultâneos',
     highlight: true,
     features: [
-      '2 cursos simultâneos (troca livre)',
+      'Até 2 cursos ativos ao mesmo tempo',
+      'Troca livre entre eles',
       'Tudo do plano de 1 curso',
-      'Cronograma único integrando os 2',
+      'Cronograma único integrado',
       'Simulados de ambos os concursos',
-      'Suporte prioritário',
     ],
-    mensal: { price: 59, slug: 'mensal-2-cursos' },
-    anual: { price: 447, mensalEquiv: 37.25, economia: 37, slug: 'anual-2-cursos' },
+    mensal: { priceLabel: '39,99', slug: 'mensal-2-cursos' },
+    anual: { priceLabel: '297', mensalEquivLabel: '24,75', economia: 38, slug: 'anual-2-cursos' },
   },
   'todos': {
     nome: 'Todos os cursos',
     desc: 'Acesso completo · sem limite de cargo',
-    cursos: 'TODOS',
+    limite: 'Todos os cursos sem limite',
     highlight: false,
     features: [
       'TODOS os cursos da plataforma',
+      'Sem limite de cursos ativos',
       'Tudo dos planos anteriores',
-      'Troca de concurso quantas vezes quiser',
-      'Acesso a edital novo automático',
+      'Acesso automático a edital novo',
       'Suporte prioritário',
       'Comunidade VIP',
     ],
-    mensal: { price: 89, slug: 'mensal-todos' },
-    anual: { price: 697, mensalEquiv: 58.08, economia: 35, slug: 'anual-todos' },
+    mensal: { priceLabel: '89,99', slug: 'mensal-todos' },
+    anual: { priceLabel: '697', mensalEquivLabel: '58,08', economia: 35, slug: 'anual-todos' },
   },
 } as const
 
@@ -712,7 +722,7 @@ function Planos() {
             >
               Anual
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                -37%
+                até -38%
               </span>
             </button>
           </div>
@@ -742,21 +752,24 @@ function Planos() {
                   <div>
                     <h3 className="font-bold text-lg">{p.nome}</h3>
                     <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{p.desc}</p>
+                    <div className="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-700 dark:text-brand-300 text-[10px] font-semibold">
+                      {p.limite}
+                    </div>
                   </div>
 
                   {/* Preço */}
                   <div className="py-2">
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold tracking-tight tabular-nums">
-                        R$ {ativo.price}
+                        R$ {ativo.priceLabel}
                       </span>
                       <span className="text-sm text-muted-foreground">
                         {isMensal ? '/mês' : '/ano'}
                       </span>
                     </div>
-                    {!isMensal && 'mensalEquiv' in ativo && (
+                    {!isMensal && 'mensalEquivLabel' in ativo && (
                       <div className="text-[11px] text-muted-foreground mt-1">
-                        ≈ R$ {ativo.mensalEquiv.toFixed(2).replace('.', ',')}/mês ·{' '}
+                        ≈ R$ {ativo.mensalEquivLabel}/mês ·{' '}
                         <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                           economia de {ativo.economia}%
                         </span>
