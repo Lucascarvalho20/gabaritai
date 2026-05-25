@@ -589,8 +589,6 @@ function Depoimentos() {
           <p className="mt-3 text-muted-foreground text-base leading-relaxed">
             O Gabaritai é uma plataforma nova. Em vez de inventar histórias de aprovados,
             preferimos te mostrar exatamente <strong className="text-foreground">o que sustenta o produto</strong>.
-            Quando tivermos aprovados reais, eles entram aqui com nome, posição na prova e o
-            print da nomeação — não antes.
           </p>
         </Reveal>
 
@@ -622,54 +620,61 @@ function Depoimentos() {
   )
 }
 
+// ── Planos: 3 niveis × 2 ciclos (mensal/anual) ─────────────────────────────
+const PLANOS = {
+  '1-curso': {
+    nome: '1 curso',
+    desc: 'Pra quem foca num cargo só (com troca livre)',
+    cursos: 1,
+    highlight: false,
+    features: [
+      '1 curso à escolha (troca quando quiser)',
+      'Cronograma adaptativo',
+      'Mentor 24h',
+      '3 simulados por semana',
+      'Flashcards SRS',
+      'Correção de redação',
+    ],
+    mensal: { price: 39, slug: 'mensal-1-curso' },
+    anual: { price: 297, mensalEquiv: 24.75, economia: 38, slug: 'anual-1-curso' },
+  },
+  '2-cursos': {
+    nome: '2 cursos',
+    desc: 'Pra quem está prestando 2 concursos simultâneos',
+    cursos: 2,
+    highlight: true,
+    features: [
+      '2 cursos simultâneos (troca livre)',
+      'Tudo do plano de 1 curso',
+      'Cronograma único integrando os 2',
+      'Simulados de ambos os concursos',
+      'Suporte prioritário',
+    ],
+    mensal: { price: 59, slug: 'mensal-2-cursos' },
+    anual: { price: 447, mensalEquiv: 37.25, economia: 37, slug: 'anual-2-cursos' },
+  },
+  'todos': {
+    nome: 'Todos os cursos',
+    desc: 'Acesso completo · sem limite de cargo',
+    cursos: 'TODOS',
+    highlight: false,
+    features: [
+      'TODOS os cursos da plataforma',
+      'Tudo dos planos anteriores',
+      'Troca de concurso quantas vezes quiser',
+      'Acesso a edital novo automático',
+      'Suporte prioritário',
+      'Comunidade VIP',
+    ],
+    mensal: { price: 89, slug: 'mensal-todos' },
+    anual: { price: 697, mensalEquiv: 58.08, economia: 35, slug: 'anual-todos' },
+  },
+} as const
+
+type PlanKey = keyof typeof PLANOS
+
 function Planos() {
-  const planos = [
-    {
-      slug: 'trial',
-      name: 'Trial',
-      price: 0,
-      pricePretty: 'R$ 0',
-      period: '3 dias grátis',
-      desc: 'Conhece a plataforma sem cartão',
-      features: ['1 curso à escolha', 'Cronograma completo', 'Mentor', '3 mini-simulados'],
-      cta: 'Começar grátis',
-      highlight: false,
-    },
-    {
-      slug: 'mensal',
-      name: 'Mensal',
-      price: 39.90,
-      pricePretty: 'R$ 39,90',
-      period: '/mês',
-      desc: '1 curso · pra quem tá começando',
-      features: ['1 curso à escolha', 'Mentor 24h', 'Simulados ter · qui · dom', 'Flashcards SRS', 'Correção de redação'],
-      cta: 'Assinar',
-      highlight: false,
-    },
-    {
-      slug: 'anual',
-      name: 'Anual',
-      price: 297,
-      pricePretty: 'R$ 297',
-      period: '/ano',
-      desc: 'Economia de 38% · mais escolhido',
-      features: ['1 curso à escolha', 'Tudo do mensal', 'Acesso a edital novo', 'Suporte prioritário', 'Cancela quando quiser'],
-      cta: 'Assinar anual',
-      highlight: true,
-    },
-    {
-      slug: 'vitalicio',
-      name: 'Vitalício',
-      price: 1997,
-      pricePretty: 'R$ 1.997',
-      period: 'único',
-      desc: 'Limitado a 100 vagas · vale a vida toda',
-      features: ['TODOS os cursos', 'Acesso vitalício', 'Atualizações pra sempre', 'Memória do mentor permanente', 'Comunidade VIP'],
-      cta: 'Garantir vitalício',
-      highlight: false,
-      badge: 'Edição limitada',
-    },
-  ]
+  const [ciclo, setCiclo] = useState<'mensal' | 'anual'>('anual')
 
   return (
     <section id="planos" className="py-16 sm:py-24">
@@ -677,60 +682,129 @@ function Planos() {
         <Reveal className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Planos pra cada momento</h2>
           <p className="mt-3 text-muted-foreground">
-            Garantia incondicional de 7 dias. Pague no Pix com <strong className="text-foreground">5% de desconto</strong>.
+            Garantia incondicional de 7 dias. <strong className="text-foreground">Pix com 5% de desconto</strong>.
+            Sem fidelidade — cancela quando quiser.
           </p>
         </Reveal>
 
-        <StaggerGroup className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {planos.map((p) => (
-            <StaggerItem key={p.slug}>
-              <motion.div
-                whileHover={{ y: -3 }}
-                transition={{ duration: 0.2 }}
-                className={cn(
-                  'card p-5 flex flex-col gap-3 relative h-full transition-all',
-                  p.highlight && 'ring-2 ring-brand-500 shadow-xl shadow-brand-500/15',
-                )}
-              >
-                {p.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-brand-500 text-white text-[10px] font-bold tracking-wide">
-                    MAIS ESCOLHIDO
-                  </div>
-                )}
-                {p.badge && (
-                  <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">{p.badge}</div>
-                )}
-                <div>
-                  <h3 className="font-bold text-lg">{p.name}</h3>
-                  <p className="text-xs text-muted-foreground">{p.desc}</p>
-                </div>
-                <div>
-                  <span className="text-3xl font-bold tracking-tight">{p.pricePretty}</span>
-                  <span className="text-xs text-muted-foreground ml-1">{p.period}</span>
-                </div>
-                <ul className="space-y-1.5 text-sm flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                      <span className="text-xs">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/checkout/${p.slug}`}
+        {/* Toggle Mensal | Anual */}
+        <Reveal className="flex justify-center mb-8">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted">
+            <button
+              type="button"
+              onClick={() => setCiclo('mensal')}
+              className={cn(
+                'px-5 py-2 rounded-lg text-sm font-semibold transition-all',
+                ciclo === 'mensal' ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setCiclo('anual')}
+              className={cn(
+                'px-5 py-2 rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2',
+                ciclo === 'anual' ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Anual
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                -37%
+              </span>
+            </button>
+          </div>
+        </Reveal>
+
+        {/* 3 cards */}
+        <StaggerGroup className="grid md:grid-cols-3 gap-3 sm:gap-4 max-w-5xl mx-auto">
+          {(Object.keys(PLANOS) as PlanKey[]).map((key) => {
+            const p = PLANOS[key]
+            const ativo = ciclo === 'mensal' ? p.mensal : p.anual
+            const isMensal = ciclo === 'mensal'
+            return (
+              <StaggerItem key={key}>
+                <motion.div
+                  whileHover={{ y: -3 }}
+                  transition={{ duration: 0.2 }}
                   className={cn(
-                    'mt-2 rounded-xl py-2.5 text-center text-sm font-semibold transition-all',
-                    p.highlight
-                      ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5'
-                      : 'border border-border bg-background hover:bg-muted',
+                    'card p-6 flex flex-col gap-3 relative h-full transition-all',
+                    p.highlight && 'ring-2 ring-brand-500 shadow-xl shadow-brand-500/15',
                   )}
                 >
-                  {p.cta}
-                </Link>
-              </motion.div>
-            </StaggerItem>
-          ))}
+                  {p.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-brand-500 text-white text-[10px] font-bold tracking-wide whitespace-nowrap">
+                      MAIS ESCOLHIDO
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-lg">{p.nome}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{p.desc}</p>
+                  </div>
+
+                  {/* Preço */}
+                  <div className="py-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold tracking-tight tabular-nums">
+                        R$ {ativo.price}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {isMensal ? '/mês' : '/ano'}
+                      </span>
+                    </div>
+                    {!isMensal && 'mensalEquiv' in ativo && (
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        ≈ R$ {ativo.mensalEquiv.toFixed(2).replace('.', ',')}/mês ·{' '}
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          economia de {ativo.economia}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-1.5 text-sm flex-1">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex items-start gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                        <span className="text-xs leading-relaxed">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link
+                    href={`/checkout/${ativo.slug}`}
+                    className={cn(
+                      'mt-2 rounded-xl py-2.5 text-center text-sm font-semibold transition-all',
+                      p.highlight
+                        ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5'
+                        : 'border border-border bg-background hover:bg-muted',
+                    )}
+                  >
+                    Assinar {isMensal ? 'mensal' : 'anual'}
+                  </Link>
+                </motion.div>
+              </StaggerItem>
+            )
+          })}
         </StaggerGroup>
+
+        {/* Trial faixa abaixo dos planos */}
+        <Reveal className="mt-8 max-w-3xl mx-auto">
+          <div className="rounded-xl border border-dashed border-emerald-300/60 dark:border-emerald-700/40 bg-emerald-50/30 dark:bg-emerald-900/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-sm text-center sm:text-left">
+              <strong className="text-foreground">Antes de assinar?</strong>{' '}
+              <span className="text-muted-foreground">3 dias grátis · sem cartão · cancela em 2 cliques</span>
+            </div>
+            <Link
+              href="/checkout/trial-3-dias"
+              className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 inline-flex items-center gap-1 group"
+            >
+              Começar trial
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   )

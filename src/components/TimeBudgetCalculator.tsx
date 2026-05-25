@@ -2,49 +2,35 @@
 
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calculator, Clock, BookOpen, TrendingUp, ChevronRight } from 'lucide-react'
+import { Calculator, Clock, BookOpen, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 /**
- * Calculadora de tempo de estudo. Concurseiro tem 2 perguntas constantes:
- *  1) "Quanto preciso estudar por dia pra passar na prova X?"
- *  2) "Dado meu tempo, dá pra eu passar até o dia X?"
+ * Calculadora de tempo de estudo (versão simplificada).
  *
- * Esse widget responde as duas com matemática simples (sem chamar IA),
- * direto na landing, sem precisar cadastrar. É um lead magnet de utilidade:
- * mostra que o sistema PENSA em concurseiro, antes mesmo de a pessoa criar
- * conta.
+ * Concurseiro responde:
+ *   - Quantas horas por dia?
+ *   - Quantos dias por semana?
  *
- * Cálculo: regra simples baseada em benchmarks reais de aprovados:
- *   - 4-6 meses de prep com 3-4h/dia = aprovação realista pra prova fácil
- *   - 8-12 meses de prep com 3-4h/dia = aprovação realista pra Cebraspe nível PF
+ * Sistema mostra em quanto tempo ele terá estudado o equivalente a um
+ * plano completo de concurso de nível médio (≈600h).
  *
- *   carga_total_recomendada (horas):
- *     básico (PRF/PMDF/GCM):    400-500h
- *     intermediário (PCDF/PMMG): 600-800h
- *     avançado (PF Agente/PRF):  900-1100h
- *     expert (PF Delegado/Perito): 1500h+
+ * Pra ajustar pra concurso mais difícil/fácil, o disclaimer indica o
+ * range. O cálculo de horas exatas POR EDITAL acontece dentro do produto.
  */
 
-const DIFICULDADES = [
-  { id: 'basico', label: 'Básico', desc: 'PRF, GCM, PM soldado (média)', cargaTotal: 450 },
-  { id: 'medio', label: 'Médio', desc: 'PCDF, PMDF, CBMDF, Bombeiros', cargaTotal: 700 },
-  { id: 'avancado', label: 'Avançado', desc: 'PF Agente/Escrivão, PRF, Polícia Penal', cargaTotal: 1000 },
-  { id: 'expert', label: 'Expert', desc: 'PF Delegado, Perito, Auditor Federal', cargaTotal: 1500 },
-] as const
+const CARGA_BASELINE = 600 // horas — benchmark pra concurso brasileiro de nível médio (PMDF/PCDF/CBMDF)
 
 export function TimeBudgetCalculator() {
   const [horasPorDia, setHorasPorDia] = useState(3)
-  const [diasUteis, setDiasUteis] = useState(6) // dias por semana
-  const [dificuldade, setDificuldade] = useState<typeof DIFICULDADES[number]['id']>('medio')
+  const [diasUteis, setDiasUteis] = useState(6)
 
   const resultado = useMemo(() => {
-    const cargaTotal = DIFICULDADES.find((d) => d.id === dificuldade)!.cargaTotal
     const horasSemana = horasPorDia * diasUteis
-    const semanasNecessarias = Math.ceil(cargaTotal / horasSemana)
+    const semanasNecessarias = Math.ceil(CARGA_BASELINE / horasSemana)
     const mesesNecessarios = Math.ceil(semanasNecessarias / 4.345)
-    return { cargaTotal, horasSemana, semanasNecessarias, mesesNecessarios }
-  }, [horasPorDia, diasUteis, dificuldade])
+    return { horasSemana, semanasNecessarias, mesesNecessarios }
+  }, [horasPorDia, diasUteis])
 
   return (
     <section className="py-12 sm:py-16 bg-muted/30 border-y border-border">
@@ -111,32 +97,10 @@ export function TimeBudgetCalculator() {
               </div>
             </div>
 
-            {/* Dificuldade do concurso */}
-            <div>
-              <label className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-brand-600" />
-                Qual a dificuldade do concurso?
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {DIFICULDADES.map((d) => {
-                  const active = dificuldade === d.id
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => setDificuldade(d.id)}
-                      className={`text-left p-2.5 rounded-lg border-2 transition-all ${
-                        active
-                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                          : 'border-border bg-card hover:border-brand-500/40'
-                      }`}
-                    >
-                      <div className="text-xs font-bold">{d.label}</div>
-                      <div className="text-[10px] text-muted-foreground line-clamp-1">{d.desc}</div>
-                    </button>
-                  )
-                })}
-              </div>
+            <div className="rounded-lg bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+              Estimativa baseada em ~<strong className="text-foreground">600h</strong> de estudo, média pra concurso
+              brasileiro de nível médio (PMDF, PCDF, CBMDF). Concursos mais difíceis (PF Delegado, Perito) podem
+              exigir até 50% a mais de horas. O cronograma exato vem do edital — comece pelo trial.
             </div>
           </div>
 
@@ -145,7 +109,7 @@ export function TimeBudgetCalculator() {
 
           {/* Resultado */}
           <motion.div
-            key={`${horasPorDia}-${diasUteis}-${dificuldade}`}
+            key={`${horasPorDia}-${diasUteis}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -163,7 +127,7 @@ export function TimeBudgetCalculator() {
               </span>
             </div>
             <div className="text-xs text-muted-foreground mb-4">
-              ≈ {resultado.semanasNecessarias} semanas · {resultado.cargaTotal}h totais
+              ≈ {resultado.semanasNecessarias} semanas · {CARGA_BASELINE}h totais
             </div>
 
             <div className="rounded-lg bg-muted/50 p-3 text-xs space-y-1.5 mb-4">
@@ -173,7 +137,7 @@ export function TimeBudgetCalculator() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Carga total:</span>
-                <span className="font-semibold tabular-nums">{resultado.cargaTotal}h</span>
+                <span className="font-semibold tabular-nums">{CARGA_BASELINE}h</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Ritmo:</span>
@@ -195,11 +159,6 @@ export function TimeBudgetCalculator() {
             </p>
           </motion.div>
         </div>
-
-        <p className="text-[10px] text-muted-foreground text-center mt-4 max-w-2xl mx-auto">
-          Estimativa baseada em horas médias de aprovados (sem ciência exata — varia conforme base anterior,
-          consistência e dificuldade pessoal). Pra um plano específico do seu edital, comece o trial.
-        </p>
       </div>
     </section>
   )
