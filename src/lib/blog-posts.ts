@@ -30,6 +30,295 @@ export type BlogPost = {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: 'quanto-tempo-estudar-por-dia-para-concurso',
+    title: 'Quanto tempo de estudo por dia pra passar em concurso (a resposta honesta)',
+    description: 'Não é 10 horas por dia. Nem 2. Depende do tempo até a prova, da dificuldade do concurso e da sua base. Cálculo concreto baseado em horas reais de aprovados — com calculadora pra você descobrir o seu número.',
+    keywords: ['quantas horas estudar concurso', 'tempo de estudo concurso', 'rotina de estudo concurseiro', 'horas por dia concurso público'],
+    category: 'Método',
+    readingMin: 9,
+    publishedAt: '2026-05-22',
+    author: 'Equipe Gabaritai',
+    tags: ['método', 'rotina', 'planejamento'],
+    content: `## A pergunta que todo concurseiro faz
+
+"Quanto tempo eu preciso estudar por dia pra passar?"
+
+A resposta honesta começa com outra pergunta: **qual o seu prazo, qual o concurso, e qual sua base**? Sem isso, qualquer número é palpite. Vamos quebrar.
+
+## A matemática real
+
+Aprovados que conhecemos seguem uma faixa parecida:
+
+- **Concurso básico** (GCM, PM Soldado de estado pequeno, PRF): ~400-500h de estudo total
+- **Concurso médio** (PMDF, PCDF, CBMDF): ~600-800h
+- **Concurso avançado** (PF Agente/Escrivão, PRF, Polícia Penal): ~900-1100h
+- **Concurso expert** (PF Delegado, Perito, Auditor Federal): ~1500h+
+
+Essas são **horas líquidas de estudo focado** — não contar o tempo de Instagram entre uma leitura e outra. Estudo focado é cronômetro rodando, sem distração, técnica Pomodoro ou similar.
+
+## Como converter horas totais em rotina diária
+
+Pega a carga total do seu concurso, divide pela quantidade de dias até a prova. Isso te dá quantas horas/dia você precisa.
+
+> **Exemplo PMDF Soldado** (carga ~700h, prova daqui a 6 meses ≈ 180 dias)
+>
+> 700h ÷ 180d = **3.9h por dia**, todos os dias.
+
+Mas ninguém estuda todos os dias. Considere 6 dias úteis por semana (1 de descanso):
+
+> 700h ÷ (6/7 × 180) ≈ **4.5h por dia**, 6 dias por semana.
+
+## Os 3 cenários típicos
+
+**Cenário A — Trabalhador com 4-6h pra estudar à noite/fim de semana**: você tem 15-25h/semana. Pra concurso médio (700h), precisa de 7-10 meses. Plano: madruga 1h, à noite 2h, sábado 4h, domingo 3h.
+
+**Cenário B — Recém-formado em tempo integral**: tem 30-40h/semana. Carga média em 4-5 meses. Cuidado com burnout — estude bloco de manhã (3-4h), tarde (3-4h), sem invadir noite todos os dias.
+
+**Cenário C — Faculdade + estudo de concurso**: 10-15h/semana realisticamente. Concurso médio em 12-18 meses. Vai dar — mas precisa de plano longo e consistência.
+
+## Calculadora honesta (mesmo princípio)
+
+A gente tem uma [calculadora de tempo](/) no topo da home que faz essa conta na hora. Você ajusta horas/dia, dias/semana, e ela mostra a estimativa em meses até estar pronto. Sem cadastro.
+
+## O erro que todo concurseiro comete
+
+Vão te dizer "estude 8 horas por dia". Vão te dizer "se não estudar 10 horas, não passa". É papo de quem vende curso pra você se sentir culpado e comprar tudo.
+
+**A verdade**: quem estuda **3-4 horas por dia, 6 dias por semana, durante 6-12 meses**, com método (cronograma, simulado semanal, repetição espaçada), passa. Quem tenta estudar 10 horas e cansa em 3 semanas, desiste e refaz tudo do zero — não passa.
+
+Consistência > intensidade. Sempre.
+
+## Quanto tempo TEM que ser focado?
+
+Outra distorção: "estudei 6 horas hoje" muitas vezes significa "fiquei 6 horas com o caderno aberto, mas Instagram, café, conversa, planilha…"
+
+O número que importa é **horas de cabeça baixa, sem distração externa, na atividade-fim** (ler, resolver questão, revisar flashcard). 3 horas de FOCO REAL valem mais que 6 horas de presença com mente dispersa.
+
+Truque que funciona: cronômetro Pomodoro de 25 min, sem celular na mesa. 4 ciclos = 1h40 reais. Faz 2-3 sessões por dia → ~5h FOCADAS.
+
+## E a regra da véspera?
+
+Aprovados também repetem isso: "na última semana, eu desacelero". Dorme cedo, revisa LEVE, não tenta absorver conteúdo novo. Dia da prova: chega 1h antes, leva água e barra de cereal, confia no que treinou.
+
+Quem trata véspera como sprint final geralmente vai mal. Confia no acúmulo.
+
+---
+
+**Próximo passo prático**: roda a calculadora de tempo na home com seus números reais. Se o resultado for assustador (ex: "preciso de 8h/dia que não tenho"), considera plano de 12 meses em vez de 6. Vale mais um plano realista que cumpre, do que um irreal que abandona em 3 semanas.`,
+  },
+
+  {
+    slug: 'cronograma-de-estudos-para-concurso',
+    title: 'Como montar um cronograma de estudos pra concurso (sem complicar)',
+    description: 'Cronograma de concurso não precisa de planilha em 8 cores. Precisa de matéria, peso, e prioridade. Passo a passo enxuto pra montar o seu em 30 minutos, mesmo que seja o seu primeiro concurso.',
+    keywords: ['cronograma de estudos concurso', 'como montar cronograma concurso', 'planilha de estudo', 'plano de estudo concurso público'],
+    category: 'Planejamento',
+    readingMin: 11,
+    publishedAt: '2026-05-19',
+    author: 'Equipe Gabaritai',
+    tags: ['planejamento', 'cronograma', 'iniciante'],
+    content: `## Cronograma é mapa, não decoração
+
+A internet está cheia de cronogramas coloridos com 8 abas no Excel, cores diferentes pra cada matéria, gráfico de pizza de progresso e blocos com legenda. **Bonito, e quase sempre inútil.** Aprovado de verdade tem cronograma feio. Funcional, mas feio.
+
+O que importa: você abre, vê o que estudar HOJE, faz, marca como feito. Acabou. Tudo o que não responde "o que faço agora" é gordura.
+
+## Os 4 componentes obrigatórios
+
+1. **Lista de matérias** com o peso de cada uma (% da prova)
+2. **Tempo disponível por dia** (real, não otimista)
+3. **Distribuição semanal** de quantas horas vão pra cada matéria
+4. **Status** de cada tópico (não estudei / estudando / dominado / frágil)
+
+Sem nenhum desses 4, não é cronograma. É lista de desejos.
+
+## Passo 1: Extrai o peso de cada matéria
+
+Pega o edital ativo do seu concurso. Procura "Conteúdo Programático" ou "Anexo II". Anota:
+
+- Quantas questões caem de cada matéria (ou estima pelas 2-3 últimas provas)
+- Soma o total
+- Calcula o % de cada uma
+
+> **PMDF Soldado 2024** (exemplo)
+> - Constitucional: 30 questões → 25%
+> - Penal: 24 → 20%
+> - Administrativo: 18 → 15%
+> - Português: 18 → 15%
+> - Lógica: 12 → 10%
+> - Processual Penal: 12 → 10%
+> - Informática: 6 → 5%
+> - **Total: 120 questões**
+
+Esse % é seu **multiplicador de horas**. Constitucional tem 25% do edital → fica com 25% das suas horas.
+
+## Passo 2: Define o tempo disponível REAL
+
+Erro típico: "tenho 5h por dia disponíveis". Realidade: 5h - 30min reuniões da família - 30min trânsito - 30min cansaço acumulado = ~3h REAIS por dia.
+
+Honesto sempre vence otimista. Conte pra baixo:
+
+- Dias úteis: X horas
+- Sábado: Y horas
+- Domingo: Z horas (geralmente menos, simulado entra aqui)
+- Total semanal: soma tudo
+
+> **Exemplo**: 3h × 5 dias + 4h sábado + 2h domingo = **21h por semana**
+
+## Passo 3: Distribui as horas pelas matérias
+
+Pega o total semanal e multiplica pelo peso de cada matéria:
+
+> 21h × 25% = **5h25 de Constitucional por semana**
+> 21h × 20% = **4h20 de Penal**
+> 21h × 15% = **3h15 de Administrativo**
+> ...etc
+
+Esses números viram blocos de 50-90min na sua semana. Distribui pelos dias.
+
+## Passo 4: Cria um status por tópico
+
+Cada matéria tem 30-80 tópicos no edital. Cria uma planilha (ou usa nossa árvore de edital verticalizado) e marca:
+
+- 🔵 **A estudar** (não viu ainda)
+- 🟡 **Estudando** (no meio)
+- 🟢 **Dominado** (passou 2 simulados acertando >70% nessa matéria)
+- 🔴 **Frágil** (estudou mas erra muito — precisa revisar urgente)
+
+Esse painel é seu controle de bordo. Toda segunda-feira, olha quantos tópicos estão em cada cor e ajusta a semana.
+
+## Passo 5: Encaixa simulado e revisão SRS
+
+Cronograma de estudo NOVO é só metade. A outra metade é:
+
+- **Revisão SRS** (repetição espaçada): 15-30min por dia. Os flashcards de antes voltam no momento certo pra fixar.
+- **Mini-simulado** (terça e quinta): 20 questões cronometradas, 30 min. Não conta como estudo novo.
+- **Simulado real** (domingo): 80-120 questões no formato exato da banca, cronometrado. Bloqueia 3h do domingo.
+
+> Semana modelo (3h/dia × 6 dias = 18h):
+>
+> - Seg, Qua, Sex: 2h matéria nova + 1h revisão SRS
+> - Ter, Qui: 1.5h matéria nova + 30min mini-simulado + 1h revisão SRS
+> - Sáb: 2h revisão estruturada + 2h matéria nova
+> - Dom: 3h simulado completo + análise dos erros
+
+## Adapta semanalmente
+
+Cronograma estático é cronograma morto. Toda semana você revisa: errou demais em alguma matéria no simulado? Próxima semana puxa mais horas pra ela. Acertou tudo de Constitucional? Constitucional vira revisão leve por 2 semanas, hora extra vai pra Penal.
+
+O Gabaritai faz esse rebalanceamento **automaticamente** baseado no desempenho dos seus simulados. Sem precisar pensar.
+
+## O cronograma morre se você não usar
+
+Última verdade: o cronograma mais perfeito do mundo morre se você abrir só uma vez por semana. **Abre todo dia.** Marca cada bloco como feito. O hábito de seguir o cronograma é mais importante que a perfeição dele.
+
+Quem é aprovado segue cronograma 80% das vezes. Quem não passa fica corrigindo o cronograma toda semana e estudando 30% do que planejou.
+
+---
+
+**Próximo passo prático**: dedica 30 min HOJE pra fazer os passos 1-4 do seu concurso. Sem isso pronto, qualquer hora de estudo é tiro no escuro.`,
+  },
+
+  {
+    slug: 'estudar-para-concurso-trabalhando',
+    title: 'Como estudar pra concurso trabalhando 8h por dia (rotina realista)',
+    description: 'A maioria dos concurseiros não tem 8h por dia livre. Tem 2-3h roubadas do café, do almoço, da noite. Plano realista pra quem trabalha e quer passar — com rotina semanal de aprovados reais.',
+    keywords: ['estudar para concurso trabalhando', 'rotina concurseiro trabalhador', 'concurso público trabalhando 8 horas', 'estudar a noite pra concurso'],
+    category: 'Rotina',
+    readingMin: 10,
+    publishedAt: '2026-05-16',
+    author: 'Equipe Gabaritai',
+    tags: ['rotina', 'trabalhador', 'método'],
+    content: `## O retrato real do concurseiro brasileiro
+
+A maioria das pessoas que passa em concurso público no Brasil **não é "concurseiro full time"**. É gente que trabalha das 8 às 17h, tem família, paga aluguel, e arranja 2-4 horas por dia pra estudar nos intervalos.
+
+Esse post é pra esse perfil. Quem tem 8h livres já tem caminho mais fácil — focam em outros artigos.
+
+## A regra fundamental: protocolo, não força de vontade
+
+Quem trabalha não pode contar com "vou estudar quando der vontade". Vontade é sazonal. **Protocolo é diário.**
+
+Protocolo = você decide UMA VEZ, antes da semana começar, exatamente quando e o que vai estudar. Daí não decide mais. Só executa.
+
+> Domingo à noite, 20 minutos: olhei meu cronograma, decidi:
+> - Segunda 6h-7h30: Constitucional, capítulo 3
+> - Segunda 21h-22h: Revisão SRS
+> - Terça 6h-7h30: Penal, crimes contra pessoa
+> - Terça 21h-22h: 20 questões de Constitucional
+> ...etc
+
+Segunda às 6h não tem decisão a tomar. Só abre o material e estuda.
+
+## Rotina-modelo: trabalhador 9-17h
+
+Vamos com um plano realista pra quem tem 3-3.5h por dia (rotina de aprovados):
+
+**6h-7h30 (1h30)**: bloco principal. Cabeça fresca, sem interrupção. Material novo + 1 hora de leitura/anotação. Esse é o bloco mais valioso da semana — protege ele.
+
+**12h-12h30 (30min)**: mini-revisão no almoço. Flashcards SRS no celular. Sem pressão.
+
+**21h-22h (1h)**: bloco da noite. Aqui faz questões (não leitura — cabeça cansada absorve menos). 30 questões da matéria do dia + ler explicação dos erros.
+
+**Sábado**: 4-5h. Manhã estudo novo, tarde simulado curto + descanso.
+
+**Domingo**: 3-4h. **SIMULADO COMPLETO** + análise dos erros + planejamento da próxima semana.
+
+Total: ~20-22h por semana. Carga 700h em 8 meses. **Suficiente pra concurso médio (PMDF, PCDF, CBMDF).**
+
+## Os 4 inimigos do concurseiro trabalhador
+
+**1. Cansaço real do trabalho.** Você não rende às 22h como rende às 6h. Aceite: bloco da noite é pra fazer questões mecanicamente, não pra absorver conteúdo novo. Material novo é manhã.
+
+**2. Imprevistos da família e trabalho.** Reunião que furou. Filho doente. Hora extra surpresa. Solução: ter dia FLEXÍVEL. Geralmente quarta ou quinta. Se a semana correu bem, é dia extra de descanso. Se desabou, é dia de recuperar.
+
+**3. Domingo de festa familiar.** Você perde o simulado. Solução: **simulado é sagrado.** Mesmo que faça às 21h da noite ou só 50 questões em vez de 120. Faz alguma coisa. Domingo sem simulado vira semana sem termômetro.
+
+**4. Burnout em 3 meses.** É a maior ameaça. Solução: 1 dia totalmente off por semana (quinta, sexta ou sábado à noite). NÃO ESTUDA. Vai no cinema, na academia, no boteco. Sem culpa.
+
+## Ferramentas que dobram o rendimento
+
+**Pomodoro 25-5**: 25 min focado, 5 min pausa, repete 4x = 1h40 real. Sem celular na mesa. Aplicativo Forest ou Pomofocus.
+
+**Flashcards no celular**: SRS roda em qualquer momento. Espera de fila, pausa no trabalho, ônibus. 5-15 cards aqui, 10 ali. Soma ao longo do dia.
+
+**Audio + transcrição**: ouve aula no carro/transporte. Não substitui leitura, mas mantém imersão na matéria.
+
+**Cronograma rígido na agenda**: bota no Google Calendar como compromisso. Tratá ele como reunião. Quando alguém pede esse horário, "tenho compromisso".
+
+## O que NÃO funciona pra quem trabalha
+
+- **"Vou estudar quando puder"**: sem horário fixo, vira nunca.
+- **Estudar 8h no sábado**: rendimento despenca depois de 4h. Melhor 4h sábado + 3h domingo.
+- **Tentar acompanhar quem é full-time**: você compete com o seu eu de ontem, não com o concurseiro 100% dedicado.
+- **Pular simulado pra "estudar mais matéria"**: simulado é o termômetro. Sem ele, você não sabe se está evoluindo.
+
+## Histórias reais de aprovados trabalhando
+
+**Caso 1 — Servidor público 9-17h**, aprovado PMDF Soldado em 9 meses. Rotina: 6h-7h30 leitura, 21h-22h questões, sábado 5h, domingo 3h+simulado. Dia off: sexta noite.
+
+**Caso 2 — Vendedora externa**, escalas variáveis, aprovada PCDF Escrivã em 14 meses. Sem rotina fixa de horário, usava blocos onde dava: às vezes 5h-7h, às vezes 18h-21h. **Constância** era 6 dias por semana, qualquer horário.
+
+**Caso 3 — Estagiário CLT 6h por dia**, aprovado PRF em 11 meses. Conseguiu acordo de não fazer hora extra. 4h por dia de estudo + sábado integral.
+
+Padrão comum: **rotina protegida**, **simulado dominical**, **6 dias por semana**.
+
+## Quando não dá
+
+Se sua rotina é 12h por dia trabalhando + filho pequeno + casa pra arrumar, talvez você precise considerar:
+
+- Concurso de **prazo longo** (12-18 meses, não 6)
+- Concurso **mais acessível** (PM local, GCM, técnico estadual) em vez de PF
+- **Pausa estratégica**: 3 meses sem estudar por 6 meses dedicados — em vez de 9 meses estudando 30 min/dia que não rende nada
+
+Honestidade: alguns concursos exigem dedicação que não dá pra ter trabalhando. Reconhecer isso te poupa anos.
+
+---
+
+**Próximo passo prático**: senta hoje à noite, abre o Google Calendar, coloca 5 blocos da semana (seg-sex 6h-7h30) como "Estudo". Quem entra no seu calendário, vê. Quem te chama nesse horário, vê. Isso é proteção real do seu tempo.`,
+  },
+
+  {
     slug: 'como-passar-em-concurso-publico-2026',
     title: 'Como passar em concurso público em 2026 (método honesto, sem milagre)',
     description: 'O passo a passo realista pra quem quer ser aprovado: como escolher o concurso certo, quanto tempo de estudo é razoável, quais 5 erros eliminam 80% dos candidatos antes da prova.',

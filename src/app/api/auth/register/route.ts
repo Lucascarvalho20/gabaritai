@@ -5,6 +5,7 @@ import { sendEmail, buildVerificationEmail } from '@/lib/email'
 import { audit } from '@/lib/audit-log'
 import { getClientIp, checkRateLimit, recordFailedAttempt } from '@/lib/rate-limit'
 import { telegramNewSignup, telegramTrialFraudAttempt } from '@/lib/telegram'
+import { findReferrerByCode } from '@/lib/referral'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
@@ -18,7 +19,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, email, password, cpf } = await req.json()
+    const { name, email, password, cpf, ref } = await req.json()
+
+    // Resolve quem indicou (se veio ?ref=CODE)
+    let referredByUserId: string | null = null
+    if (ref && typeof ref === 'string') {
+      referredByUserId = await findReferrerByCode(ref).catch(() => null)
+    }
 
     if (!name || !email || !password || !cpf) {
       recordFailedAttempt(`register:${ip}`, ip)
@@ -87,6 +94,7 @@ export async function POST(req: NextRequest) {
         emailVerified: false,
         emailVerifyToken: verifyToken,
         emailVerifyExpiry: verifyExpiry,
+        referredByUserId,
         profile: { create: {} },
         // Cria registro de TrialPeriod automaticamente (7 dias)
         trials: {

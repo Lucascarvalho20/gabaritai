@@ -81,6 +81,15 @@ model User {
   oauthProvider String?  // "google" | "apple" | null
   oauthSub      String?  // ID externo do provider (sub claim)
 
+  // ── Programa de indicações (afiliados) ────────────────────────────────────
+  // Código único do user — usado pra montar link de indicação.
+  // Gerado lazy quando aluno acessa /dashboard/indicacoes pela primeira vez.
+  referralCode      String?   @unique
+  // Quem te indicou (cadastrou primeiro). Null = veio orgânico/direto.
+  referredByUserId  String?
+  referredBy        User?     @relation("UserReferrals", fields: [referredByUserId], references: [id])
+  referrals         User[]    @relation("UserReferrals")
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
