@@ -7,7 +7,8 @@
     { "path": "/api/cron/generate-weekly-mocks?day=THU", "schedule": "0 22 * * 3" },
     { "path": "/api/cron/generate-weekly-mocks?day=SUN", "schedule": "0 22 * * 6" },
     { "path": "/api/cron/cleanup", "schedule": "0 4 1 * *" },
-    { "path": "/api/cron/detect-new-editais", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/detect-new-editais", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/daily-reminders", "schedule": "0 10 * * *" }
   ],
   "headers": [
     {

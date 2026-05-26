@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Calendar, BookOpen, Zap, Target, Brain,
   TrendingUp, Settings, LogOut, Menu, X,
-  Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles, FileText, Trophy
+  Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles, FileText, Trophy,
+  MessageCircle, Gift,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/auth'
@@ -31,6 +32,9 @@ const NAV_ALUNO = [
   { href: '/dashboard/chat', label: 'Mensagens', icon: Sparkles },
   { href: '/dashboard/progresso', label: 'Meu progresso', icon: BarChart3 },
   { href: '/dashboard/ranking', label: 'Ranking', icon: Trophy },
+  { href: '/dashboard/comunidade', label: 'Comunidade', icon: MessageCircle },
+  { href: '/dashboard/indicacoes', label: 'Indicações', icon: Gift, badge: '30%' },
+  { href: '/dashboard/notificacoes', label: 'Notificações', icon: Bell },
 ]
 
 const NAV_ADMIN = [
