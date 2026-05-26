@@ -320,7 +320,7 @@ export default async function ConcursoPage({ params, searchParams }: Props) {
             Comece sua preparação pro {group.label} {cargoNome}
           </h3>
           <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
-            3 dias grátis. Sem cartão. Cronograma montado em 5 minutos no formato exato do edital.
+            7 dias grátis. Sem cartão. Cronograma montado em 5 minutos no formato exato do edital.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
             <Link

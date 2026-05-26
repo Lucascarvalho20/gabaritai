@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { isWindowOpen } from '@/lib/mock-exam-scheduler'
 import { consumeQuota, trackFeatureUsage } from '@/lib/ai-quota'
+import { canTakeMockExam } from '@/lib/plan-access'
 
 // POST /api/simulados/[id]/start
 // Cria MockExamResult em status IN_PROGRESS com expiresAt = startedAt + durationMin.
@@ -14,6 +15,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const exam = await prisma.mockExam.findUnique({ where: { id: params.id } })
   if (!exam) return NextResponse.json({ message: 'Simulado não encontrado' }, { status: 404 })
+
+  // Trial só libera MINI — simulado completo requer assinatura
+  const planCheck = await canTakeMockExam(user.id, exam.type as 'MINI' | 'REAL' | 'PERSONALIZADO')
+  if (!planCheck.ok) {
+    return NextResponse.json(
+      { message: planCheck.reason, code: 'PLAN_LIMIT', upgradeMessage: planCheck.upgradeMessage },
+      { status: 403 },
+    )
+  }
 
   // Valida janela — exceção: admins podem iniciar fora de janela (pra testar)
   const isShared = exam.weekStart && exam.scheduledDay

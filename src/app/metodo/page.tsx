@@ -146,6 +146,7 @@ export default function MetodoPage() {
               cta="Receber edital"
               successMessage="Pronto! Chega em alguns minutos no seu email."
               hint="Sem spam · sem precisar criar conta"
+              withCourseSelect
             />
           </div>
           <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
@@ -153,7 +154,7 @@ export default function MetodoPage() {
               href="/planos"
               className="group inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-all"
             >
-              Começar 3 dias grátis
+              Começar 7 dias grátis
               <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link

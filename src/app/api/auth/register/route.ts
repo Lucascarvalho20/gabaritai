@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
         emailVerifyToken: verifyToken,
         emailVerifyExpiry: verifyExpiry,
         profile: { create: {} },
-        // Cria registro de TrialPeriod automaticamente (3 dias)
+        // Cria registro de TrialPeriod automaticamente (7 dias)
         trials: {
           create: {
-            endsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+            endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           },
         },
       },

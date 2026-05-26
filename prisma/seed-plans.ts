@@ -37,9 +37,9 @@ type SeedPlan = {
 const PLANS: SeedPlan[] = [
   // ── TRIAL ──────────────────────────────────────────────────────────────
   {
-    slug: 'trial-3-dias',
-    name: 'Trial 3 dias',
-    description: 'Conhece a plataforma sem cartão',
+    slug: 'trial-7-dias',
+    name: 'Trial 7 dias',
+    description: 'Conhece a plataforma sem cartão · 1 curso · 30 questões por dia',
     type: 'TRIAL',
     interval: 'TRIAL',
     priceCents: 0,
@@ -49,9 +49,12 @@ const PLANS: SeedPlan[] = [
     maxCourses: 1,
     features: [
       '1 curso à escolha',
-      'Cronograma completo',
+      '7 dias completos pra explorar',
+      'Cronograma adaptativo completo',
       'Mentor 24h',
-      '3 mini-simulados',
+      'Mini-simulados liberados',
+      'Limite de 30 questões por dia',
+      'Simulado completo da banca: só após assinar',
       'Sem cartão de crédito',
     ],
     badge: null,
@@ -203,7 +206,7 @@ const PLANS: SeedPlan[] = [
 
 // Slugs LEGADOS que devem ser ocultados do checkout público
 // (mantém histórico no banco, só não aparece pro novo cliente).
-const LEGACY_SLUGS_TO_HIDE = ['trial', 'mensal', 'anual', 'vitalicio']
+const LEGACY_SLUGS_TO_HIDE = ['trial', 'trial-3-dias', 'mensal', 'anual', 'vitalicio']
 
 async function main() {
   console.log('═══ Seeding plans ═══\n')

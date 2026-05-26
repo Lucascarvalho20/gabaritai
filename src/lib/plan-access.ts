@@ -17,6 +17,20 @@
 
 import { prisma } from '@/lib/prisma'
 
+// ─── Configuração dos limites por tipo de plano ──────────────────────────────
+// Mantemos os limites do trial hardcoded aqui (em vez de em campos novos no
+// PricingPlan) pra evitar schema change. Se um dia precisar de planos com
+// limites custom, movemos pra Json field no PricingPlan.
+
+export const TRIAL_LIMITS = {
+  dailyQuestions: 30,
+  allowedMockTypes: ['MINI'] as Array<'MINI' | 'REAL' | 'PERSONALIZADO'>,
+  trialDays: 7,
+  allowFlashcards: true,
+  allowMentor: true,
+  allowRedacao: false, // correção de redação só após assinar
+} as const
+
 export type PlanLimits = {
   hasPlan: boolean
   planSlug: string | null
@@ -25,6 +39,7 @@ export type PlanLimits = {
   maxCourses: number | null       // null = ilimitado
   expiresAt: Date | null
   isBypassed: boolean             // admin/beta/full access
+  isTrial: boolean                // está em trial gratuito
   reason?: string                 // texto descritivo
 }
 
@@ -46,7 +61,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     return {
       hasPlan: false, planSlug: null, planName: null,
       coverageType: null, maxCourses: 0, expiresAt: null,
-      isBypassed: false, reason: 'Usuário não encontrado',
+      isBypassed: false, isTrial: false, reason: 'Usuário não encontrado',
     }
   }
 
@@ -60,6 +75,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
       maxCourses: null, // ilimitado
       expiresAt: null,
       isBypassed: true,
+      isTrial: false,
     }
   }
 
@@ -87,6 +103,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
       maxCourses: 0,
       expiresAt: null,
       isBypassed: false,
+      isTrial: false,
       reason: 'Sem plano ativo',
     }
   }
@@ -118,9 +135,12 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     return {
       hasPlan: false, planSlug: null, planName: null,
       coverageType: null, maxCourses: 0, expiresAt: payment.expiresAt,
-      isBypassed: false, reason: 'Plano do pagamento não encontrado',
+      isBypassed: false, isTrial: false,
+      reason: 'Plano do pagamento não encontrado',
     }
   }
+
+  const isTrial = plan.slug.startsWith('trial-')
 
   return {
     hasPlan: true,
@@ -130,6 +150,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     maxCourses: plan.maxCourses,
     expiresAt: payment.expiresAt,
     isBypassed: false,
+    isTrial,
   }
 }
 
@@ -212,6 +233,113 @@ function suggestUpgrade(currentSlug: string | null): string {
     return currentSlug.replace('2-cursos', 'todos')
   }
   return 'mensal-todos'
+}
+
+// ─── Limites de TRIAL (questões/dia + tipos de simulado) ─────────────────────
+
+/**
+ * Conta quantas questões o usuário respondeu hoje.
+ * Conta apenas QuestionAttempt criadas após 00:00 do dia local (UTC-3).
+ *
+ * Não conta tentativas de simulado (mock exam) — só questões avulsas via
+ * /me/questoes/[id]/attempt. Se o produto unificar, ajusta aqui.
+ */
+export async function getQuestionsUsedToday(userId: string): Promise<number> {
+  // Brasil: meia-noite local = 03:00 UTC. Calcula início do dia atual em BRT.
+  const now = new Date()
+  const brtOffsetMinutes = -180 // UTC-3
+  const localMs = now.getTime() + brtOffsetMinutes * 60 * 1000
+  const localDate = new Date(localMs)
+  const startOfDayLocal = new Date(Date.UTC(
+    localDate.getUTCFullYear(),
+    localDate.getUTCMonth(),
+    localDate.getUTCDate(),
+  ))
+  // Volta pro UTC subtraindo offset
+  const startOfDayUTC = new Date(startOfDayLocal.getTime() - brtOffsetMinutes * 60 * 1000)
+
+  return prisma.questionAttempt.count({
+    where: { userId, createdAt: { gte: startOfDayUTC } },
+  })
+}
+
+export type QuestionAttemptCheck =
+  | { ok: true; isTrial: boolean; used: number; max: number | null }
+  | { ok: false; reason: string; used: number; max: number; upgradeMessage: string }
+
+/**
+ * Checa se o usuário pode responder mais 1 questão agora.
+ * Usuário pagante (não-trial) e bypassed: sempre ok.
+ * Usuário em trial: limita a TRIAL_LIMITS.dailyQuestions por dia.
+ */
+export async function canAttemptQuestion(userId: string): Promise<QuestionAttemptCheck> {
+  const limits = await getUserPlanLimits(userId)
+
+  // Sem plano: bloqueia
+  if (!limits.hasPlan) {
+    return {
+      ok: false,
+      reason: 'Sem plano ativo. Comece pelo trial gratuito de 7 dias.',
+      used: 0,
+      max: 0,
+      upgradeMessage: 'Ativar trial',
+    }
+  }
+
+  // Bypass: admin/beta/full access
+  if (limits.isBypassed) return { ok: true, isTrial: false, used: 0, max: null }
+
+  // Pagante (não-trial): sem limite
+  if (!limits.isTrial) return { ok: true, isTrial: false, used: 0, max: null }
+
+  // Trial: aplica limite diário
+  const used = await getQuestionsUsedToday(userId)
+  const max = TRIAL_LIMITS.dailyQuestions
+  if (used < max) return { ok: true, isTrial: true, used, max }
+
+  return {
+    ok: false,
+    reason: `Você atingiu o limite de ${max} questões por dia do trial. Volta amanhã ou assine pra ter questões ilimitadas.`,
+    used,
+    max,
+    upgradeMessage: 'Assinar agora',
+  }
+}
+
+export type MockExamCheck =
+  | { ok: true }
+  | { ok: false; reason: string; upgradeMessage: string }
+
+/**
+ * Checa se o usuário pode fazer um simulado de um tipo específico.
+ * Trial só permite MINI; demais planos liberam todos.
+ */
+export async function canTakeMockExam(
+  userId: string,
+  type: 'MINI' | 'REAL' | 'PERSONALIZADO',
+): Promise<MockExamCheck> {
+  const limits = await getUserPlanLimits(userId)
+
+  if (!limits.hasPlan) {
+    return {
+      ok: false,
+      reason: 'Sem plano ativo.',
+      upgradeMessage: 'Ver planos',
+    }
+  }
+
+  if (limits.isBypassed || !limits.isTrial) return { ok: true }
+
+  if (TRIAL_LIMITS.allowedMockTypes.includes(type)) return { ok: true }
+
+  return {
+    ok: false,
+    reason:
+      type === 'REAL'
+        ? 'Simulado completo no formato da banca está disponível só pra assinantes. Mini-simulados de treino estão liberados no trial.'
+        : 'Esse tipo de simulado não está disponível no trial.',
+    upgradeMessage: 'Assinar pra liberar',
+  }
 }
 
 /**

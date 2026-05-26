@@ -31,10 +31,21 @@ export async function GET(req: NextRequest) {
   // Admin e ?includeNoEdital=1 veem tudo.
   const includeNoEdital = searchParams.get('includeNoEdital') === '1' || user?.role === 'ADMIN'
 
+  // Filtro de área: por padrão só FOCO ATUAL (policial, militar, bombeiro,
+  // guarda municipal). Cursos OUTRO (banco, TJ, CNU, etc.) ficam invisíveis
+  // pro público. Admin e ?includeAll=1 enxergam tudo.
+  const includeAllAreas = searchParams.get('includeAll') === '1' || user?.role === 'ADMIN'
+  const PUBLIC_AREAS = ['POLICIAL', 'MILITAR', 'BOMBEIRO', 'GUARDA_MUNICIPAL'] as const
+  const areaFilter = area
+    ? { area: area as any }
+    : includeAllAreas
+      ? {}
+      : { area: { in: PUBLIC_AREAS as any } }
+
   const courses = await prisma.course.findMany({
     where: {
       active: true,
-      ...(area && { area: area as any }),
+      ...areaFilter,
       ...(uf && { uf }),
       ...(courseIdFilter ?? {}),
       ...(!includeNoEdital && {
