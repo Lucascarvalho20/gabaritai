@@ -81,7 +81,7 @@ export async function getReferralStats(userId: string): Promise<ReferralStats> {
 
   // Garante o código
   const code = await ensureReferralCode(userId)
-  const link = `${baseUrl}/register?ref=${code}`
+  const link = `${baseUrl}/registro?ref=${code}`
 
   // Pessoas que vc indicou
   const referrals = await prisma.user.findMany({
