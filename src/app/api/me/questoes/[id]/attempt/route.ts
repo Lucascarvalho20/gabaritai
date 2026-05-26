@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { canAttemptQuestion } from '@/lib/plan-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (!selected) {
     return NextResponse.json({ message: 'Resposta selecionada é obrigatória' }, { status: 400 })
+  }
+
+  // Limite diário do trial (30 questões/dia). Pagantes não têm limite.
+  const limitCheck = await canAttemptQuestion(user.id)
+  if (!limitCheck.ok) {
+    return NextResponse.json(
+      {
+        message: limitCheck.reason,
+        limit: { used: limitCheck.used, max: limitCheck.max, upgrade: limitCheck.upgradeMessage },
+      },
+      { status: 429 },
+    )
   }
 
   const question = await prisma.question.findUnique({

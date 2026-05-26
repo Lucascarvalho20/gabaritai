@@ -69,7 +69,7 @@ export default function DemoPage() {
               href="/planos"
               className="group inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 shadow-lg shadow-brand-500/25 transition-all hover:-translate-y-0.5"
             >
-              Começar 3 dias grátis
+              Começar 7 dias grátis
               <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
@@ -93,6 +93,7 @@ export default function DemoPage() {
             source="demo-edital-pdf"
             cta="Receber edital"
             hint="Sem spam · cancela quando quiser"
+            withCourseSelect
           />
         </section>
       </main>

@@ -155,7 +155,7 @@ export function TimeBudgetCalculator() {
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <p className="text-[10px] text-muted-foreground text-center mt-2">
-              Cronograma adaptativo · 3 dias grátis · sem cartão
+              Cronograma adaptativo · 7 dias grátis · sem cartão
             </p>
           </motion.div>
         </div>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { sendEmail } from '@/lib/email'
+import { renderEditalEmail } from '@/lib/edital-renderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,5 +78,16 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({ ok: true })
+  // Dispara email com edital verticalizado (ou genérico de boas-vindas se
+  // courseSlug não foi informado). Sem RESEND_API_KEY, vai pro console (dev).
+  // Não bloqueia a resposta — captura é o que importa, email é melhor-esforço.
+  const courseSlugForEmail = body.courseSlug ?? body.parentSlug ?? null
+  try {
+    const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
+    await sendEmail({ to: emailRaw, subject, html, text })
+  } catch (err) {
+    console.warn('[leads] email send failed (não-bloqueante):', err)
+  }
+
+  return NextResponse.json({ ok: true, emailSent: true })
 }

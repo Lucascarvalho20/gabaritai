@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { GamifiedHeader } from '@/components/gamified-header'
+import { TrialBanner } from '@/components/TrialBanner'
 
 // ─── tipos vindos da API ────────────────────────────────────────────────────
 type MeStats = {
@@ -127,15 +128,18 @@ export default function DashboardPage() {
   // Aluno sem cursos ainda
   if (cursos.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto py-16 text-center space-y-4 animate-fade-in">
-        <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto" />
-        <h1 className="text-2xl font-black">Você ainda não tem nenhum curso</h1>
-        <p className="text-muted-foreground text-sm">
-          Pra começar a estudar, escolha um concurso e monte seu plano.
-        </p>
-        <Link href="/dashboard/comecar" className="btn-primary btn-md inline-flex">
-          Montar meu plano agora
-        </Link>
+      <div className="max-w-3xl mx-auto py-8 sm:py-16 space-y-6 animate-fade-in">
+        <TrialBanner />
+        <div className="text-center space-y-4">
+          <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto" />
+          <h1 className="text-2xl font-black">Você ainda não tem nenhum curso</h1>
+          <p className="text-muted-foreground text-sm">
+            Pra começar a estudar, escolha um concurso e monte seu plano.
+          </p>
+          <Link href="/dashboard/comecar" className="btn-primary btn-md inline-flex">
+            Montar meu plano agora
+          </Link>
+        </div>
       </div>
     )
   }
@@ -144,6 +148,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
+      <TrialBanner />
       <GamifiedHeader />
 
       {/* Saudação */}

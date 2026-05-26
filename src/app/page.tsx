@@ -369,9 +369,10 @@ function Hero() {
               <EmailCapture
                 source="hero-edital-pdf"
                 placeholder="seu@email.com"
-                cta="Receber edital em PDF"
+                cta="Receber edital"
                 successMessage="Pronto! Em alguns minutos chega no seu email."
                 hint="Edital verticalizado com matérias, peso e o que mais cai · sem spam"
+                withCourseSelect
               />
             </motion.div>
 
@@ -380,7 +381,7 @@ function Hero() {
                 href="/planos"
                 className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-all shadow-md shadow-brand-500/20 hover:shadow-lg"
               >
-                Começar 3 dias grátis
+                Começar 7 dias grátis
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
@@ -392,7 +393,7 @@ function Hero() {
             </motion.div>
 
             <motion.div variants={fadeInUp} className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 justify-center lg:justify-start text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> 7 dias garantia</span>
+              <span className="inline-flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> Trial 7 dias grátis</span>
               <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Sem fidelidade</span>
               <span className="inline-flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Pagamento seguro</span>
             </motion.div>
@@ -809,10 +810,10 @@ function Planos() {
           <div className="rounded-xl border border-dashed border-emerald-300/60 dark:border-emerald-700/40 bg-emerald-50/30 dark:bg-emerald-900/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-sm text-center sm:text-left">
               <strong className="text-foreground">Antes de assinar?</strong>{' '}
-              <span className="text-muted-foreground">3 dias grátis · sem cartão · cancela em 2 cliques</span>
+              <span className="text-muted-foreground">7 dias grátis · sem cartão · cancela em 2 cliques</span>
             </div>
             <Link
-              href="/checkout/trial-3-dias"
+              href="/checkout/trial-7-dias"
               className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 inline-flex items-center gap-1 group"
             >
               Começar trial
@@ -875,7 +876,7 @@ function CtaFinal() {
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Comece hoje. Sem cartão.</h2>
               <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-                3 dias pra explorar tudo. Se não te servir, sai sem dever nada — nem precisa pedir.
+                7 dias pra explorar tudo. Se não te servir, sai sem dever nada — nem precisa pedir.
               </p>
               <Link
                 href="/planos"
