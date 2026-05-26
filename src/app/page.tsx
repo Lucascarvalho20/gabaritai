@@ -924,7 +924,7 @@ function Footer() {
           <h4 className="font-semibold text-sm mb-3">Conta</h4>
           <ul className="space-y-1.5 text-xs text-muted-foreground">
             <li><Link href="/login" className="hover:text-foreground transition-colors">Entrar</Link></li>
-            <li><Link href="/register" className="hover:text-foreground transition-colors">Criar conta</Link></li>
+            <li><Link href="/registro" className="hover:text-foreground transition-colors">Criar conta</Link></li>
           </ul>
         </div>
       </div>

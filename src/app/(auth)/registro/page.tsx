@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Loader2, UserPlus, Mail, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, UserPlus, Mail, CheckCircle2, Gift } from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
@@ -43,9 +43,47 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function RegistroPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>}>
+      <RegistroInner />
+    </Suspense>
+  )
+}
+
+function RegistroInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPass, setShowPass] = useState(false)
   const [registered, setRegistered] = useState<{ email: string; devVerifyUrl?: string } | null>(null)
+  const [refCode, setRefCode] = useState<string | null>(null)
+
+  // Captura ?ref=CODE do URL e persiste em localStorage por 30d
+  // (caso o usuário visite a landing primeiro e depois volte pra cá direto)
+  useEffect(() => {
+    const fromUrl = searchParams.get('ref')
+    if (fromUrl) {
+      const clean = fromUrl.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12)
+      if (clean) {
+        setRefCode(clean)
+        try {
+          localStorage.setItem('gabaritai_ref', JSON.stringify({ code: clean, ts: Date.now() }))
+        } catch {}
+        return
+      }
+    }
+    try {
+      const stored = localStorage.getItem('gabaritai_ref')
+      if (stored) {
+        const { code, ts } = JSON.parse(stored)
+        // Expira em 30 dias
+        if (code && ts && Date.now() - ts < 30 * 24 * 60 * 60 * 1000) {
+          setRefCode(code)
+        } else {
+          localStorage.removeItem('gabaritai_ref')
+        }
+      }
+    } catch {}
+  }, [searchParams])
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -62,8 +100,10 @@ export default function RegistroPage() {
         email: data.email,
         cpf: data.cpf.replace(/\D/g, ''),
         password: data.password,
+        ...(refCode && { ref: refCode }),
       })
       setRegistered({ email: data.email, devVerifyUrl: res.data?.devVerifyUrl })
+      try { localStorage.removeItem('gabaritai_ref') } catch {}
       toast.success('Conta criada! Verifique seu e-mail.')
     } catch (err: any) {
       const msg = err.response?.data?.message ?? 'Erro ao criar conta'
@@ -115,7 +155,13 @@ export default function RegistroPage() {
     <div className="animate-fade-in">
       <div className="mb-8">
         <h1 className="text-3xl font-black text-foreground mb-2">Criar conta</h1>
-        <p className="text-muted-foreground">3 dias grátis, sem cartão de crédito.</p>
+        <p className="text-muted-foreground">7 dias grátis, sem cartão de crédito.</p>
+        {refCode && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand-500/10 border border-brand-500/30 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300">
+            <Gift className="w-3.5 h-3.5" />
+            Indicado por <span className="font-mono tracking-widest">{refCode}</span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
