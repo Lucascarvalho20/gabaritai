@@ -16,6 +16,7 @@ import { ImpersonationBanner } from '@/components/impersonation-banner'
 import { OnboardingTour } from '@/components/onboarding-tour'
 import { OfflineIndicator } from '@/components/offline-indicator'
 import { cn } from '@/lib/utils'
+import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
 const NAV_ALUNO = [
@@ -86,10 +87,11 @@ function NavItem({ href, label, icon: Icon, badge, active }: { href: string; lab
 
 type Notif = {
   id: string
-  type: string          // 'INFO' | 'SUCCESS' | 'WARNING' | 'CHAT' (do schema Notification)
+  category: string      // 'system' | 'simulado' | 'mentor' | 'pagamento' | 'comunidade' | 'indicacao' | 'edital' | 'estudo' | 'conta'
   title: string
   body: string | null
   link: string | null
+  icon: string | null
   read: boolean
   createdAt: string
 }
@@ -107,11 +109,18 @@ function timeAgo(iso: string): string {
   return `${mo}mês`
 }
 
-function notifIcon(type: string): string {
-  if (type === 'SUCCESS') return '✅'
-  if (type === 'WARNING') return '⚠️'
-  if (type === 'CHAT') return '💬'
-  return '🔔'
+function notifIcon(category: string): string {
+  switch (category) {
+    case 'simulado': return '🏆'
+    case 'mentor': return '💬'
+    case 'pagamento': return '💳'
+    case 'comunidade': return '👥'
+    case 'indicacao': return '🎁'
+    case 'edital': return '📋'
+    case 'estudo': return '📚'
+    case 'conta': return '🔐'
+    default: return '🔔'
+  }
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -291,11 +300,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <Link
                           key={n.id}
                           href={n.link ?? '#'}
-                          onClick={() => { setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x)); setNotifOpen(false) }}
+                          onClick={() => {
+                            setNotifs(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x))
+                            setNotifOpen(false)
+                            if (!n.read) api.patch(`/me/notifications/${n.id}`).catch(() => {})
+                          }}
                           className={`block p-4 hover:bg-muted/50 transition-colors ${!n.read ? 'bg-brand-50/50 dark:bg-brand-900/10' : ''}`}
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-lg shrink-0">{notifIcon(n.type)}</span>
+                            <span className="text-lg shrink-0">{notifIcon(n.category)}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold text-foreground">{n.title}</span>

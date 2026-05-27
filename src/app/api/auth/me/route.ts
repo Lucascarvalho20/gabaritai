@@ -32,5 +32,8 @@ export async function GET(req: NextRequest) {
     avatar: user.avatar,
     concursoAlvo: user.profile?.concursoLabel,
     profile: user.profile,
+    hasCpf: !!user.cpfHash,
+    hasPhone: !!user.phone,
+    oauthProvider: user.oauthProvider,
   })
 }
