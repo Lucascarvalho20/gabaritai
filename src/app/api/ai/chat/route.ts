@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
 import { DEMO_USERS } from '@/lib/demo-users'
+import { consumeQuota } from '@/lib/ai-quota'
+import { prisma } from '@/lib/prisma'
 
 function detectCronogramaUpdate(userMessage: string, _aiResponse: string): { horas_dia?: number; dias_semana?: number[] } | null {
   const msg = userMessage.toLowerCase()
@@ -44,13 +46,33 @@ export async function POST(req: NextRequest) {
   }
 
   const payload = await verifyToken(auth.split(' ')[1])
-  if (!payload) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
+  if (!payload?.sub) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
 
   const user = DEMO_USERS.find(u => u.id === payload.sub)
   const { message, history = [] } = await req.json()
 
   if (!message?.trim()) {
     return NextResponse.json({ message: 'Mensagem não pode ser vazia' }, { status: 400 })
+  }
+  if (typeof message === 'string' && message.length > 4000) {
+    return NextResponse.json({ message: 'Mensagem muito longa (máx 4000 caracteres)' }, { status: 400 })
+  }
+
+  // Quota diária por aluno (anti-abuso) — protege custo de IA.
+  // Usuários DEMO não estão no DB então pulamos a quota pra eles.
+  const realUser = await prisma.user.findUnique({
+    where: { id: String(payload.sub) },
+    select: { id: true, hasFullAccess: true },
+  })
+  if (realUser) {
+    try {
+      await consumeQuota({ userId: realUser.id, kind: 'mentor_chat', hasFullAccess: realUser.hasFullAccess })
+    } catch (err: any) {
+      if (err?.code === 'QUOTA_EXCEEDED') {
+        return NextResponse.json({ message: err.message, quota: err.quota }, { status: 429 })
+      }
+      throw err
+    }
   }
 
   const systemPrompt = buildMentorPrompt(user)

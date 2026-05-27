@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
+import { consumeQuota, type QuotaKind } from '@/lib/ai-quota'
+import { prisma } from '@/lib/prisma'
 
 export const maxDuration = 60
 // tipo: 'flashcards' | 'questoes' | 'simulado'
@@ -8,9 +10,31 @@ export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
   const payload = await verifyToken(auth.split(' ')[1])
-  if (!payload) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
+  if (!payload?.sub) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
 
   const { tipo, materia, curso, quantidade = 5, nivel = 'medio', semana = 1 } = await req.json()
+
+  // Cota por tipo (anti-abuso da geração de IA)
+  const KIND_MAP: Record<string, QuotaKind> = {
+    flashcards: 'flashcard_ia',
+    questoes: 'simulado_ia',
+    simulado: 'simulado_ia',
+  }
+  const kind = KIND_MAP[tipo as string]
+  const realUser = await prisma.user.findUnique({
+    where: { id: String(payload.sub) },
+    select: { id: true, hasFullAccess: true },
+  })
+  if (realUser && kind) {
+    try {
+      await consumeQuota({ userId: realUser.id, kind, hasFullAccess: realUser.hasFullAccess })
+    } catch (err: any) {
+      if (err?.code === 'QUOTA_EXCEEDED') {
+        return NextResponse.json({ message: err.message, quota: err.quota }, { status: 429 })
+      }
+      throw err
+    }
+  }
 
   const prompt = buildPrompt(tipo, materia, curso, quantidade, nivel, semana)
   const result = await callAI(prompt)

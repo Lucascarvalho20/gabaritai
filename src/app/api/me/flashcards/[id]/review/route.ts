@@ -25,8 +25,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = await req.json().catch(() => ({}))
   const quality = Math.max(0, Math.min(5, Math.round(Number(body.quality ?? 0))))
 
-  const fc = await prisma.flashcard.findUnique({ where: { id: params.id }, select: { id: true } })
-  if (!fc) return NextResponse.json({ message: 'Flashcard não encontrado' }, { status: 404 })
+  const fc = await prisma.flashcard.findUnique({
+    where: { id: params.id },
+    select: { id: true, userId: true, isShared: true, active: true },
+  })
+  if (!fc || !fc.active) return NextResponse.json({ message: 'Flashcard não encontrado' }, { status: 404 })
+  // Só pode revisar flashcard próprio OU compartilhado. Evita IDOR (aluno A
+  // criando reviews em flashcards privados de aluno B).
+  const isOwner = fc.userId === user.id
+  if (!isOwner && !fc.isShared) {
+    return NextResponse.json({ message: 'Flashcard não encontrado' }, { status: 404 })
+  }
 
   const prev = await prisma.flashcardReview.findUnique({
     where: { userId_flashcardId: { userId: user.id, flashcardId: fc.id } },
