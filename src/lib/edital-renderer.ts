@@ -18,6 +18,143 @@ import { prisma } from '@/lib/prisma'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
 
+/**
+ * Gera análise estratégica via IA (cache de 30 dias por curso+banca).
+ *
+ * O lead magnet só vira realmente VALIOSO quando vai além de listar matérias —
+ * o aluno já tem o edital. O que ele NÃO tem é: pra essa banca específica,
+ * quais matérias caem mais, em que ordem estudar, onde estão as pegadinhas.
+ * Isso aqui faz exatamente isso.
+ *
+ * Se IA falhar ou estiver lenta, devolve null e o email segue sem essa seção
+ * (graceful degradation — não bloqueia o envio).
+ */
+async function generateAnaliseEstrategica(input: {
+  cargo: string
+  orgao: string
+  banca: string
+  materias: Array<{ name: string; weight: number | null; expectedQuestions: number | null }>
+}): Promise<string | null> {
+  const cacheKey = `edital_analise:${input.orgao}:${input.cargo}:${input.banca}`.toLowerCase().replace(/\s+/g, '-')
+
+  // 1) Tenta cache (30 dias)
+  try {
+    const cached = await prisma.aIGenerationCache.findUnique({ where: { cacheKey } })
+    if (cached) {
+      const age = Date.now() - cached.createdAt.getTime()
+      if (age < 30 * 24 * 60 * 60 * 1000) {
+        await prisma.aIGenerationCache.update({
+          where: { cacheKey },
+          data: { hitCount: { increment: 1 }, lastUsedAt: new Date() },
+        }).catch(() => {})
+        return cached.content as string
+      }
+    }
+  } catch {}
+
+  // 2) Gera via IA — só Gemini Flash (rápido e barato) pra esse caso
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (!geminiKey) return null
+
+  const materiasList = input.materias
+    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+    .map((m) => `- ${m.name}${m.weight ? ` (peso ${m.weight})` : ''}${m.expectedQuestions ? ` — ~${m.expectedQuestions} questões` : ''}`)
+    .join('\n')
+
+  const prompt = `Você é um professor sênior de concursos públicos com 15 anos analisando provas da banca ${input.banca}. Conhece exatamente o estilo dela.
+
+Concurso: ${input.orgao} ${input.cargo}
+Banca: ${input.banca}
+
+Matérias do edital (já ordenadas por peso):
+${materiasList}
+
+Gere uma ANÁLISE ESTRATÉGICA pra esse aluno (texto direto, ~400 palavras), em Markdown, com EXATAMENTE essas 3 seções:
+
+## 🎯 Por onde começar
+Em qual ordem o aluno deve atacar as matérias e por quê. Considera: peso na prova, quanto cai pra ${input.banca}, dificuldade média.
+
+## 🔥 O que ${input.banca} ama cobrar
+Liste 4-5 padrões SUPER ESPECÍFICOS dessa banca pra ${input.cargo}. Exemplos do tipo de detalhe:
+- "${input.banca} ama questão CE em Português que troca regência verbal"
+- "Pra ${input.cargo}, Direito Administrativo cai 80% em improbidade e licitações"
+- Sé específico sobre essa banca/cargo. NÃO seja genérico.
+
+## ⚡ 3 erros que derrubam candidato em ${input.banca}
+3 erros mentais ou de estudo que pegam o concurseiro de surpresa nessa banca específica.
+
+REGRAS:
+- Específico pra ${input.banca}, não genérico
+- Cite percentuais quando souber
+- Tom direto, próximo, sem enrolar
+- Markdown limpo (h2 ## títulos, listas)
+- Sem emojis nas seções (só os que já dei nos títulos)`
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 1500, temperature: 0.5 },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!text || text.length < 200) return null
+
+    // 3) Salva no cache
+    await prisma.aIGenerationCache.create({
+      data: {
+        cacheKey,
+        kind: 'edital_analise',
+        content: text,
+        modelUsed: 'gemini-1.5-flash',
+      },
+    }).catch(() => {})
+
+    return text
+  } catch (err) {
+    console.error('[edital-analise] failed:', err)
+    return null
+  }
+}
+
+/**
+ * Converte markdown simples (gerado pela IA) em HTML inline-styled pra email.
+ * Suporta: ## h2, **bold**, listas com -, parágrafos.
+ */
+function markdownToEmailHtml(md: string): string {
+  const lines = md.split('\n')
+  const out: string[] = []
+  let inList = false
+  for (const line of lines) {
+    const t = line.trim()
+    if (!t) { if (inList) { out.push('</ul>'); inList = false } continue }
+    if (t.startsWith('## ')) {
+      if (inList) { out.push('</ul>'); inList = false }
+      out.push(`<h3 style="font-size:15px;font-weight:700;margin:18px 0 6px;color:#0f172a;">${escapeHtml(t.slice(3))}</h3>`)
+      continue
+    }
+    if (t.startsWith('- ')) {
+      if (!inList) { out.push('<ul style="margin:0 0 8px;padding-left:20px;font-size:13px;color:#475569;line-height:1.55;">'); inList = true }
+      const content = t.slice(2).replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#0f172a;">$1</strong>')
+      out.push(`<li style="margin-bottom:4px;">${escapeHtml(content).replace(/&lt;strong[^&]+&gt;/g, '<strong style="color:#0f172a;">').replace(/&lt;\/strong&gt;/g, '</strong>')}</li>`)
+      continue
+    }
+    if (inList) { out.push('</ul>'); inList = false }
+    const content = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#0f172a;">$1</strong>')
+    out.push(`<p style="font-size:13px;color:#475569;margin:6px 0;line-height:1.55;">${escapeHtml(content).replace(/&lt;strong[^&]+&gt;/g, '<strong style="color:#0f172a;">').replace(/&lt;\/strong&gt;/g, '</strong>')}</p>`)
+  }
+  if (inList) out.push('</ul>')
+  return out.join('\n')
+}
+
 const examFormatLabel: Record<string, string> = {
   CE: 'Certo/Errado',
   ME_5: 'Múltipla escolha (5 alternativas)',
@@ -139,6 +276,24 @@ export async function renderEditalEmail(courseSlug: string | null): Promise<{ su
   // Soma de pesos pra calcular percentual
   const totalWeight = subjectsWithTopics.reduce((sum, s) => sum + (s.weight ?? 1), 0)
 
+  // Tenta gerar análise estratégica via IA (cache de 30 dias por curso+banca)
+  let analiseHtml: string | null = null
+  if (edital.banca?.name) {
+    const analiseMarkdown = await generateAnaliseEstrategica({
+      cargo: cargoLabel,
+      orgao: orgaoLabel,
+      banca: edital.banca.name,
+      materias: subjectsWithTopics.map((s) => ({
+        name: s.subjectName,
+        weight: s.weight ?? null,
+        expectedQuestions: s.expectedQuestions ?? null,
+      })),
+    }).catch(() => null)
+    if (analiseMarkdown) {
+      analiseHtml = markdownToEmailHtml(analiseMarkdown)
+    }
+  }
+
   const subjectsTableRows = subjectsWithTopics
     .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
     .map((s, i) => {
@@ -202,6 +357,16 @@ export async function renderEditalEmail(courseSlug: string | null): Promise<{ su
       </thead>
       <tbody>${subjectsTableRows}</tbody>
     </table>
+
+    <!-- Análise estratégica gerada por IA (se disponível) -->
+    ${analiseHtml ? `
+    <div style="margin-top:28px;padding:20px;background:linear-gradient(135deg,#fef3c7 0%,#fce7f3 100%);border-radius:12px;border:1px solid #fde68a;">
+      <h2 style="font-size:16px;font-weight:700;margin:0 0 4px;color:#0f172a;display:flex;align-items:center;gap:6px;">
+        🧠 Análise estratégica da banca
+      </h2>
+      <p style="font-size:12px;color:#78716c;margin:0 0 12px;">Onde focar primeiro e o que ${escapeHtml(edital.banca?.name ?? 'a banca')} ama cobrar.</p>
+      ${analiseHtml}
+    </div>` : ''}
 
     <!-- Conteúdo programático detalhado -->
     <h2 style="font-size:16px;font-weight:700;margin:28px 0 4px;color:#0f172a;">Conteúdo programático</h2>
