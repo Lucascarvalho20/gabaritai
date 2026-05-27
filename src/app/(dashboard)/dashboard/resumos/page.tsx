@@ -6,6 +6,10 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import toast from 'react-hot-toast'
 
 const MAX_CHARS = 30_000
@@ -182,8 +186,13 @@ export default function ResumosPage() {
                 </p>
               </div>
             ) : resultado ? (
-              <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-headings:text-foreground prose-strong:text-foreground text-muted-foreground">
-                <ReactMarkdown>{resultado}</ReactMarkdown>
+              <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-headings:text-foreground prose-strong:text-foreground text-muted-foreground prose-table:text-xs prose-th:bg-muted prose-th:p-2 prose-td:p-2 prose-table:border prose-table:border-border">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {resultado}
+                </ReactMarkdown>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center py-8 space-y-3">
