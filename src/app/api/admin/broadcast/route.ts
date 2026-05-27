@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { notifyMany } from '@/lib/notify'
 
 export const maxDuration = 60
 
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req)
   if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
 
-  const { title, body, target, courseSlug, plan, dryRun } = await req.json()
+  const { title, body, target, courseSlug, plan, dryRun, link } = await req.json()
   if (!title || !body) return NextResponse.json({ message: 'title e body obrigatórios' }, { status: 400 })
   if (!['ALL', 'COURSE', 'PLAN'].includes(target)) {
     return NextResponse.json({ message: 'target inválido' }, { status: 400 })
@@ -47,30 +48,15 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 1. Cria notificação in-app pra TODOS
-  await prisma.notification.createMany({
-    data: users.map((u) => ({
-      userId: u.id,
-      title,
-      body,
-    })),
+  // Cria notificação in-app + email pra cada um (notify() respeita notifyEmail)
+  await notifyMany(users.map((u) => u.id), {
+    title,
+    body,
+    link: link || undefined,
+    category: 'system',
+    icon: 'Megaphone',
+    email: true,
   })
-
-  // 2. Envia email pra quem optou (fire-and-forget)
-  const usersComEmail = users.filter((u) => u.notifyEmail && u.email)
-  if (usersComEmail.length > 0 && process.env.RESEND_API_KEY) {
-    import('@/lib/email').then(({ sendEmail }) => {
-      for (const u of usersComEmail) {
-        sendEmail({
-          to: u.email!,
-          subject: `[Gabaritai] ${title}`,
-          html: `<h2>${title}</h2><p>${body.replace(/\n/g, '<br>')}</p>`,
-        }).catch((err) => console.warn('[broadcast] email falhou pra', u.email, err.message))
-      }
-    }).catch(() => {})
-  }
-
-  // (Telegram pra aluno removido — admin ainda recebe via TELEGRAM_BOT_TOKEN)
 
   // Audita
   await prisma.auditLog.create({

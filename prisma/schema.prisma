@@ -1057,9 +1057,15 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   body      String
+  link      String?  // pra onde direcionar ao clicar (ex: "/dashboard/simulados/abc")
+  category  String   @default("system") // system | simulado | mentor | pagamento | comunidade | indicacao | edital
+  icon      String?  // nome do ícone lucide (ex: "Trophy", "Bell")
   read      Boolean  @default(false)
+  emailSent Boolean  @default(false) // se também foi enviado por email
   createdAt DateTime @default(now())
 
+  @@index([userId, read])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 

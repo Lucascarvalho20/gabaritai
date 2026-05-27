@@ -38,8 +38,10 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    let isNewUser = false
     if (!user) {
-      // Cria novo
+      // Cria novo + trial 7 dias automático
+      isNewUser = true
       user = await prisma.user.create({
         data: {
           name: profile.name ?? profile.email.split('@')[0],
@@ -51,6 +53,9 @@ export async function GET(req: NextRequest) {
           // Senha aleatória (não usada — login só via Google) — força reset se quiser senha
           password: 'oauth-' + Math.random().toString(36).slice(2) + Date.now(),
           profile: { create: { nivel: 'iniciante', horasDia: '3' } },
+          trials: {
+            create: { endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          },
         },
       })
     } else {
@@ -85,14 +90,17 @@ export async function GET(req: NextRequest) {
     // Assina JWT
     const token = await signToken({ sub: user.id, email: user.email, role: user.role })
 
-    const res = NextResponse.redirect(`${baseUrl}/dashboard`)
-    res.cookies.set('token', token, {
-      httpOnly: true,
-      secure: req.nextUrl.protocol === 'https:',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 dias
-    })
+    // Precisa redirecionar pra uma página intermediária que persiste o token
+    // em localStorage (cliente usa Bearer, não cookie). Se faltar CPF/telefone,
+    // a página manda pra /completar-cadastro depois.
+    const needsCompletion = !user.cpfHash || !user.phone
+    const next = needsCompletion ? '/completar-cadastro' : (user.role === 'ADMIN' ? '/admin' : '/dashboard')
+    const finalizeUrl = new URL(`${baseUrl}/auth/oauth-finalize`)
+    finalizeUrl.searchParams.set('token', token)
+    finalizeUrl.searchParams.set('next', next)
+    if (isNewUser) finalizeUrl.searchParams.set('new', '1')
+
+    const res = NextResponse.redirect(finalizeUrl.toString())
     res.cookies.delete('oauth_state')
     return res
   } catch (err: any) {

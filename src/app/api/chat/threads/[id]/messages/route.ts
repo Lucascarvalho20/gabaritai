@@ -69,13 +69,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Notificação
   if (user.role === 'ADMIN') {
-    // Aluno recebe notificação in-app
-    await prisma.notification.create({
-      data: {
-        userId: thread.userId,
-        title: 'Nova mensagem do admin',
-        body: body.slice(0, 200),
-      },
+    // Aluno recebe notificação in-app + email
+    const { notify } = await import('@/lib/notify')
+    await notify({
+      userId: thread.userId,
+      category: 'mentor',
+      icon: 'MessageCircle',
+      title: 'Nova mensagem do suporte',
+      body: body.slice(0, 200),
+      link: `/dashboard/mentor`,
     })
   } else {
     // Admin via Telegram

@@ -11,6 +11,11 @@ export async function GET(req: NextRequest) {
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
     take: 50,
+    select: {
+      id: true, title: true, body: true,
+      link: true, category: true, icon: true,
+      read: true, createdAt: true,
+    },
   })
   const unreadCount = await prisma.notification.count({ where: { userId: user.id, read: false } })
 
