@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAIVision, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 300
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'PDF maior que 20MB — divida em partes' }, { status: 413 })
     }
   } catch (err: any) {
-    return NextResponse.json({ message: `Falha ao baixar PDF: ${err.message}` }, { status: 502 })
+    return apiError(err, 'Falha ao baixar o PDF da URL informada', 'import-url-download', 502)
   }
 
   const base64 = Buffer.from(pdfBuffer).toString('base64')
@@ -119,7 +120,7 @@ REGRAS:
     })
     extracted = parseAIJson(raw)
   } catch (err: any) {
-    return NextResponse.json({ message: `Falha na extração IA: ${err.message}` }, { status: 500 })
+    return apiError(err, 'Falha na extração via IA — tenta de novo', 'import-url-ai')
   }
 
   if (!Array.isArray(extracted) || extracted.length === 0) {

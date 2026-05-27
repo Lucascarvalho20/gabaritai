@@ -109,9 +109,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, paymentId: updated.id, status: newStatus })
   } catch (err: any) {
-    console.error('[webhook] error:', err.message)
+    // Log completo no servidor, mas resposta genérica (webhook é público)
+    console.error('[webhook-mp]', err)
     // 200 evita MP reenviar infinitamente; investigamos via log
-    return NextResponse.json({ ok: false, message: err.message }, { status: 200 })
+    return NextResponse.json({ ok: false, message: 'Erro processando webhook' }, { status: 200 })
   }
 }
 

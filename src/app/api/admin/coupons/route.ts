@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { apiError } from '@/lib/api-errors'
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req)
@@ -48,6 +49,6 @@ export async function POST(req: NextRequest) {
     if (err.message?.includes('Unique constraint')) {
       return NextResponse.json({ message: 'Código já existe' }, { status: 409 })
     }
-    return NextResponse.json({ message: err.message }, { status: 500 })
+    return apiError(err, 'Falha ao criar cupom', 'admin-coupons-create')
   }
 }

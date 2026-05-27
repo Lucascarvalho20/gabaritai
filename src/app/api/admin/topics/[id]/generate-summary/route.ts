@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 120
 export const dynamic = 'force-dynamic'
@@ -114,7 +115,7 @@ Retorne APENAS o markdown.`
   try {
     resumoText = await callAI(prompt, { task: 'generate', maxTokens: 4000 })
   } catch (err: any) {
-    return NextResponse.json({ message: `Falha na geração IA: ${err.message}` }, { status: 500 })
+    return apiError(err, 'Falha na geração via IA — tenta de novo', 'topic-generate-summary')
   }
   if (!resumoText || resumoText.length < 200) {
     return NextResponse.json({ message: 'Resumo gerado muito curto — tente novamente' }, { status: 502 })

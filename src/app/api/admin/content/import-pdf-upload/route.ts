@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAIVision, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 300 // 10min — PDFs grandes podem demorar
 export const runtime = 'nodejs'
@@ -74,7 +75,7 @@ REGRAS:
     })
     extracted = parseAIJson(raw)
   } catch (err: any) {
-    return NextResponse.json({ message: `Falha na extração: ${err.message}` }, { status: 500 })
+    return apiError(err, 'Falha na extração — tenta de novo', 'import-pdf-upload')
   }
 
   if (!Array.isArray(extracted) || extracted.length === 0) {

@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { createPreference, isSandboxMode } from '@/lib/mercadopago'
 import { Plan } from '@prisma/client'
+import { apiError } from '@/lib/api-errors'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 
 const PRICING_TO_PLAN: Record<string, Plan> = {
@@ -164,7 +165,6 @@ export async function POST(req: NextRequest) {
       sandbox: isSandboxMode(),
     })
   } catch (err: any) {
-    console.error('[checkout] error', err)
-    return NextResponse.json({ message: err.message ?? 'Erro ao criar checkout' }, { status: 500 })
+    return apiError(err, 'Erro ao criar checkout', 'checkout-create')
   }
 }

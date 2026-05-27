@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
 import { Difficulty, QuestionSource } from '@prisma/client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 300 // extração de PDF pode demorar
 
@@ -88,7 +89,6 @@ Retorne APENAS o JSON, sem markdown.`
 
     return NextResponse.json({ ok: true, count: created.length })
   } catch (err: any) {
-    console.error('[import-pdf] error', err)
-    return NextResponse.json({ message: err.message ?? 'Erro' }, { status: 500 })
+    return apiError(err, 'Erro ao importar PDF', 'import-pdf')
   }
 }
