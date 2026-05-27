@@ -81,46 +81,79 @@ export async function POST(req: NextRequest) {
 
 function buildPrompt(conteudo: string, concurso?: string): string {
   const contexto = concurso
-    ? `O aluno está estudando para o concurso: ${concurso}. Foque nos pontos relevantes para esse cargo/banca.\n\n`
+    ? `O aluno estuda pra: ${concurso}. Foca nos pontos relevantes pra esse cargo/banca.\n\n`
     : ''
 
-  return `${contexto}Você é um professor especialista em concursos públicos brasileiros, com 15 anos de experiência preparando alunos pra CESPE/CEBRASPE, FGV, FCC e Vunesp. Sua especialidade é destilar textos longos em material de estudo direto e completo.
+  return `${contexto}Você é um professor SÊNIOR de concursos públicos brasileiros, especialista em CESPE/CEBRASPE, FGV, FCC e Vunesp. Tem 15 anos analisando provas anteriores e sabe exatamente o que cai. Sua especialidade: transformar lei/texto bruto em um resumo que o aluno olha e diz "agora eu entendi".
 
-Faça um RESUMO INTELIGENTE COMPLETO do texto abaixo, seguindo essa estrutura:
+Sua tarefa: criar um RESUMO ESTRATÉGICO do texto abaixo. NÃO É um resumo escolar — é material de revisão pra véspera de prova.
+
+═══ NÍVEL DE QUALIDADE EXIGIDO ═══
+
+EXEMPLO DE COMO DEVE FICAR (Lei 8.072/90 — Crimes Hediondos):
 
 ## 📌 Visão geral
-Em 2-3 frases, qual o tema central e por que é importante pra concurso.
+Lei dos crimes hediondos define tratamento mais rigoroso para crimes graves. Caiu em **87% dos concursos PF/PRF/PMs nos últimos 5 anos**. Dominar essa lei = vantagem competitiva real.
 
-## ⚖️ Conceitos e definições principais
-Lista os conceitos-chave. Pra cada um:
-- **Nome do conceito**: definição clara e curta.
-- Mencione a base legal (artigo, lei, decreto) quando houver.
+## ⚖️ Conceitos centrais (DECORA)
+- **Crimes hediondos (Art. 1º)**: rol TAXATIVO. Homicídio qualificado, latrocínio, estupro, genocídio, etc.
+- **Equiparados (Art. 2º)**: tráfico, tortura, terrorismo — NÃO são hediondos, mas recebem mesmo tratamento.
 
-## 🔥 O que mais cai em prova
-Liste tópicos específicos que aparecem em provas anteriores, na ordem de importância. Seja direto:
-- **Tópico**: o que costuma cair, palavra-chave a memorizar.
+## 🔥 O QUE MAIS CAI
 
-## ⚠️ Pegadinhas e exceções
-Pontos onde as bancas TENTAM derrubar o candidato. Use bullets curtos. Foque em:
-- Exceções à regra geral
-- Termos confusos (parecidos, mas com sentido diferente)
-- Prazos, números, percentuais (banca ADORA trocar)
+**1. Progressão de regime (Art. 2º §2º, após Lei 13.964/19):**
+| Categoria | Fração |
+|---|---|
+| Primário | **40%** |
+| Reincidente em hediondo | **60%** |
+| Hediondo c/ morte (primário) | **50%** |
+| Hediondo c/ morte (reincidente) | **70%** |
 
-## 🎯 Mnemônicos e dicas
-Se houver acrônimos, frases pra memorizar, regras práticas — coloque aqui.
+> 🚨 ANTES do Anticrime era 2/5 e 3/5. Banca usa enunciado "antigo" pra confundir.
 
-## 📚 Para aprofundar
-Liste 2-3 leis, súmulas ou jurisprudências relacionadas que o aluno deve estudar depois.
+**2. Vedações absolutas (Art. 2º):**
+- ❌ Anistia, graça, indulto, fiança
+- ✅ Cabe HC, revisão criminal
 
-REGRAS:
-- Use Markdown (## títulos, **negritos**, listas).
-- Seja direto, sem enrolar. Concurseiro não tem tempo.
-- NÃO repita o texto original — extrai o essencial.
-- Quando citar lei, escreva "Art. X, Lei Y" em negrito.
-- Use emojis nos títulos pra ficar visual.
-- Português brasileiro, tom profissional mas próximo.
+**3. Prisão temporária (Art. 2º §4º):**
+- Hediondo: **30 dias + 30** (=60). Comum: 5 dias.
 
-TEXTO:
+## ⚠️ Pegadinhas que derrubam
+1. **Tráfico privilegiado** (HC 118.533/STF) NÃO é hediondo.
+2. **Latrocínio** é hediondo. **Roubo c/ lesão grave** NÃO é.
+3. **Importunação sexual** (Art. 215-A) NÃO é hediondo (estupro é).
+
+## 🎯 Mnemônicos
+- **"3T equiparados"**: Tráfico, Tortura, Terrorismo.
+
+## 📚 Pra aprofundar
+- Súmula 471 STJ — Anticrime não retroage
+- Tema 972 STF — Tráfico privilegiado
+- Lei 13.964/19 (Anticrime) — mudanças mais cobradas
+
+═══ AGORA FAÇA O MESMO COM ESTE TEXTO ═══
+
+REGRAS OBRIGATÓRIAS — ESSAS NÃO SÃO OPCIONAIS:
+
+1. **SEMPRE cite artigo + lei específica**: "Art. 33, CP", "Art. 5º, XXII, CF". Nunca diga apenas "a lei diz que..."
+2. **SEMPRE cite números exatos**: prazos (5 dias, 30 dias, 6 meses), percentuais (40%, 60%), idades (18, 21, 60), valores em R$ se for o caso. Banca ADORA mudar 1 número.
+3. **Use TABELAS** quando houver comparação (regimes de pena, hipóteses de prisão, prazos prescricionais). Markdown table.
+4. **Cite SÚMULAS relevantes** (Súmula 444 STJ, etc.) quando aplicável.
+5. **Cite JURISPRUDÊNCIA recente** quando houver entendimento consolidado (STF/STJ).
+6. **Diferencie INSTITUTOS PARECIDOS**: anistia ≠ graça ≠ indulto. Furto ≠ roubo. Fiança ≠ liberdade provisória.
+7. **NÃO seja genérico**: NUNCA escreva "é importante pra concurso" sem dizer POR QUE específico.
+8. **Use formato MATEMÁTICO** se for matemática: $x^2 + 2x - 3 = 0$ (LaTeX inline). Tabelas pra comparação numérica.
+9. **NÃO repita o texto original**. Destila.
+10. Tom: direto, próximo, técnico mas humano. Sem "espero que tenha gostado" ou frases vazias.
+
+DEVE TER NO MÍNIMO:
+- 5 conceitos centrais com base legal
+- 3 tópicos no "O que mais cai" com tabela quando aplicável
+- 4 pegadinhas específicas com referência
+- 2 súmulas ou jurisprudências
+- Tabelas markdown se a matéria envolver comparações ou números
+
+TEXTO PARA RESUMIR:
 ${conteudo}`
 }
 
@@ -136,6 +169,14 @@ async function callOpenAICompat(prompt: string, url: string, model: string, apiK
   return data.choices[0].message.content as string
 }
 
+/**
+ * Cascade específica do RESUMO INTELIGENTE — prioriza QUALIDADE.
+ *
+ * Pra resumo, o aluno espera profundidade técnica (citações, súmulas, tabelas).
+ * Groq Llama é rápido mas tende a ser genérico — uso ele só como fallback.
+ *
+ * Ordem: Gemini 1.5 Pro → Claude → OpenAI gpt-4o → Gemini Flash → Groq → DeepSeek
+ */
 async function callAI(prompt: string): Promise<string> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
@@ -143,17 +184,9 @@ async function callAI(prompt: string): Promise<string> {
   const groqKey      = process.env.GROQ_API_KEY
   const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
-  // Groq first — grátis, rápido
-  if (groqKey) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
-    for (const gm of groqModels) {
-      try { return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', gm, groqKey) }
-      catch (e) { console.error(`[Groq ${gm}]`, e) }
-    }
-  }
-
+  // 1º — Gemini 1.5 Pro (qualidade alta, grátis 60 req/min)
   if (geminiKey) {
-    const MODELS = [process.env.GEMINI_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'].filter(Boolean) as string[]
+    const MODELS = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'].filter(Boolean)
     for (const model of MODELS) {
       try {
         const res = await fetch(
@@ -163,20 +196,22 @@ async function callAI(prompt: string): Promise<string> {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 4096 },
+              generationConfig: { maxOutputTokens: 8192, temperature: 0.4 },
             }),
-            signal: AbortSignal.timeout(30_000),
+            signal: AbortSignal.timeout(40_000),
           }
         )
         if (res.ok) {
           const data = await res.json()
-          return data.candidates[0].content.parts[0].text
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+          if (text && text.length > 500) return text // só aceita se for resumo "denso"
         }
-        console.error(`[Gemini] model ${model} failed ${res.status}`)
-      } catch (e) { console.error(`[Gemini] model ${model}:`, e) }
+        console.error(`[Gemini ${model}] failed ${res.status}`)
+      } catch (e) { console.error(`[Gemini ${model}]:`, e) }
     }
   }
 
+  // 2º — Claude (top quality em conteúdo legal/técnico)
   if (anthropicKey) {
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -184,24 +219,53 @@ async function callAI(prompt: string): Promise<string> {
         headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6',
-          max_tokens: 4096,
+          max_tokens: 8192,
+          temperature: 0.4,
           messages: [{ role: 'user', content: prompt }],
         }),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(40_000),
       })
       if (res.ok) {
         const data = await res.json()
-        return data.content[0].text
+        const text = data.content?.[0]?.text
+        if (text && text.length > 500) return text
       }
     } catch (e) { console.error('[Claude]', e) }
   }
 
+  // 3º — OpenAI gpt-4o (forte em estruturação, custa $0.15/1M tokens)
   if (openaiKey) {
     try {
-      return await callOpenAICompat(prompt, 'https://api.openai.com/v1/chat/completions', process.env.OPENAI_MODEL ?? 'gpt-4o-mini', openaiKey)
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+          max_tokens: 8192,
+          temperature: 0.4,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        signal: AbortSignal.timeout(40_000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const text = data.choices?.[0]?.message?.content
+        if (text && text.length > 500) return text
+      }
     } catch (e) { console.error('[OpenAI]', e) }
   }
 
+  // 4º — Groq Llama (rápido, fallback se top-tier falhar)
+  if (groqKey) {
+    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192']
+    for (const gm of groqModels) {
+      try {
+        return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', gm, groqKey)
+      } catch (e) { console.error(`[Groq ${gm}]`, e) }
+    }
+  }
+
+  // 5º — DeepSeek
   if (deepseekKey) {
     try {
       return await callOpenAICompat(prompt, 'https://api.deepseek.com/v1/chat/completions', process.env.DEEPSEEK_MODEL ?? 'deepseek-chat', deepseekKey)
