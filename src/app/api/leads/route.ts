@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendEmail } from '@/lib/email'
 import { renderEditalEmail } from '@/lib/edital-renderer'
+import { checkRateLimit, recordFailedAttempt, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,16 @@ export const dynamic = 'force-dynamic'
  * evita o concurseiro spammar o form e poluir o banco.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit por IP (protege contra bot que enche tabela Lead + dispara emails caros)
+  const clientIp = getClientIp(req)
+  const rl = checkRateLimit(`leads:${clientIp}`, clientIp)
+  if (!rl.ok) {
+    return NextResponse.json(
+      { message: 'Muitas requisições. Aguarde alguns minutos.' },
+      { status: 429 },
+    )
+  }
+
   let body: any
   try {
     body = await req.json()
@@ -31,10 +42,12 @@ export async function POST(req: NextRequest) {
   const source = String(body.source ?? '').trim()
 
   if (!emailRaw || !source) {
+    recordFailedAttempt(`leads:${clientIp}`, clientIp)
     return NextResponse.json({ message: 'email e source obrigatórios' }, { status: 400 })
   }
   // Regex simples — não bate todas as edge cases mas elimina 99% do lixo
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    recordFailedAttempt(`leads:${clientIp}`, clientIp)
     return NextResponse.json({ message: 'Email inválido' }, { status: 400 })
   }
 
