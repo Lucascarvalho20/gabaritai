@@ -17,11 +17,16 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-const QUICK_ACCESS = [
-  { label: '👑 Admin',        identifier: 'admin@gabaritai.com.br',      pass: 'Admin@2024!' },
-  { label: '⭐ Acesso total',  identifier: 'teste-full@gabaritai.com.br', pass: 'Teste@2024!' },
-  { label: '🛡️ Só PMDF',     identifier: 'teste-pmdf@gabaritai.com.br', pass: 'Teste@2024!' },
-]
+// Perfis de teste — só aparecem em dev (process.env é inlined em build,
+// então em produção o array fica vazio e nada vaza pro bundle do cliente).
+const QUICK_ACCESS: Array<{ label: string; identifier: string; pass: string }> =
+  process.env.NODE_ENV === 'development'
+    ? [
+        { label: '👑 Admin',       identifier: 'admin@gabaritai.com.br',      pass: 'Admin@2024!' },
+        { label: '⭐ Acesso total', identifier: 'teste-full@gabaritai.com.br', pass: 'Teste@2024!' },
+        { label: '🛡️ Só PMDF',    identifier: 'teste-pmdf@gabaritai.com.br', pass: 'Teste@2024!' },
+      ]
+    : []
 
 function LoginForm() {
   const router = useRouter()
@@ -31,7 +36,8 @@ function LoginForm() {
   const [needs2FA, setNeeds2FA] = useState(false)
   const [totpCode, setTotpCode] = useState('')
 
-  const showDevPanel = searchParams.get('dev') !== 'off' // mostra por padrão (beta) — esconde com ?dev=off
+  // Só mostra o painel se tiver perfis (dev) — em produção QUICK_ACCESS é []
+  const showDevPanel = QUICK_ACCESS.length > 0 && searchParams.get('dev') !== 'off'
 
   const { register, handleSubmit, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
