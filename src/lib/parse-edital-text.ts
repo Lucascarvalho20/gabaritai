@@ -54,6 +54,115 @@ const RE_INLINE_MATERIA_HEADER =
 const RE_INLINE_TOPIC =
   /(?:^|(?<=[.)\s]))(\d+(?:\.\d+)*)\s+(?=[A-ZÀ-ÿ])/g
 
+// Section markers que aparecem em editais mas NÃO são matérias.
+// Quando encontrados, são ignorados (mas o texto depois deles continua sendo processado).
+// Marcadores de seção que aparecem em editais e NÃO são matérias.
+// Cuidado: "Conhecimentos Gerais" é matéria de verdade em muitos editais,
+// então fica de fora. Aqui só os que NUNCA são matérias.
+const SECTION_MARKERS = new Set([
+  'CONHECIMENTOS BASICOS',
+  'CONHECIMENTOS BÁSICOS',
+  'CONHECIMENTOS ESPECIFICOS',
+  'CONHECIMENTOS ESPECÍFICOS',
+  'CONHECIMENTOS COMPLEMENTARES',
+  'PROVA OBJETIVA',
+  'PROVA DISCURSIVA',
+  'CONTEUDO PROGRAMATICO',
+  'CONTEÚDO PROGRAMÁTICO',
+])
+
+function normalizeForCompare(s: string): string {
+  return s.trim().toUpperCase().replace(/[.:;,]/g, '').trim()
+}
+
+function isSectionMarker(name: string): boolean {
+  return SECTION_MARKERS.has(normalizeForCompare(name))
+}
+
+/**
+ * Pre-processa o texto pra quebrar matérias que vieram coladas numa linha só.
+ *
+ * Caso típico (cole direto do PDF de edital CESPE):
+ *   LÍNGUA PORTUGUESA: 1 Compreensão. 2 Reescritura. INFORMÁTICA: 1 Conceitos.
+ *
+ * Vira:
+ *   LÍNGUA PORTUGUESA: 1 Compreensão. 2 Reescritura.
+ *   INFORMÁTICA: 1 Conceitos.
+ *
+ * A heurística: depois de `. ` ou `; ` ou `) `, se vier UMA SEQUÊNCIA UPPERCASE
+ * (3-60 chars, com possíveis acentos/espaços/hífens) seguida de `:`, é matéria.
+ * Quebra inserindo \n antes dela.
+ */
+function preprocessSplitInlineMaterias(text: string): string {
+  // Pattern: (fim-de-frase) + (HEADER UPPERCASE) + (: espaço)
+  // O HEADER tem que começar com letra maiúscula e ter pelo menos 3 chars.
+  // Não pode começar com dígito.
+  const pattern = /([.;)]\s+)([A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ][A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ\s\-/]{2,80}?)(:\s+)(?=[A-ZÀ-ÿ0-9])/g
+  return text.replace(pattern, (match, before, header, after) => {
+    // Só quebra se o header é predominantemente uppercase (não é só "A B" curto random)
+    const letters = header.match(/[A-Za-zÀ-ÿ]/g) ?? []
+    const upper = header.match(/[A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ]/g) ?? []
+    const ratio = letters.length > 0 ? upper.length / letters.length : 0
+    if (ratio < 0.7 || letters.length < 3) return match // não é matéria, mantém
+    return `${before.trimEnd()}\n${header}${after}`
+  })
+}
+
+/**
+ * Pre-processa: detecta matérias em UPPERCASE numa linha sozinha (sem `:`),
+ * seguidas de uma linha numerada → trata como matéria.
+ *
+ * Ex:
+ *   DIREITO ADMINISTRATIVO
+ *   1 Introdução
+ *   1.1 Princípios
+ *
+ * Vira marcado:
+ *   ## Direito Administrativo
+ *   1 Introdução
+ *   1.1 Princípios
+ */
+function preprocessUppercaseTitles(text: string): string {
+  const lines = text.split(/\r?\n/)
+  const out: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trim()
+
+    // Linha curta (3-80 chars) MAIÚSCULA dominante, sem `:` no final,
+    // sem números no início, e próxima linha não-branca começa com número.
+    const hasColon = trimmed.endsWith(':')
+    const startsWithDigit = /^\d/.test(trimmed)
+    const isPlainText = trimmed.length >= 3 && trimmed.length <= 80
+    if (!isPlainText || hasColon || startsWithDigit) {
+      out.push(line)
+      continue
+    }
+    const letters = trimmed.match(/[A-Za-zÀ-ÿ]/g) ?? []
+    const upper = trimmed.match(/[A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ]/g) ?? []
+    const ratio = letters.length > 0 ? upper.length / letters.length : 0
+    if (ratio < 0.7 || letters.length < 3) {
+      out.push(line)
+      continue
+    }
+    // Próxima linha não-branca tem que começar com número
+    let nextIdx = i + 1
+    while (nextIdx < lines.length && lines[nextIdx].trim() === '') nextIdx++
+    if (nextIdx >= lines.length) {
+      out.push(line)
+      continue
+    }
+    const nextTrim = lines[nextIdx].trim()
+    if (!/^\d/.test(nextTrim) && !/^[-*•]/.test(nextTrim)) {
+      out.push(line)
+      continue
+    }
+    // É matéria — convert pra formato markdown `## Nome`
+    out.push(`## ${titleCase(trimmed)}`)
+  }
+  return out.join('\n')
+}
+
 function isBlank(line: string): boolean {
   return line.trim().length === 0
 }
@@ -201,7 +310,13 @@ function tryParseInlineMateriaHeader(line: string): { nome: string; rest: string
 
 export function parseEditalText(text: string): ParseResult {
   const warnings: ParseError[] = []
-  const lines = text.split(/\r?\n/)
+
+  // Pré-processa pra suportar formatos comuns de edital CESPE/FGV:
+  // 1. Quebra matérias que vieram coladas numa linha só
+  // 2. Detecta títulos UPPERCASE sem `:` seguidos de tópicos numerados
+  const preprocessed1 = preprocessSplitInlineMaterias(text)
+  const preprocessed = preprocessUppercaseTitles(preprocessed1)
+  const lines = preprocessed.split(/\r?\n/)
 
   // ── 1. Detecta blocos de CARGO ──────────────────────────────────────
   type Block = { cargoNome: string | null; lineStart: number; lineEnd: number }
@@ -263,6 +378,8 @@ export function parseEditalText(text: string): ParseResult {
       // Tenta como matéria markdown (## Nome / **Nome** / Matéria: Nome)
       const mdMateria = tryParseMateriaMd(line)
       if (mdMateria) {
+        // Section markers (CONHECIMENTOS BÁSICOS, etc.) não viram matéria
+        if (isSectionMarker(mdMateria)) continue
         flushInlineMateria()
         currentMateria = { nome: mdMateria, ordem: materias.length, topicos: [] }
         materias.push(currentMateria)
@@ -274,6 +391,16 @@ export function parseEditalText(text: string): ParseResult {
       // Tenta como header inline (DIREITO ADMINISTRATIVO: 1 ...)
       const inlineHeader = tryParseInlineMateriaHeader(line)
       if (inlineHeader) {
+        // Section markers no início (ex: "CONHECIMENTOS BÁSICOS: LÍNGUA PORTUGUESA: ...")
+        // ignora o marker e continua processando o resto (pode ter outra matéria embutida)
+        if (isSectionMarker(inlineHeader.nome)) {
+          if (inlineHeader.rest) {
+            // Volta o resto na fila pra ser re-parseado
+            lines[i] = inlineHeader.rest
+            i--
+          }
+          continue
+        }
         flushInlineMateria()
         currentMateria = { nome: inlineHeader.nome, ordem: materias.length, topicos: [] }
         materias.push(currentMateria)
