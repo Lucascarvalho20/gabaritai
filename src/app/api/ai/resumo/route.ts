@@ -1,73 +1,127 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/jwt'
+import { getUserFromRequest } from '@/lib/auth-server'
+import { prisma } from '@/lib/prisma'
 
 export const maxDuration = 60
 
+const MAX_CHARS = 30_000
+
+// Limite diário por aluno (resumos/dia).
+// Trial: bem restrito pra não queimar tokens com fraude.
+// Plano "todos cursos" tem mais espaço.
+function dailyLimitForUser(plan: string | null, hasFullAccess: boolean): number {
+  if (hasFullAccess) return 50 // admin/beta tester
+  const p = (plan ?? '').toLowerCase()
+  if (p.startsWith('trial')) return 2
+  if (p.includes('todos')) return 10
+  return 5 // padrão pagante
+}
+
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (!auth?.startsWith('Bearer ')) {
-    return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
-  }
+  const user = await getUserFromRequest(req)
+  if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
-  const payload = await verifyToken(auth.split(' ')[1])
-  if (!payload) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
-
-  const { conteudo, tipo, concurso } = await req.json()
-  // tipo: 'resumo' | 'mapa_mental' | 'flashcards' | 'questoes' | 'pontos_chave'
+  const { conteudo, concurso } = await req.json()
 
   if (!conteudo?.trim()) {
     return NextResponse.json({ message: 'Conteúdo não pode ser vazio' }, { status: 400 })
   }
-
-  const prompt = buildPrompt(conteudo, tipo, concurso)
-  const result = await callAI(prompt)
-
-  return NextResponse.json({ resultado: result, tipo })
-}
-
-function buildPrompt(conteudo: string, tipo: string, concurso?: string): string {
-  const contexto = concurso ? `Contexto: concurso ${concurso}.\n\n` : ''
-
-  const prompts: Record<string, string> = {
-    resumo: `${contexto}Você é um especialista em concursos públicos brasileiros. Faça um RESUMO INTELIGENTE do texto abaixo, destacando:
-- Os pontos mais cobrados em provas
-- Artigos e legislação importantes
-- Exceções e pegadinhas comuns
-- Use bullet points e negritos
-
-TEXTO:
-${conteudo}`,
-
-    mapa_mental: `${contexto}Crie um MAPA MENTAL do conteúdo abaixo em formato de texto estruturado, usando emojis e hierarquia clara. Organize por:
-📌 TEMA CENTRAL
-  ├── 🔵 Subtema 1
-  │   ├── Ponto A
-  │   └── Ponto B
-  └── 🟢 Subtema 2
-
-CONTEÚDO:
-${conteudo}`,
-
-    flashcards: `${contexto}Crie 10 FLASHCARDS de alta qualidade para concurso público a partir do texto. Formato:
-**Flashcard 1:**
-Frente: [pergunta direta e objetiva]
-Verso: [resposta completa e precisa]
-
-TEXTO:
-${conteudo}`,
-
-    questoes: `${contexto}Crie 5 QUESTÕES de concurso público no estilo CESPE/CEBRASPE (certo ou errado) e 3 questões de múltipla escolha, baseadas no texto abaixo. Para cada questão, indique o gabarito e explique brevemente.
-
-TEXTO:
-${conteudo}`,
-
-    pontos_chave: `${contexto}Liste os 10 PONTOS-CHAVE mais importantes do texto para quem está estudando para concurso público. Para cada ponto, explique por que ele é relevante para a prova. Seja direto e objetivo.
-
-TEXTO:
-${conteudo}`,
+  if (typeof conteudo !== 'string') {
+    return NextResponse.json({ message: 'Conteúdo inválido' }, { status: 400 })
+  }
+  if (conteudo.length > MAX_CHARS) {
+    return NextResponse.json({
+      message: `Texto muito longo (máx ${MAX_CHARS.toLocaleString('pt-BR')} caracteres). Quebra em pedaços menores.`,
+    }, { status: 400 })
   }
 
-  return prompts[tipo] ?? prompts.resumo
+  // ── Quota diária por aluno (anti-abuso) ────────────────────────────────
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const fullUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { plan: true, hasFullAccess: true, role: true },
+  })
+  const limit = dailyLimitForUser(fullUser?.plan ?? null, fullUser?.hasFullAccess ?? false)
+
+  const usage = await prisma.featureUsage.findUnique({
+    where: {
+      userId_feature_date: { userId: user.id, feature: 'resumo', date: today },
+    },
+    select: { count: true },
+  })
+  const used = usage?.count ?? 0
+
+  if (used >= limit) {
+    return NextResponse.json({
+      message: `Você atingiu o limite de ${limit} resumos hoje. Volta amanhã ou faz upgrade pra ter mais.`,
+      quota: { used, limit },
+    }, { status: 429 })
+  }
+
+  // ── Gera resumo ─────────────────────────────────────────────────────────
+  const prompt = buildPrompt(conteudo, concurso)
+  const result = await callAI(prompt)
+
+  // ── Registra uso (mesmo se IA falhou — protege contra retry abuse) ──────
+  await prisma.featureUsage.upsert({
+    where: {
+      userId_feature_date: { userId: user.id, feature: 'resumo', date: today },
+    },
+    create: { userId: user.id, feature: 'resumo', date: today, count: 1 },
+    update: { count: { increment: 1 } },
+  })
+
+  return NextResponse.json({
+    resultado: result,
+    quota: { used: used + 1, limit },
+  })
+}
+
+function buildPrompt(conteudo: string, concurso?: string): string {
+  const contexto = concurso
+    ? `O aluno está estudando para o concurso: ${concurso}. Foque nos pontos relevantes para esse cargo/banca.\n\n`
+    : ''
+
+  return `${contexto}Você é um professor especialista em concursos públicos brasileiros, com 15 anos de experiência preparando alunos pra CESPE/CEBRASPE, FGV, FCC e Vunesp. Sua especialidade é destilar textos longos em material de estudo direto e completo.
+
+Faça um RESUMO INTELIGENTE COMPLETO do texto abaixo, seguindo essa estrutura:
+
+## 📌 Visão geral
+Em 2-3 frases, qual o tema central e por que é importante pra concurso.
+
+## ⚖️ Conceitos e definições principais
+Lista os conceitos-chave. Pra cada um:
+- **Nome do conceito**: definição clara e curta.
+- Mencione a base legal (artigo, lei, decreto) quando houver.
+
+## 🔥 O que mais cai em prova
+Liste tópicos específicos que aparecem em provas anteriores, na ordem de importância. Seja direto:
+- **Tópico**: o que costuma cair, palavra-chave a memorizar.
+
+## ⚠️ Pegadinhas e exceções
+Pontos onde as bancas TENTAM derrubar o candidato. Use bullets curtos. Foque em:
+- Exceções à regra geral
+- Termos confusos (parecidos, mas com sentido diferente)
+- Prazos, números, percentuais (banca ADORA trocar)
+
+## 🎯 Mnemônicos e dicas
+Se houver acrônimos, frases pra memorizar, regras práticas — coloque aqui.
+
+## 📚 Para aprofundar
+Liste 2-3 leis, súmulas ou jurisprudências relacionadas que o aluno deve estudar depois.
+
+REGRAS:
+- Use Markdown (## títulos, **negritos**, listas).
+- Seja direto, sem enrolar. Concurseiro não tem tempo.
+- NÃO repita o texto original — extrai o essencial.
+- Quando citar lei, escreva "Art. X, Lei Y" em negrito.
+- Use emojis nos títulos pra ficar visual.
+- Português brasileiro, tom profissional mas próximo.
+
+TEXTO:
+${conteudo}`
 }
 
 async function callOpenAICompat(prompt: string, url: string, model: string, apiKey: string) {
@@ -75,7 +129,7 @@ async function callOpenAICompat(prompt: string, url: string, model: string, apiK
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(30_000),
   })
   if (!res.ok) throw new Error(`${url} ${res.status}`)
   const data = await res.json()
@@ -89,7 +143,7 @@ async function callAI(prompt: string): Promise<string> {
   const groqKey      = process.env.GROQ_API_KEY
   const deepseekKey  = process.env.DEEPSEEK_API_KEY
 
-  // Groq first — grátis, rápido (console.groq.com)
+  // Groq first — grátis, rápido
   if (groqKey) {
     const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
     for (const gm of groqModels) {
@@ -99,14 +153,7 @@ async function callAI(prompt: string): Promise<string> {
   }
 
   if (geminiKey) {
-    const MODELS = [
-      process.env.GEMINI_MODEL,
-      'gemini-pro',
-      'gemini-1.0-pro',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
-    ].filter(Boolean) as string[]
-
+    const MODELS = [process.env.GEMINI_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'].filter(Boolean) as string[]
     for (const model of MODELS) {
       try {
         const res = await fetch(
@@ -118,7 +165,7 @@ async function callAI(prompt: string): Promise<string> {
               contents: [{ role: 'user', parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: 4096 },
             }),
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(30_000),
           }
         )
         if (res.ok) {
@@ -140,7 +187,7 @@ async function callAI(prompt: string): Promise<string> {
           max_tokens: 4096,
           messages: [{ role: 'user', content: prompt }],
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(30_000),
       })
       if (res.ok) {
         const data = await res.json()
@@ -155,12 +202,11 @@ async function callAI(prompt: string): Promise<string> {
     } catch (e) { console.error('[OpenAI]', e) }
   }
 
-  // DeepSeek — barato, alta qualidade (platform.deepseek.com)
   if (deepseekKey) {
     try {
       return await callOpenAICompat(prompt, 'https://api.deepseek.com/v1/chat/completions', process.env.DEEPSEEK_MODEL ?? 'deepseek-chat', deepseekKey)
     } catch (e) { console.error('[DeepSeek]', e) }
   }
 
-  return '⚠️ Nenhuma chave de IA funcionou. Configure GEMINI_API_KEY, GROQ_API_KEY ou ANTHROPIC_API_KEY no Vercel → Environment Variables.'
+  return '⚠️ Nenhuma IA respondeu. Avise o admin pra checar as chaves no Vercel.'
 }
