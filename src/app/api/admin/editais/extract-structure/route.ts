@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAIVision, parseAIJson } from '@/lib/ai-client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
       pdfBuffer = Buffer.from(body.pdfBase64, 'base64').buffer as ArrayBuffer
     }
   } catch (err: any) {
-    return NextResponse.json({ message: `PDF inválido: ${err.message}` }, { status: 400 })
+    return apiError(err, 'PDF inválido ou corrompido', 'edital-extract-pdf-parse', 400)
   }
 
   if (pdfBuffer.byteLength === 0) {
@@ -175,10 +176,7 @@ Responda APENAS o JSON puro (sem markdown, sem texto antes ou depois):
     })
     extracted = parseAIJson(raw)
   } catch (err: any) {
-    return NextResponse.json(
-      { message: `Falha na extração IA: ${err.message}` },
-      { status: 500 },
-    )
+    return apiError(err, 'Falha na extração via IA — tenta de novo', 'edital-extract-ai')
   }
 
   if (extracted.erro) {

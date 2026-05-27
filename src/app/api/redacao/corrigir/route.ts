@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 60
 
@@ -72,7 +73,6 @@ Seja rigoroso mas justo. Aponte erros gramaticais específicos. Comentários em 
 
     return NextResponse.json({ feedback })
   } catch (err: any) {
-    console.error('[redacao] error', err)
-    return NextResponse.json({ message: err.message ?? 'Erro ao corrigir' }, { status: 500 })
+    return apiError(err, 'Erro ao corrigir redação', 'redacao-corrigir')
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { apiError } from '@/lib/api-errors'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (!textContent) return NextResponse.json({ message: 'text obrigatório no body' }, { status: 400 })
     }
   } catch (err: any) {
-    return NextResponse.json({ message: `Falha ao processar fonte: ${err.message}` }, { status: 500 })
+    return apiError(err, 'Falha ao processar a fonte informada', 'topics-sources')
   }
 
   const finalContent = pdfText ?? textContent
