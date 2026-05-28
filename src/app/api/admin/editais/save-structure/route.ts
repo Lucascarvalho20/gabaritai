@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 /**
  * Persiste a estrutura COMPLETA de UM cargo do edital — incluindo metadados
@@ -126,20 +127,36 @@ export async function POST(req: NextRequest) {
 
   const createdMaterias: Array<{ subjectId: string; topicIds: string[]; weight: number; expectedQuestions: number | null }> = []
 
+  // ── OTIMIZAÇÃO: pré-busca TODOS subjects que vão ser usados (1 query)
+  const subjectNames = materias.map((m: any) => m.nome).filter(Boolean)
+  const subjectSlugs = subjectNames.map((n: string) => slugify(n))
+  const existingSubjects = subjectNames.length > 0
+    ? await prisma.subject.findMany({
+        where: { OR: [{ slug: { in: subjectSlugs } }, { name: { in: subjectNames } }] },
+      })
+    : []
+  const subjectByKey = new Map<string, typeof existingSubjects[number]>()
+  for (const s of existingSubjects) {
+    subjectByKey.set(s.slug, s)
+    subjectByKey.set(norm(s.name), s)
+  }
+
   for (let mi = 0; mi < materias.length; mi++) {
     const m = materias[mi]
     if (!m.nome) continue
 
-    // 1. Subject — reusa se já existe (matéria global)
+    // 1. Subject — reusa se já existe (matéria global), senão cria
     let subjectId: string = m.subjectId
     if (!subjectId) {
       const slug = slugify(m.nome)
-      const existing = await prisma.subject.findFirst({ where: { OR: [{ slug }, { name: m.nome }] } })
-      if (existing) {
-        subjectId = existing.id
+      const cached = subjectByKey.get(slug) ?? subjectByKey.get(norm(m.nome))
+      if (cached) {
+        subjectId = cached.id
       } else {
         const created = await prisma.subject.create({ data: { name: m.nome, slug } })
         subjectId = created.id
+        subjectByKey.set(slug, created)
+        subjectByKey.set(norm(m.nome), created)
       }
     }
 
@@ -150,43 +167,82 @@ export async function POST(req: NextRequest) {
       create: { courseId, subjectId, order: m.ordem ?? mi, weight: m.peso ?? 1 },
     }).catch(() => null)
 
-    // 3. Tópicos (recursivamente, com hierarquia parent + dedupe Jaccard)
+    // 3. OTIMIZAÇÃO: pré-busca TODOS topics do subject (1 query por matéria),
+    //    faz dedupe em memória, e cria os novos em PARALELO via Promise.all
+    const allTopics = await prisma.topic.findMany({
+      where: { subjectId, archivedAt: null },
+      select: { id: true, name: true, parentId: true },
+    })
+    // Index por (parentId || 'root') → array
+    const byParent = new Map<string, typeof allTopics>()
+    for (const t of allTopics) {
+      const key = t.parentId ?? 'root'
+      if (!byParent.has(key)) byParent.set(key, [])
+      byParent.get(key)!.push(t)
+    }
+
     const topicIds: string[] = []
     async function createTopics(items: any[], parentId: string | null) {
+      const parentKey = parentId ?? 'root'
+      const siblings = byParent.get(parentKey) ?? []
+
+      // Separa: o que já existe vs precisa criar
+      type Pending = { item: any; index: number }
+      const toCreate: Pending[] = []
+      const resolved: Array<{ id: string; item: any }> = []
+
       for (let ti = 0; ti < items.length; ti++) {
         const t = items[ti]
         if (!t.nome) continue
-        let existing = await prisma.topic.findFirst({
-          where: { subjectId, name: t.nome, parentId: parentId ?? null, archivedAt: null },
-        })
+        // Match exato ou Jaccard >= 0.7 entre os siblings em memória
+        const tNorm = norm(t.nome)
+        let existing = siblings.find((s) => norm(s.name) === tNorm)
         if (!existing) {
-          const siblings = await prisma.topic.findMany({
-            where: { subjectId, parentId: parentId ?? null, archivedAt: null },
-            select: { id: true, name: true },
-          })
           for (const s of siblings) {
-            if (jaccard(s.name, t.nome) >= 0.7) {
-              existing = await prisma.topic.findUnique({ where: { id: s.id } })
-              break
-            }
+            if (jaccard(s.name, t.nome) >= 0.7) { existing = s; break }
           }
         }
-        const topic = existing
-          ? existing
-          : await prisma.topic.create({
-              data: {
-                subjectId,
-                parentId: parentId ?? null,
-                name: t.nome,
-                slug: slugify(t.nome),
-                order: t.ordem ?? ti,
-              },
-            })
-        topicIds.push(topic.id)
-        if (Array.isArray(t.subtopicos) && t.subtopicos.length > 0) {
-          await createTopics(t.subtopicos, topic.id)
+        if (existing) {
+          resolved.push({ id: existing.id, item: t })
+        } else {
+          toCreate.push({ item: t, index: ti })
         }
       }
+
+      // Cria todos os novos em paralelo
+      const created = await Promise.all(
+        toCreate.map(({ item, index }) =>
+          prisma.topic.create({
+            data: {
+              subjectId,
+              parentId: parentId ?? null,
+              name: item.nome,
+              slug: slugify(item.nome),
+              order: item.ordem ?? index,
+            },
+          }),
+        ),
+      )
+      // Atualiza cache em memória pra criações subsequentes (subtópicos)
+      for (const c of created) {
+        const key = c.parentId ?? 'root'
+        if (!byParent.has(key)) byParent.set(key, [])
+        byParent.get(key)!.push({ id: c.id, name: c.name, parentId: c.parentId })
+      }
+
+      // Agora todos os tópicos desse nível têm id. Processa subtópicos.
+      const allResolved = [
+        ...resolved,
+        ...created.map((c, i) => ({ id: c.id, item: toCreate[i].item })),
+      ]
+      for (const r of allResolved) topicIds.push(r.id)
+
+      // Processa subtópicos em paralelo por tópico pai
+      await Promise.all(
+        allResolved
+          .filter((r) => Array.isArray(r.item.subtopicos) && r.item.subtopicos.length > 0)
+          .map((r) => createTopics(r.item.subtopicos, r.id)),
+      )
     }
     if (Array.isArray(m.topicos)) await createTopics(m.topicos, null)
     createdMaterias.push({
