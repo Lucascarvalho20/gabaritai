@@ -42,9 +42,18 @@ export async function runBackupAndEmail(opts: {
   const now = new Date()
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
+  // Cada query roda isolada. Se uma falhar (ex: tabela ainda não criada
+  // no Supabase), retorna array vazio em vez de quebrar o backup inteiro.
+  const safe = async <T,>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try { return await fn() } catch (err: any) {
+      console.warn(`[backup] ${label} skipped:`, err?.message ?? err)
+      return fallback
+    }
+  }
+
   const [users, payments, enrollments, studyPlans, mockResults, recentAttempts, leads, referrals] =
     await Promise.all([
-      prisma.user.findMany({
+      safe('users', () => prisma.user.findMany({
         select: {
           id: true, name: true, email: true, username: true, role: true, plan: true,
           active: true, emailVerified: true, hasFullAccess: true, isBetaTester: true,
@@ -55,39 +64,39 @@ export async function runBackupAndEmail(opts: {
           createdAt: true, updatedAt: true,
           archivedAt: true, archivedReason: true,
         },
-      }),
-      prisma.payment.findMany({
+      }), [] as any[]),
+      safe('payments', () => prisma.payment.findMany({
         select: {
           id: true, userId: true, plan: true, amount: true, status: true,
           provider: true, providerPaymentId: true, providerPreferenceId: true,
           pricingPlanSlug: true, courseSlug: true, paymentMethod: true,
           paidAt: true, expiresAt: true, createdAt: true, updatedAt: true,
         },
-      }),
-      prisma.userCourseEnrollment.findMany(),
-      prisma.studyPlan.findMany(),
-      prisma.mockExamResult.findMany({
+      }), [] as any[]),
+      safe('enrollments', () => prisma.userCourseEnrollment.findMany(), [] as any[]),
+      safe('studyPlans', () => prisma.studyPlan.findMany(), [] as any[]),
+      safe('mockResults', () => prisma.mockExamResult.findMany({
         select: {
           id: true, userId: true, mockExamId: true, status: true,
           score: true, acertos: true, erros: true, brancos: true,
           startedAt: true, finishedAt: true,
         },
-      }),
-      prisma.questionAttempt.findMany({
+      }), [] as any[]),
+      safe('recentAttempts', () => prisma.questionAttempt.findMany({
         where: { createdAt: { gte: thirtyDaysAgo } },
         select: {
           id: true, userId: true, questionId: true,
           selected: true, correct: true, timeMs: true,
           createdAt: true,
         },
-      }),
-      prisma.lead.findMany({
+      }), [] as any[]),
+      safe('leads', () => prisma.lead.findMany({
         select: {
           id: true, email: true, source: true, courseSlug: true,
           convertedAt: true, createdAt: true,
         },
-      }),
-      prisma.user.count({ where: { referredByUserId: { not: null } } }),
+      }), [] as any[]),
+      safe('referrals', () => prisma.user.count({ where: { referredByUserId: { not: null } } }), 0),
     ])
 
   const stats: BackupStats = {
