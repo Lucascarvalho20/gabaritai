@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { ChevronLeft, Save, Loader2, FileText, AlertTriangle, RefreshCw } from 'lucide-react'
+import { ChevronLeft, Save, Loader2, FileText, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
@@ -209,6 +209,28 @@ export default function EditEditalPage() {
           <Field label="Data da prova">
             <input className="input" type="date" value={toDateInput(form.dataProva as string)} onChange={(e) => setField('dataProva', e.target.value as any)} />
           </Field>
+        </div>
+      </div>
+
+      {/* Análise estratégica IA */}
+      <div className="card p-5 border-purple-200 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-900/10">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-bold text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-500" />
+              Análise estratégica (verticalizado)
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              É o conteúdo "o que mais cai por matéria/banca" que aparece pro aluno logado e no email do lead magnet.
+              IA gera automaticamente, você revisa e edita se quiser.
+            </p>
+          </div>
+          <Link
+            href={`/admin/editais/${params.id}/verticalizado`}
+            className="rounded-lg bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 shrink-0"
+          >
+            <Sparkles className="w-3 h-3" /> Editar análise
+          </Link>
         </div>
       </div>
 
