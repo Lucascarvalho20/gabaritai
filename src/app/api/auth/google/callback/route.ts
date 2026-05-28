@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     // a página manda pra /completar-cadastro depois.
     const needsCompletion = !user.cpfHash || !user.phone
     const next = needsCompletion ? '/completar-cadastro' : (user.role === 'ADMIN' ? '/admin' : '/dashboard')
-    const finalizeUrl = new URL(`${baseUrl}/auth/oauth-finalize`)
+    const finalizeUrl = new URL(`${baseUrl}/oauth-finalize`)
     finalizeUrl.searchParams.set('token', token)
     finalizeUrl.searchParams.set('next', next)
     if (isNewUser) finalizeUrl.searchParams.set('new', '1')
