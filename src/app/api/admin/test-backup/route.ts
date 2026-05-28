@@ -30,9 +30,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result)
   } catch (err: any) {
     console.error('[admin-test-backup]', err)
+    // Admin-only: pode expor o erro real pra debug
     return NextResponse.json({
-      message: 'Backup falhou — confira logs do Vercel.',
-      detail: process.env.NODE_ENV === 'development' ? String(err?.message ?? err) : undefined,
+      message: 'Backup falhou.',
+      detail: String(err?.message ?? err),
+      stack: err?.stack?.split('\n').slice(0, 6).join('\n') ?? null,
     }, { status: 500 })
   }
 }
