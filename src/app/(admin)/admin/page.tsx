@@ -205,7 +205,15 @@ function BackupSection() {
       }
     } catch (err: any) {
       toast.dismiss(t)
-      toast.error(err.response?.data?.message ?? 'Falha ao disparar backup')
+      const msg = err.response?.data?.message ?? 'Falha ao disparar backup'
+      const detail = err.response?.data?.detail
+      toast.error(detail ? `${msg} (${detail.slice(0, 80)})` : msg, { duration: 8000 })
+      setLastResult({
+        ok: false,
+        sentEmail: false,
+        sizeMB: '0',
+        error: detail ?? msg,
+      })
     } finally {
       setLoading(false)
     }
