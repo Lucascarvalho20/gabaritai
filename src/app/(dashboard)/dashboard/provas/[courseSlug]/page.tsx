@@ -39,7 +39,7 @@ export default function ProvasDoCursoPage() {
   const [starting, setStarting] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get(`/me/provas/${params.courseSlug}`)
+    api.get(`/me/provas/curso/${params.courseSlug}`)
       .then(({ data }) => setData(data))
       .catch((err) => toast.error(err.response?.data?.message ?? 'Erro ao carregar provas'))
       .finally(() => setLoading(false))
