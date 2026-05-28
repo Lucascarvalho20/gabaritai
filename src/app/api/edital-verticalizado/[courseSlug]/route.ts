@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { getActiveEditalForCourse } from '@/lib/edital-resolver'
+import { getVerticalizadoCacheKey } from '@/lib/verticalizado'
 
 // GET /api/edital-verticalizado/[courseSlug]
 // Retorna o edital verticalizado: matérias com peso + assuntos top cobrados +
@@ -69,8 +70,29 @@ export async function GET(req: NextRequest, { params }: { params: { courseSlug: 
   // Ordena por peso decrescente (mais cobradas primeiro)
   materias.sort((a, b) => b.weight - a.weight)
 
+  // Análise estratégica IA: busca do AIGenerationCache (admin pode editar)
+  let analiseEstrategica: string | null = null
+  try {
+    const key = getVerticalizadoCacheKey({
+      orgao: course.orgao ?? course.name,
+      cargo: course.cargo ?? course.name,
+      banca: edital.banca?.name,
+    })
+    const cached = await prisma.aIGenerationCache.findUnique({ where: { cacheKey: key } })
+    if (cached?.content && typeof cached.content === 'string') {
+      analiseEstrategica = cached.content as string
+      // Incrementa hit count, atualiza lastUsedAt
+      prisma.aIGenerationCache.update({
+        where: { cacheKey: key },
+        data: { hitCount: { increment: 1 }, lastUsedAt: new Date() },
+      }).catch(() => {})
+    }
+  } catch (err) {
+    console.error('[edital-verticalizado] cache lookup failed:', err)
+  }
+
   return NextResponse.json({
-    course: { slug: course.slug, name: course.name, cargo: course.cargo },
+    course: { slug: course.slug, name: course.name, cargo: course.cargo, orgao: course.orgao },
     edital: {
       id: edital.id,
       ano: edital.ano,
@@ -86,5 +108,6 @@ export async function GET(req: NextRequest, { params }: { params: { courseSlug: 
       isActive: edital.isActive,
     },
     materias,
+    analiseEstrategica,
   })
 }

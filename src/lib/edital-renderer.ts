@@ -15,6 +15,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { getVerticalizadoCacheKey } from '@/lib/verticalizado'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
 
@@ -35,7 +36,7 @@ async function generateAnaliseEstrategica(input: {
   banca: string
   materias: Array<{ name: string; weight: number | null; expectedQuestions: number | null }>
 }): Promise<string | null> {
-  const cacheKey = `edital_analise:${input.orgao}:${input.cargo}:${input.banca}`.toLowerCase().replace(/\s+/g, '-')
+  const cacheKey = getVerticalizadoCacheKey({ orgao: input.orgao, cargo: input.cargo, banca: input.banca })
 
   // 1) Tenta cache (30 dias)
   try {

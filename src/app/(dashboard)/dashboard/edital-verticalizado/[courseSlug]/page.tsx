@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { FileText, Loader2, ArrowLeft, Sparkles, ChevronDown, Calendar, Users, Clock, Award, BookOpen, Target, CheckCircle2 } from 'lucide-react'
+import { FileText, Loader2, ArrowLeft, Sparkles, ChevronDown, Calendar, Users, Clock, Award, BookOpen, Target, CheckCircle2, Brain } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 
 type Edital = {
@@ -47,6 +49,7 @@ export default function EditalVerticalizadoCursoPage() {
     course: { slug: string; name: string; cargo: string | null }
     edital: Edital | null
     materias: Materia[]
+    analiseEstrategica?: string | null
     message?: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -114,6 +117,22 @@ export default function EditalVerticalizadoCursoPage() {
       ) : (
         <div className="card p-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500/30 text-sm">
           {data.message}
+        </div>
+      )}
+
+      {/* Análise estratégica IA */}
+      {data.analiseEstrategica && (
+        <div className="card p-5 border-purple-200 dark:border-purple-800/40 bg-gradient-to-br from-purple-50/60 to-pink-50/40 dark:from-purple-900/15 dark:to-pink-900/10">
+          <h2 className="font-bold text-sm flex items-center gap-2 mb-2">
+            <Brain className="w-4 h-4 text-purple-500" />
+            Análise estratégica
+          </h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Onde focar primeiro · O que essa banca ama cobrar · Erros que derrubam candidato
+          </p>
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-strong:text-foreground prose-p:text-muted-foreground">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{data.analiseEstrategica}</ReactMarkdown>
+          </div>
         </div>
       )}
 
