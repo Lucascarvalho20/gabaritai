@@ -186,7 +186,11 @@ function BackupSection() {
     sentEmail: boolean
     sizeMB: string
     to?: string
-    stats?: { users: number; payments: number; recentAttempts: number }
+    stats?: {
+      users: number; payments: number; recentAttempts: number
+      courses?: number; subjects?: number; topics?: number
+      editais?: number; questions?: number; flashcards?: number
+    }
     error?: string
   } | null>(null)
 
@@ -262,7 +266,7 @@ function BackupSection() {
           {lastResult.stats && (
             <>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Usuários no backup</span>
+                <span className="text-muted-foreground">Usuários</span>
                 <span className="font-mono">{lastResult.stats.users}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -273,6 +277,31 @@ function BackupSection() {
                 <span className="text-muted-foreground">Tentativas (30d)</span>
                 <span className="font-mono">{lastResult.stats.recentAttempts}</span>
               </div>
+              {lastResult.stats.courses !== undefined && (
+                <>
+                  <div className="border-t border-border my-1" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Cursos</span>
+                    <span className="font-mono">{lastResult.stats.courses}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Matérias / Tópicos</span>
+                    <span className="font-mono">{lastResult.stats.subjects} / {lastResult.stats.topics}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Editais</span>
+                    <span className="font-mono">{lastResult.stats.editais}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Questões oficiais</span>
+                    <span className="font-mono">{lastResult.stats.questions}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Flashcards manuais</span>
+                    <span className="font-mono">{lastResult.stats.flashcards}</span>
+                  </div>
+                </>
+              )}
             </>
           )}
           {lastResult.error && (

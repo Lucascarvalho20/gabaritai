@@ -33,6 +33,13 @@ type BackupStats = {
   referredUsers: number
   activeUsers: number
   payingUsers: number
+  courses: number
+  subjects: number
+  topics: number
+  editais: number
+  bancas: number
+  questions: number
+  flashcards: number
 }
 
 export async function runBackupAndEmail(opts: {
@@ -51,7 +58,10 @@ export async function runBackupAndEmail(opts: {
     }
   }
 
-  const [users, payments, enrollments, studyPlans, mockResults, recentAttempts, leads, referrals] =
+  const [
+    users, payments, enrollments, studyPlans, mockResults, recentAttempts, leads, referrals,
+    courses, subjects, topics, editais, bancas, questions, flashcards,
+  ] =
     await Promise.all([
       safe('users', () => prisma.user.findMany({
         select: {
@@ -97,6 +107,44 @@ export async function runBackupAndEmail(opts: {
         },
       }), [] as any[]),
       safe('referrals', () => prisma.user.count({ where: { referredByUserId: { not: null } } }), 0),
+      // ─── CONTEÚDO EDUCACIONAL ────────────────────────────────────────
+      safe('courses', () => prisma.course.findMany({
+        include: {
+          courseSubjects: { select: { subjectId: true, order: true, weight: true } },
+        },
+      }), [] as any[]),
+      safe('subjects', () => prisma.subject.findMany(), [] as any[]),
+      safe('topics', () => prisma.topic.findMany({
+        select: {
+          id: true, subjectId: true, parentId: true, name: true, slug: true,
+          order: true, archivedAt: true, createdAt: true,
+        },
+      }), [] as any[]),
+      safe('editais', () => prisma.edital.findMany({
+        include: {
+          subjects: { select: { subjectId: true, weight: true, expectedQuestions: true, order: true } },
+        },
+      }), [] as any[]),
+      safe('bancas', () => prisma.banca.findMany(), [] as any[]),
+      // Só questões OFICIAIS (provas reais) — IA geradas podem ser regeradas
+      safe('questions', () => prisma.question.findMany({
+        where: { source: 'OFFICIAL', active: true },
+        select: {
+          id: true, subjectId: true, topicId: true, provaId: true,
+          bancaSlug: true, ano: true, numeroQuestao: true, difficulty: true,
+          enunciado: true, alternativas: true, gabarito: true,
+          gabaritoOficial: true, anulada: true, explicacao: true,
+          tags: true, createdAt: true,
+        },
+      }), [] as any[]),
+      // Só flashcards manuais (não IA) — IA geradas podem ser regeradas
+      safe('flashcards', () => prisma.flashcard.findMany({
+        where: { isAI: false, active: true },
+        select: {
+          id: true, subjectId: true, topicId: true, userId: true,
+          frente: true, verso: true, isShared: true, createdAt: true,
+        },
+      }), [] as any[]),
     ])
 
   const stats: BackupStats = {
@@ -110,6 +158,13 @@ export async function runBackupAndEmail(opts: {
     referredUsers: referrals,
     activeUsers: users.filter((u) => u.active && !u.archivedAt).length,
     payingUsers: users.filter((u) => u.plan !== 'FREE').length,
+    courses: courses.length,
+    subjects: subjects.length,
+    topics: topics.length,
+    editais: editais.length,
+    bancas: bancas.length,
+    questions: questions.length,
+    flashcards: flashcards.length,
   }
 
   const backup = {
@@ -119,9 +174,14 @@ export async function runBackupAndEmail(opts: {
       site: 'gabaritai',
       trigger: opts.trigger,
       recentAttemptsScope: 'last_30_days',
+      questionsScope: 'OFFICIAL_only',
+      flashcardsScope: 'manual_only_non_AI',
     },
     stats,
+    // Dados de usuários e progresso
     users, payments, enrollments, studyPlans, mockResults, recentAttempts, leads,
+    // Conteúdo educacional (estrutura + materiais oficiais)
+    courses, subjects, topics, editais, bancas, questions, flashcards,
   }
 
   const json = JSON.stringify(backup, null, 2)
@@ -155,6 +215,14 @@ export async function runBackupAndEmail(opts: {
     <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Indicações</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.referredUsers}</td></tr>
     <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Leads</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.leads}</td></tr>
     <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Tentativas (30d)</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.recentAttempts}</td></tr>
+    <tr><td colspan="2" style="padding:8px 6px 4px;font-weight:700;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Conteúdo educacional</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Cursos</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.courses}</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Matérias</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.subjects}</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Tópicos</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.topics}</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Editais</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.editais}</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Questões oficiais</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.questions}</td></tr>
+    <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Flashcards manuais</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${stats.flashcards}</td></tr>
+    <tr><td colspan="2" style="padding:8px 6px 0;"></td></tr>
     <tr><td style="padding:6px;border:1px solid #e2e8f0;font-weight:600;">Tamanho do anexo</td><td style="padding:6px;border:1px solid #e2e8f0;text-align:right;">${sizeMB} MB</td></tr>
   </table>
   <p style="font-size:12px;color:#64748b;margin:16px 0 0;">
