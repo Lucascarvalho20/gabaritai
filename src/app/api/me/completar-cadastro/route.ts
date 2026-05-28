@@ -5,6 +5,7 @@ import { isValidCpf, hashCpf, encryptCpf } from '@/lib/cpf'
 import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
 import { telegramTrialFraudAttempt } from '@/lib/telegram'
+import { createDefaultStudyPlan } from '@/lib/create-default-study-plan'
 
 /**
  * POST /api/me/completar-cadastro
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
   const ip = getClientIp(req)
-  const { cpf, phone } = await req.json()
+  const { cpf, phone, courseSlug } = await req.json()
 
   if (!cpf || !phone) {
     return NextResponse.json({ message: 'CPF e telefone obrigatórios' }, { status: 400 })
@@ -75,5 +76,45 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return NextResponse.json({ ok: true })
+  // Se aluno escolheu um curso, matricula + gera plano de estudo padrão.
+  // Não bloqueia o cadastro se algo falhar — aluno entra no dashboard e
+  // pode escolher curso/refazer plano depois.
+  let courseEnrolled: { courseId: string; studyPlanId: string | null } | null = null
+  if (courseSlug && typeof courseSlug === 'string') {
+    try {
+      const course = await prisma.course.findUnique({
+        where: { slug: courseSlug },
+        select: { id: true, active: true },
+      })
+      if (course?.active) {
+        await prisma.userCourseEnrollment.upsert({
+          where: { userId_courseId: { userId: user.id, courseId: course.id } },
+          create: {
+            userId: user.id,
+            courseId: course.id,
+            isActive: true,
+            source: 'signup',
+          },
+          update: { isActive: true },
+        })
+
+        const planResult = await createDefaultStudyPlan({
+          userId: user.id,
+          courseId: course.id,
+        }).catch((err) => {
+          console.error('[completar-cadastro] create plan failed', err)
+          return null
+        })
+
+        courseEnrolled = {
+          courseId: course.id,
+          studyPlanId: planResult?.studyPlanId ?? null,
+        }
+      }
+    } catch (err) {
+      console.error('[completar-cadastro] enroll failed', err)
+    }
+  }
+
+  return NextResponse.json({ ok: true, courseEnrolled })
 }

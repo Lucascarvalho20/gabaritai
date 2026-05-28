@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, Loader2, ShieldCheck, BookOpen } from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+
+type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null }
 
 function isValidCpfClient(cpf: string): boolean {
   const c = cpf.replace(/\D/g, '')
@@ -42,6 +44,7 @@ function formatPhoneInput(v: string): string {
 const schema = z.object({
   cpf: z.string().refine((v) => isValidCpfClient(v), 'CPF inválido'),
   phone: z.string().refine((v) => v.replace(/\D/g, '').length >= 10, 'Telefone incompleto (DDD + número)'),
+  courseSlug: z.string().min(1, 'Escolha um curso'),
 })
 
 type FormData = z.infer<typeof schema>
@@ -59,6 +62,8 @@ function CompletarCadastroInner() {
   const searchParams = useSearchParams()
   const [me, setMe] = useState<{ name: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(true)
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -86,13 +91,26 @@ function CompletarCadastroInner() {
       .finally(() => setLoading(false))
   }, [router])
 
+  // Carrega cursos disponíveis (filtrados pra militar/policial)
+  useEffect(() => {
+    api.get('/courses?all=true')
+      .then(({ data }) => setCourses(data.courses ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingCourses(false))
+  }, [])
+
   async function onSubmit(data: FormData) {
     try {
-      await api.post('/me/completar-cadastro', {
+      const res = await api.post('/me/completar-cadastro', {
         cpf: data.cpf.replace(/\D/g, ''),
         phone: data.phone.replace(/\D/g, ''),
+        courseSlug: data.courseSlug,
       })
-      toast.success('Cadastro completo! Bem-vindo ao Gabaritai.')
+      if (res.data.courseEnrolled?.studyPlanId) {
+        toast.success('Cadastro completo! Seu plano de estudo está pronto.')
+      } else {
+        toast.success('Cadastro completo! Bem-vindo ao Gabaritai.')
+      }
       const next = searchParams.get('next') ?? '/dashboard'
       router.push(next)
     } catch (err: any) {
@@ -114,12 +132,36 @@ function CompletarCadastroInner() {
         </div>
         <h1 className="text-2xl font-black text-foreground mb-2">Falta pouco, {me.name.split(' ')[0]}!</h1>
         <p className="text-muted-foreground text-sm">
-          Pra liberar seu acesso, precisamos do seu <strong>CPF</strong> (anti-fraude do trial)
-          e <strong>telefone</strong> (pra recuperar a conta se você perder acesso ao seu Gmail).
+          3 informações pra liberar seu acesso e já montar seu cronograma. Leva 30 segundos.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <label className="label inline-flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-brand-500" />
+            Qual concurso você vai prestar?
+          </label>
+          {loadingCourses ? (
+            <div className="input flex items-center text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" /> Carregando concursos…
+            </div>
+          ) : (
+            <select className="input" {...register('courseSlug')}>
+              <option value="">— escolha seu concurso —</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.slug}>
+                  {c.name}{c.cargo ? ` · ${c.cargo}` : ''}{c.orgao ? ` (${c.orgao})` : ''}
+                </option>
+              ))}
+            </select>
+          )}
+          {errors.courseSlug && <p className="text-danger-500 text-xs mt-1">{errors.courseSlug.message}</p>}
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Vamos montar um cronograma de estudo automático baseado nesse curso. Você pode trocar depois.
+          </p>
+        </div>
+
         <div>
           <label className="label">CPF</label>
           <div className="relative">
