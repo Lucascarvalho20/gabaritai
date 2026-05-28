@@ -26,6 +26,7 @@ const NAV_ALUNO = [
   { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen },
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap },
   { href: '/dashboard/simulados', label: 'Simulados', icon: Target },
+  { href: '/dashboard/provas', label: 'Provas anteriores', icon: FileText },
   { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA' },
   { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo' },
   { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp },
