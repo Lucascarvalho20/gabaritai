@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, BookOpen, DollarSign, Activity, Shield, Sparkles, FileText, Brain, TrendingUp, Loader2 } from 'lucide-react'
+import { Users, BookOpen, DollarSign, Activity, Shield, Sparkles, FileText, Brain, TrendingUp, Loader2, ShieldCheck, Mail } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts'
 import { api } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 type Metrics = {
   users: { total: number; active: number; students: number; admins: number; fullAccess: number; betaTesters: number; activeStudents30d: number }
@@ -169,9 +170,108 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <BackupSection />
+
       <p className="text-xs text-muted-foreground text-center pt-4">
         Dados atualizados em tempo real do PostgreSQL · MRR estimado calcula apenas planos ativos (BASIC × R$59 + PREMIUM × R$97). Receita real virá do Mercado Pago quando webhook estiver ativo.
       </p>
+    </div>
+  )
+}
+
+function BackupSection() {
+  const [loading, setLoading] = useState(false)
+  const [lastResult, setLastResult] = useState<{
+    ok: boolean
+    sentEmail: boolean
+    sizeMB: string
+    to?: string
+    stats?: { users: number; payments: number; recentAttempts: number }
+    error?: string
+  } | null>(null)
+
+  async function dispararBackup() {
+    setLoading(true)
+    setLastResult(null)
+    const t = toast.loading('Exportando + enviando backup...')
+    try {
+      const { data } = await api.post('/admin/test-backup')
+      setLastResult(data)
+      toast.dismiss(t)
+      if (data.sentEmail) {
+        toast.success(`Backup enviado pra ${data.to}!`, { duration: 5000 })
+      } else {
+        toast.error(`Backup gerado mas email não saiu (${data.error ?? 'sem RESEND_API_KEY?'})`, { duration: 6000 })
+      }
+    } catch (err: any) {
+      toast.dismiss(t)
+      toast.error(err.response?.data?.message ?? 'Falha ao disparar backup')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="card p-5 border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-900/10">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h2 className="font-bold text-foreground text-sm flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            Backup automático
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Roda diariamente e manda anexo .json.gz pra <code>ADMIN_EMAIL</code>. Use o botão pra testar agora.
+          </p>
+        </div>
+        <button
+          onClick={dispararBackup}
+          disabled={loading}
+          className="btn-primary btn-sm shrink-0 inline-flex items-center gap-1.5 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+          {loading ? 'Enviando...' : 'Testar backup agora'}
+        </button>
+      </div>
+
+      {lastResult && (
+        <div className="mt-3 p-3 rounded-lg bg-card border border-border text-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Status</span>
+            <span className={lastResult.sentEmail ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
+              {lastResult.sentEmail ? '✓ Email enviado' : '⚠ Email NÃO enviado'}
+            </span>
+          </div>
+          {lastResult.to && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Destinatário</span>
+              <span className="font-mono">{lastResult.to}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Tamanho do anexo</span>
+            <span className="font-mono">{lastResult.sizeMB} MB</span>
+          </div>
+          {lastResult.stats && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Usuários no backup</span>
+                <span className="font-mono">{lastResult.stats.users}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Pagamentos</span>
+                <span className="font-mono">{lastResult.stats.payments}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Tentativas (30d)</span>
+                <span className="font-mono">{lastResult.stats.recentAttempts}</span>
+              </div>
+            </>
+          )}
+          {lastResult.error && (
+            <div className="mt-2 text-amber-600">Erro: {lastResult.error}</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
