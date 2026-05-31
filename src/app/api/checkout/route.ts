@@ -42,13 +42,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Plano esgotado — todos os lugares foram preenchidos.' }, { status: 410 })
     }
 
-    // Planos SINGLE_COURSE/TRIAL exigem courseSlug
-    if (plan.coverageType === 'SPECIFIC' && !courseSlug) {
+    // Validação de courseSlug:
+    // - SINGLE_COURSE com 1 curso na coverageData → courseSlug opcional (usa o da coverage)
+    // - SINGLE_COURSE com coverageData vazio → exige courseSlug
+    // - COMBO/FULL_ACCESS → ignora courseSlug (matricula em todos da coverageData)
+    // - TRIAL com coverageType=SPECIFIC → exige courseSlug
+    const coverageCourses = Array.isArray(plan.coverageData) ? (plan.coverageData as string[]) : []
+    const isCombo = plan.type === 'COMBO' || plan.type === 'FULL_ACCESS'
+
+    if (!isCombo && plan.coverageType === 'SPECIFIC' && coverageCourses.length === 0 && !courseSlug) {
       return NextResponse.json({ message: 'Escolha um curso pra este plano' }, { status: 400 })
     }
-    if (courseSlug) {
+    if (courseSlug && !isCombo) {
       const c = await prisma.course.findUnique({ where: { slug: courseSlug } })
       if (!c) return NextResponse.json({ message: 'Curso inválido' }, { status: 400 })
+      // Se o plano restringe a cursos específicos, valida que está na lista
+      if (coverageCourses.length > 0 && !coverageCourses.includes(courseSlug)) {
+        return NextResponse.json({ message: 'Esse plano não inclui o curso escolhido' }, { status: 400 })
+      }
     }
 
     // Calcula preço final (com desconto Pix se aplicável)

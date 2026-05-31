@@ -41,14 +41,6 @@ function formatPhoneInput(v: string): string {
   return `(${c.slice(0, 2)}) ${c.slice(2, 7)}-${c.slice(7)}`
 }
 
-const schema = z.object({
-  cpf: z.string().refine((v) => isValidCpfClient(v), 'CPF inválido'),
-  phone: z.string().refine((v) => v.replace(/\D/g, '').length >= 10, 'Telefone incompleto (DDD + número)'),
-  courseSlug: z.string().min(1, 'Escolha um curso'),
-})
-
-type FormData = z.infer<typeof schema>
-
 export default function CompletarCadastroPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>}>
@@ -60,10 +52,25 @@ export default function CompletarCadastroPage() {
 function CompletarCadastroInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [me, setMe] = useState<{ name: string; email: string } | null>(null)
+  const [me, setMe] = useState<{ name: string; email: string; hasCpf: boolean; hasPhone: boolean } | null>(null)
   const [loading, setLoading] = useState(true)
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCourses, setLoadingCourses] = useState(true)
+
+  // Schema dinâmico — campos opcionais se já tem na conta
+  const schema = z.object({
+    cpf: z.string().optional().refine(
+      (v) => !me || me.hasCpf || (v && isValidCpfClient(v)),
+      'CPF inválido',
+    ),
+    phone: z.string().optional().refine(
+      (v) => !me || me.hasPhone || (v && v.replace(/\D/g, '').length >= 10),
+      'Telefone incompleto (DDD + número)',
+    ),
+    courseSlug: z.string().optional(),
+  })
+
+  type FormData = z.infer<typeof schema>
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -73,25 +80,23 @@ function CompletarCadastroInner() {
   const cpfClean = cpfValue.replace(/\D/g, '')
   const cpfStatus = cpfClean.length === 0 ? 'idle' : cpfClean.length < 11 ? 'typing' : isValidCpfClient(cpfValue) ? 'valid' : 'invalid'
 
-  // Carrega o user (precisa estar autenticado pra acessar essa página)
   useEffect(() => {
     api.get('/auth/me')
       .then(({ data }) => {
-        // Se já tem CPF e phone, redireciona pro dashboard
+        // Se já tem CPF e phone, redireciona pro dashboard ou pro next
         if (data.hasCpf && data.hasPhone) {
-          router.replace('/dashboard')
+          const next = searchParams.get('next') ?? '/dashboard'
+          router.replace(next)
           return
         }
-        setMe({ name: data.name, email: data.email })
+        setMe({ name: data.name, email: data.email, hasCpf: !!data.hasCpf, hasPhone: !!data.hasPhone })
       })
       .catch(() => {
-        // Não autenticado — manda pro login
         router.replace('/login')
       })
       .finally(() => setLoading(false))
-  }, [router])
+  }, [router, searchParams])
 
-  // Carrega cursos disponíveis (filtrados pra militar/policial)
   useEffect(() => {
     api.get('/courses?all=true')
       .then(({ data }) => setCourses(data.courses ?? []))
@@ -101,17 +106,18 @@ function CompletarCadastroInner() {
 
   async function onSubmit(data: FormData) {
     try {
-      const res = await api.post('/me/completar-cadastro', {
-        cpf: data.cpf.replace(/\D/g, ''),
-        phone: data.phone.replace(/\D/g, ''),
-        courseSlug: data.courseSlug,
-      })
+      const body: Record<string, string> = {}
+      if (!me?.hasCpf && data.cpf) body.cpf = data.cpf.replace(/\D/g, '')
+      if (!me?.hasPhone && data.phone) body.phone = data.phone.replace(/\D/g, '')
+      if (data.courseSlug) body.courseSlug = data.courseSlug
+
+      const res = await api.post('/me/completar-cadastro', body)
       if (res.data.courseEnrolled?.studyPlanId) {
         toast.success('Cadastro completo! Seu plano de estudo está pronto.')
       } else {
         toast.success('Cadastro completo! Bem-vindo ao Gabaritai.')
       }
-      const next = searchParams.get('next') ?? '/dashboard'
+      const next = searchParams.get('next') ?? (data.courseSlug ? '/dashboard' : '/dashboard/comecar')
       router.push(next)
     } catch (err: any) {
       const msg = err.response?.data?.message ?? 'Erro ao salvar'
@@ -124,6 +130,9 @@ function CompletarCadastroInner() {
   }
   if (!me) return null
 
+  const needsCpf = !me.hasCpf
+  const needsPhone = !me.hasPhone
+
   return (
     <div className="animate-fade-in">
       <div className="mb-6">
@@ -132,15 +141,20 @@ function CompletarCadastroInner() {
         </div>
         <h1 className="text-2xl font-black text-foreground mb-2">Falta pouco, {me.name.split(' ')[0]}!</h1>
         <p className="text-muted-foreground text-sm">
-          3 informações pra liberar seu acesso e já montar seu cronograma. Leva 30 segundos.
+          {needsCpf && needsPhone
+            ? '3 informações pra liberar seu acesso e já montar seu cronograma. Leva 30 segundos.'
+            : needsCpf
+              ? 'Só falta o CPF. É obrigatório pra evitar trial duplicado.'
+              : 'Só falta o telefone. Usamos pra recuperar conta.'}
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Curso só aparece se ainda não tem enrollment (ou seja, no fluxo OAuth novo) */}
         <div>
           <label className="label inline-flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-brand-500" />
-            Qual concurso você vai prestar?
+            Qual concurso você vai prestar? <span className="text-muted-foreground text-[10px]">(opcional)</span>
           </label>
           {loadingCourses ? (
             <div className="input flex items-center text-muted-foreground text-sm">
@@ -148,7 +162,7 @@ function CompletarCadastroInner() {
             </div>
           ) : (
             <select className="input" {...register('courseSlug')}>
-              <option value="">— escolha seu concurso —</option>
+              <option value="">— pular por enquanto, escolho depois —</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.slug}>
                   {c.name}{c.cargo ? ` · ${c.cargo}` : ''}{c.orgao ? ` (${c.orgao})` : ''}
@@ -156,47 +170,50 @@ function CompletarCadastroInner() {
               ))}
             </select>
           )}
-          {errors.courseSlug && <p className="text-danger-500 text-xs mt-1">{errors.courseSlug.message}</p>}
           <p className="text-[10px] text-muted-foreground mt-1">
-            Vamos montar um cronograma de estudo automático baseado nesse curso. Você pode trocar depois.
+            Se escolher agora, já montamos seu cronograma. Pode trocar depois.
           </p>
         </div>
 
-        <div>
-          <label className="label">CPF</label>
-          <div className="relative">
+        {needsCpf && (
+          <div>
+            <label className="label">CPF</label>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                className="input pr-10"
+                placeholder="000.000.000-00"
+                maxLength={14}
+                {...register('cpf', {
+                  onChange: (e) => setValue('cpf', formatCpfInput(e.target.value), { shouldValidate: true }),
+                })}
+              />
+              {cpfStatus === 'valid' && <CheckCircle2 className="w-4 h-4 text-success-500 absolute right-3 top-1/2 -translate-y-1/2" />}
+            </div>
+            {errors.cpf && <p className="text-danger-500 text-xs mt-1">{errors.cpf.message}</p>}
+            {!errors.cpf && cpfStatus === 'invalid' && <p className="text-danger-500 text-xs mt-1">CPF inválido — verifique os dígitos</p>}
+            <p className="text-[10px] text-muted-foreground mt-1">Criptografado em repouso · usado pra evitar trial duplicado</p>
+          </div>
+        )}
+
+        {needsPhone && (
+          <div>
+            <label className="label">Telefone com DDD</label>
             <input
               type="text"
               inputMode="numeric"
-              className="input pr-10"
-              placeholder="000.000.000-00"
-              maxLength={14}
-              {...register('cpf', {
-                onChange: (e) => setValue('cpf', formatCpfInput(e.target.value), { shouldValidate: true }),
+              className="input"
+              placeholder="(11) 91234-5678"
+              maxLength={16}
+              {...register('phone', {
+                onChange: (e) => setValue('phone', formatPhoneInput(e.target.value), { shouldValidate: true }),
               })}
             />
-            {cpfStatus === 'valid' && <CheckCircle2 className="w-4 h-4 text-success-500 absolute right-3 top-1/2 -translate-y-1/2" />}
+            {errors.phone && <p className="text-danger-500 text-xs mt-1">{errors.phone.message}</p>}
+            <p className="text-[10px] text-muted-foreground mt-1">Único por conta · usado só pra recuperar acesso</p>
           </div>
-          {errors.cpf && <p className="text-danger-500 text-xs mt-1">{errors.cpf.message}</p>}
-          {!errors.cpf && cpfStatus === 'invalid' && <p className="text-danger-500 text-xs mt-1">CPF inválido — verifique os dígitos</p>}
-          <p className="text-[10px] text-muted-foreground mt-1">Criptografado em repouso · usado pra evitar trial duplicado</p>
-        </div>
-
-        <div>
-          <label className="label">Telefone com DDD</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            className="input"
-            placeholder="(11) 91234-5678"
-            maxLength={16}
-            {...register('phone', {
-              onChange: (e) => setValue('phone', formatPhoneInput(e.target.value), { shouldValidate: true }),
-            })}
-          />
-          {errors.phone && <p className="text-danger-500 text-xs mt-1">{errors.phone.message}</p>}
-          <p className="text-[10px] text-muted-foreground mt-1">Usado só pra recuperar conta · não enviamos spam</p>
-        </div>
+        )}
 
         <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full mt-2">
           {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}

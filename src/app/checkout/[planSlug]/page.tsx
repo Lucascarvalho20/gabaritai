@@ -20,6 +20,7 @@ type Plan = {
   pixDiscount: number
   moneyBackDays: number
   coverageType: 'SPECIFIC' | 'AREA' | 'ALL'
+  coverageData: string[] | null
   features: string[]
 }
 
@@ -113,14 +114,16 @@ export default function CheckoutPage() {
       return
     }
     if (!plan) return
-    if (plan.coverageType === 'SPECIFIC' && !courseSlug) {
+    const isCombo = plan.type === 'COMBO' || plan.type === 'FULL_ACCESS'
+    const needsCourseChoice = plan.coverageType === 'SPECIFIC' && !isCombo
+    if (needsCourseChoice && !courseSlug) {
       return toast.error('Selecione o curso')
     }
     setProcessing(true)
     try {
       const { data } = await api.post('/checkout', {
         planSlug: plan.slug,
-        courseSlug: plan.coverageType === 'SPECIFIC' ? courseSlug : undefined,
+        courseSlug: needsCourseChoice ? courseSlug : undefined,
         useDiscount,
         couponCode: appliedCoupon?.code,
       })
@@ -189,7 +192,34 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {plan.coverageType === 'SPECIFIC' && (
+          {/* Combo/FullAccess: mostra lista de cursos inclusos, não pede escolha */}
+          {(plan.type === 'COMBO' || plan.type === 'FULL_ACCESS') && (
+            <div className="p-3 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40">
+              <p className="text-xs font-bold text-brand-700 dark:text-brand-300 mb-2">
+                Esse plano inclui {plan.coverageType === 'ALL' ? 'todos os cursos do site' : `${(plan.coverageData ?? []).length} cursos`}:
+              </p>
+              {plan.coverageType === 'SPECIFIC' && Array.isArray(plan.coverageData) && plan.coverageData.length > 0 && (
+                <ul className="space-y-1 text-xs">
+                  {plan.coverageData.map((slug) => {
+                    const found = groups.flatMap((g) => g.cargos).find((c) => c.slug === slug)
+                    const label = found ? `${found.name}${found.cargo ? ' — ' + found.cargo : ''}` : slug
+                    return (
+                      <li key={slug} className="flex items-start gap-1.5">
+                        <Check className="w-3 h-3 text-success-500 mt-0.5 shrink-0" />
+                        <span>{label}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Acesso liberado em todos. Cronograma adapta automaticamente.
+              </p>
+            </div>
+          )}
+
+          {/* Single course: pede escolha */}
+          {plan.coverageType === 'SPECIFIC' && plan.type !== 'COMBO' && plan.type !== 'FULL_ACCESS' && (
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold">1. Concurso</label>

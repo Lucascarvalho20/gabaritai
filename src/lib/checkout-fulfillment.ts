@@ -39,10 +39,26 @@ async function resolveCourseIds(opts: {
   coverageData: any
   courseSlug?: string | null
   maxCourses: number | null
+  planType: PricingType
 }): Promise<string[]> {
   if (opts.coverageType === 'SPECIFIC') {
-    if (!opts.courseSlug) return [] // SINGLE_COURSE/TRIAL exigem courseSlug — sem ele não matricula
-    const course = await prisma.course.findUnique({ where: { slug: opts.courseSlug }, select: { id: true } })
+    const coverageSlugs = Array.isArray(opts.coverageData) ? (opts.coverageData as string[]) : []
+    const isCombo = opts.planType === 'COMBO' || opts.planType === 'FULL_ACCESS'
+
+    // Combo/FullAccess SPECIFIC: matricula em TODOS os cursos da coverageData (ignora courseSlug)
+    if (isCombo && coverageSlugs.length > 0) {
+      const courses = await prisma.course.findMany({
+        where: { slug: { in: coverageSlugs }, active: true },
+        select: { id: true },
+      })
+      return courses.map((c) => c.id)
+    }
+
+    // Single course: se vier courseSlug usa ele (validado no checkout que tá na coverageData se houver restrição).
+    // Se NÃO vier courseSlug mas coverageData tem 1 curso, usa esse.
+    const finalSlug = opts.courseSlug ?? (coverageSlugs.length === 1 ? coverageSlugs[0] : null)
+    if (!finalSlug) return []
+    const course = await prisma.course.findUnique({ where: { slug: finalSlug }, select: { id: true } })
     return course ? [course.id] : []
   }
   if (opts.coverageType === 'AREA') {
@@ -79,6 +95,7 @@ export async function fulfillPayment(paymentId: string): Promise<{ ok: boolean; 
     coverageData: plan.coverageData,
     courseSlug: payment.courseSlug,
     maxCourses: plan.maxCourses,
+    planType: plan.type,
   })
 
   const expiresAt = calcExpiresAt(plan.interval)
