@@ -49,10 +49,11 @@ const RE_INLINE_MATERIA_HEADER =
   /^([A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇA-Za-zÀ-ÿ][\s\-A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇA-Za-zÀ-ÿ\/]+):\s*(.*)$/
 
 // Tokenizer pra extrair tópicos numerados de texto inline.
-// Match: número (com ou sem subnúmeros), seguido de espaço e texto começando em maiúscula.
-// Lookbehind: precedido de início, ponto+espaço, ou apenas espaço (não dígito).
+// Aceita: "1. Texto", "1 Texto", "1) Texto", "1.1. Texto", "1.1 Texto".
+// Lookbehind: precedido de início, ponto+espaço, ou espaço (não dígito).
+// Lookahead: letra maiúscula ou acentuada (início do conteúdo do tópico).
 const RE_INLINE_TOPIC =
-  /(?:^|(?<=[.)\s]))(\d+(?:\.\d+)*)\s+(?=[A-ZÀ-ÿ])/g
+  /(?:^|(?<=[.)\s]))(\d+(?:\.\d+)*)[.)]?\s+(?=[A-ZÀ-ÿ"'])/g
 
 // Section markers que aparecem em editais mas NÃO são matérias.
 // Quando encontrados, são ignorados (mas o texto depois deles continua sendo processado).
@@ -84,28 +85,86 @@ function isSectionMarker(name: string): boolean {
  *
  * Caso típico (cole direto do PDF de edital CESPE):
  *   LÍNGUA PORTUGUESA: 1 Compreensão. 2 Reescritura. INFORMÁTICA: 1 Conceitos.
+ *   Lingua portuguesa: 1. Compreensão. ... 22. Redação Oficial. Realidade étnica, social: ...
  *
  * Vira:
  *   LÍNGUA PORTUGUESA: 1 Compreensão. 2 Reescritura.
  *   INFORMÁTICA: 1 Conceitos.
  *
- * A heurística: depois de `. ` ou `; ` ou `) `, se vier UMA SEQUÊNCIA UPPERCASE
- * (3-60 chars, com possíveis acentos/espaços/hífens) seguida de `:`, é matéria.
- * Quebra inserindo \n antes dela.
+ * Heurística atualizada (mais tolerante): depois de `. ` ou `; ` ou `) `, se vier
+ * um header (3-80 chars, qualquer capitalização, sem dígitos no começo) seguido de `:`
+ * e DEPOIS um número "1 " ou "1.", é matéria. Quebra inserindo \n antes dela.
  */
 function preprocessSplitInlineMaterias(text: string): string {
-  // Pattern: (fim-de-frase) + (HEADER UPPERCASE) + (: espaço)
-  // O HEADER tem que começar com letra maiúscula e ter pelo menos 3 chars.
-  // Não pode começar com dígito.
-  const pattern = /([.;)]\s+)([A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ][A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ\s\-/]{2,80}?)(:\s+)(?=[A-ZÀ-ÿ0-9])/g
+  // Pattern: (fim-de-frase) + (HEADER 3-80 chars) + (: espaço) + lookahead "número texto"
+  // Aceita qualquer capitalização — o que importa é o padrão "Algo: 1 ..."
+  const pattern = /([.;)]\s+)([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s\-/]{2,80}?)(:\s+)(?=\d+[.)\s])/g
   return text.replace(pattern, (match, before, header, after) => {
-    // Só quebra se o header é predominantemente uppercase (não é só "A B" curto random)
     const letters = header.match(/[A-Za-zÀ-ÿ]/g) ?? []
-    const upper = header.match(/[A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ]/g) ?? []
-    const ratio = letters.length > 0 ? upper.length / letters.length : 0
-    if (ratio < 0.7 || letters.length < 3) return match // não é matéria, mantém
+    if (letters.length < 3) return match
+    // Rejeita se o header parece frase normal (muitos espaços, muito longo)
+    const wordCount = header.trim().split(/\s+/).length
+    if (wordCount > 8) return match
     return `${before.trimEnd()}\n${header}${after}`
   })
+}
+
+/**
+ * Pre-processa: junta linhas quebradas pelo word-wrap do PDF.
+ * Uma matéria longa pode aparecer assim quando colada:
+ *
+ *   Lingua portuguesa: 1. Compreensão e interpretação de texto. 2. Tipologia.
+ *   3. Figuras de linguagem. 4. Significação de palavras e expressões.
+ *   5. Relações de sinonimia...
+ *
+ * O parser velho via "4. Significação" como tópico solto, sem matéria.
+ * Solução: juntar linhas que começam com número (1-99) num único parágrafo
+ * com a linha anterior, até bater linha em branco OU header explícito.
+ */
+function preprocessJoinWrappedLines(text: string): string {
+  const lines = text.split(/\r?\n/)
+  const out: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmed = line.trim()
+    // Linha em branco → mantém quebra (separador de blocos)
+    if (trimmed === '') {
+      out.push(line)
+      continue
+    }
+    // Linha começando com marcadores especiais → não junta
+    if (
+      /^(##|\*\*|CARGO\s+\d|mat[ée]ria\s*:|[-*•])/i.test(trimmed) ||
+      /^\(CARGO\s+\d/i.test(trimmed)
+    ) {
+      out.push(line)
+      continue
+    }
+    // Linha começando com "1. " ou "1." ou "1) " → é continuação de parágrafo
+    // anterior (lista numerada wrapped)
+    const isNumericContinuation = /^\d+(\.\d+)*[.)\s]/.test(trimmed)
+    // OU continuação textual: começa com minúscula e anterior não termina em
+    // sentinel que sugere fim de bloco (anterior não termina em `:` solto)
+    const startsWithLowerOrParen = /^[a-zà-ÿ(]/.test(trimmed)
+    let isTextContinuation = false
+    if (startsWithLowerOrParen && out.length > 0) {
+      const prev = out[out.length - 1].trim()
+      // anterior precisa ter conteúdo e não terminar como header standalone
+      if (prev !== '' && !/^(##|\*\*|CARGO\s+\d|mat[ée]ria\s*:)/i.test(prev)) {
+        isTextContinuation = true
+      }
+    }
+    if ((isNumericContinuation || isTextContinuation) && out.length > 0) {
+      const prevIdx = out.length - 1
+      const prev = out[prevIdx]
+      if (prev.trim() !== '') {
+        out[prevIdx] = prev.replace(/\s+$/, '') + ' ' + trimmed
+        continue
+      }
+    }
+    out.push(line)
+  }
+  return out.join('\n')
 }
 
 /**
@@ -226,10 +285,11 @@ function parseInlineTopics(body: string): Topico[] {
   let match: RegExpExecArray | null
   RE_INLINE_TOPIC.lastIndex = 0
   while ((match = RE_INLINE_TOPIC.exec(flat)) !== null) {
-    // match[0] inclui o número; queremos saber onde o NÚMERO começa e termina
+    // match[0] inclui número + opcional `.`/`)` + espaços (até a letra do conteúdo)
     const numeric = match[1]
     const markerStart = match.index + match[0].indexOf(numeric)
-    const markerEnd = markerStart + numeric.length
+    // markerEnd vai até o FIM do match completo (depois do número + pontuação + espaço)
+    const markerEnd = match.index + match[0].length
     positions.push({ start: markerStart, markerEnd, numeric })
   }
 
@@ -281,40 +341,80 @@ function parseInlineTopics(body: string): Topico[] {
 }
 
 /**
- * Tenta interpretar uma linha como header de matéria inline (UPPERCASE: conteúdo).
- * Não casa com nada que seja apenas "1. algo" ou contenha muitos números.
+ * Tenta interpretar uma linha como header de matéria inline ("Algo: conteúdo").
+ *
+ * Aceita QUALQUER capitalização ("Lingua portuguesa:", "LÍNGUA PORTUGUESA:", "Direito Penal:")
+ * desde que:
+ *  - O head tem 3-120 chars e contém letras
+ *  - O rest começa com um número de tópico ("1 ", "1.", "1)") OU é UPPERCASE-dominante
+ *  - O head tem no máx 8 palavras (matérias de concurso raramente são frases longas)
  */
 function tryParseInlineMateriaHeader(line: string): { nome: string; rest: string } | null {
   const t = line.trim()
   if (t.length === 0) return null
-  // Header tem que ter ":" e o que vem antes não pode começar com dígito
   const colonIdx = t.indexOf(':')
   if (colonIdx <= 0) return null
   const head = t.slice(0, colonIdx).trim()
   const rest = t.slice(colonIdx + 1).trim()
   if (/^\d/.test(head)) return null
-  // head precisa ter palavras válidas (alguma letra)
   if (!/[A-Za-zÀ-ÿ]/.test(head)) return null
-  // Rejeita se head é longo demais (provavelmente não é título de matéria)
-  if (head.length > 120) return null
-  // Heurística: é UPPERCASE-dominante? Se a maioria das letras é maiúscula, é matéria
+  if (head.length < 3 || head.length > 200) return null
+  const wordCount = head.split(/\s+/).length
+
+  // Critério 1: rest começa com tópico numerado ("1 ", "1.", "1)") — sinal FORTE
+  // Aceita até 20 palavras no head (matérias longas tipo "Realidade étnica, social...")
+  const startsWithNumberedTopic = /^\d+(\.\d+)*[.)\s]/.test(rest)
+  if (startsWithNumberedTopic && wordCount <= 20) return { nome: cleanMateriaName(head), rest }
+
+  // Headers maiores: rejeita (provavelmente é frase normal com `:` no meio)
+  if (wordCount > 8) return null
+
+  // Critério 2: head é UPPERCASE-dominante (>=60% maiúsculas)
   const letters = head.match(/[A-Za-zÀ-ÿ]/g) ?? []
   const upper = head.match(/[A-ZÀÁÉÍÓÚÂÊÔÃÕÄËÏÖÜÇ]/g) ?? []
   const ratio = letters.length > 0 ? upper.length / letters.length : 0
-  // Aceita se >= 60% upper OU se a linha começa com palavra capitalizada e tem ":"
-  // mas também — se vem direto seguido de "1 Texto" então provavelmente é header
-  const looksLikeMateriaHeader = ratio >= 0.6 || /^\s*\d+\s+[A-ZÀ-ÿ]/.test(rest)
-  if (!looksLikeMateriaHeader) return null
-  return { nome: titleCase(head), rest }
+  if (ratio >= 0.6) return { nome: cleanMateriaName(head), rest }
+
+  return null
+}
+
+/**
+ * Limpa nome de matéria: remove numeração inicial, conserta acentuação básica
+ * comum em PDFs ("Lingua" → "Língua", "Dominio" → "Domínio") e aplica title case.
+ */
+function cleanMateriaName(raw: string): string {
+  let s = raw.trim()
+  // Remove numeração inicial tipo "1.", "1.1.", "I.", "II - "
+  s = s.replace(/^[\dIVX]+(\.[\dIVX]+)*\.?\s*[-—:)]?\s*/i, '')
+  // Title case
+  s = titleCase(s)
+  // Conserta acentuações comuns que somem em PDFs antigos
+  s = s
+    .replace(/\bLingua\b/g, 'Língua')
+    .replace(/\bDominio\b/g, 'Domínio')
+    .replace(/\bConteudo\b/g, 'Conteúdo')
+    .replace(/\bMatematica\b/g, 'Matemática')
+    .replace(/\bLogica\b/g, 'Lógica')
+    .replace(/\bInformatica\b/g, 'Informática')
+    .replace(/\bAdministracao\b/g, 'Administração')
+    .replace(/\bConstitucional\b/g, 'Constitucional')
+    .replace(/\bEtnica\b/g, 'Étnica')
+    .replace(/\bGeografica\b/g, 'Geográfica')
+    .replace(/\bPolitica\b/g, 'Política')
+    .replace(/\bEconomica\b/g, 'Econômica')
+    .replace(/\bRealidade Etnica\b/gi, 'Realidade Étnica')
+  return s
 }
 
 export function parseEditalText(text: string): ParseResult {
   const warnings: ParseError[] = []
 
   // Pré-processa pra suportar formatos comuns de edital CESPE/FGV:
-  // 1. Quebra matérias que vieram coladas numa linha só
-  // 2. Detecta títulos UPPERCASE sem `:` seguidos de tópicos numerados
-  const preprocessed1 = preprocessSplitInlineMaterias(text)
+  // 1. Junta linhas quebradas por word-wrap do PDF (a partir de continuação numérica)
+  // 2. Quebra matérias que vieram coladas numa linha só
+  // 3. Detecta títulos UPPERCASE sem `:` seguidos de tópicos numerados
+  const preprocessed0 = preprocessJoinWrappedLines(text)
+  const preprocessed1 = preprocessSplitInlineMaterias(preprocessed0)
   const preprocessed = preprocessUppercaseTitles(preprocessed1)
   const lines = preprocessed.split(/\r?\n/)
 

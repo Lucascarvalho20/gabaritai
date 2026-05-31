@@ -49,7 +49,10 @@ export default function ProvasDoCursoPage() {
     setStarting(provaId)
     try {
       const { data } = await api.post(`/me/provas/${provaId}/start`)
-      router.push(`/dashboard/simulados/${data.mockExamId}`)
+      if (data.durationNote) {
+        toast(data.durationNote, { duration: 6000, icon: 'ℹ️' })
+      }
+      router.push(`/dashboard/simulados/${data.mockExamId}/fazer`)
     } catch (err: any) {
       toast.error(err.response?.data?.message ?? 'Erro ao iniciar prova')
       setStarting(null)

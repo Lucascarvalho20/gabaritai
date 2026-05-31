@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Sempre roda no servidor — não pré-renderizar (depende do banco)
+export const dynamic = 'force-dynamic'
+
 /**
  * Lista pública dos planos visíveis pro checkout.
  * Sem auth (qualquer um pode ver os preços).

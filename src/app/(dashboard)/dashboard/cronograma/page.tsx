@@ -321,6 +321,7 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
   const [loading, setLoading] = useState(false)
   const [recalculating, setRecalculating] = useState(false)
   const [planStatus, setPlanStatus] = useState<any>(null)
+  const [turboMode, setTurboMode] = useState(false)
 
   async function loadMonth(y: number, m: number) {
     setLoading(true)
@@ -368,15 +369,38 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
     setViewMonth(m); setViewYear(y)
   }
 
-  async function doRecalculate() {
+  async function doRecalculate(opts?: { turbo?: boolean }) {
     if (!confirm('Recalcular o cronograma a partir de hoje? As sessões futuras serão reorganizadas.')) return
     setRecalculating(true)
     try {
-      await api.post(`/schedule/${plan.id}/recalculate`)
-      toast.success('Cronograma recalculado')
+      await api.post(`/schedule/${plan.id}/recalculate`, {
+        turbo: opts?.turbo ?? turboMode,
+      })
+      toast.success(opts?.turbo ?? turboMode
+        ? 'Modo turbo ligado — dobra tempo nas matérias top do verticalizado'
+        : 'Cronograma recalculado')
       onChanged()
     } catch (e: any) {
       toast.error(e.response?.data?.message ?? 'Erro ao recalcular')
+    } finally {
+      setRecalculating(false)
+    }
+  }
+
+  async function toggleTurbo() {
+    const novo = !turboMode
+    setTurboMode(novo)
+    // Aplica direto recalculando
+    setRecalculating(true)
+    try {
+      await api.post(`/schedule/${plan.id}/recalculate`, { turbo: novo })
+      toast.success(novo
+        ? '🔥 Modo turbo ON — dobra o tempo nas top do verticalizado'
+        : 'Modo turbo OFF — peso igual ao edital')
+      onChanged()
+    } catch (e: any) {
+      setTurboMode(!novo) // rollback
+      toast.error(e.response?.data?.message ?? 'Erro ao mudar modo')
     } finally {
       setRecalculating(false)
     }
@@ -422,7 +446,7 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
               </span>
             )}
             <button
-              onClick={doRecalculate}
+              onClick={() => doRecalculate()}
               disabled={recalculating}
               className="text-xs font-bold inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50"
               title="Recalcular cronograma a partir de hoje (use quando sua rotina mudou)"
@@ -431,6 +455,46 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
               {recalculating ? 'Recalculando…' : 'Recalcular'}
             </button>
           </div>
+        </div>
+
+        {/* Toggle MODO TURBO */}
+        <div className={cn(
+          'mt-3 rounded-xl border p-3 flex items-center gap-3 transition-colors',
+          turboMode
+            ? 'bg-orange-50/60 dark:bg-orange-900/15 border-orange-300 dark:border-orange-700/60'
+            : 'bg-card border-border',
+        )}>
+          <div className={cn(
+            'w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0',
+            turboMode ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground',
+          )}>
+            {turboMode ? '🔥' : '⚖️'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm flex items-center gap-1.5">
+              Modo turbo
+              {turboMode && <span className="badge bg-orange-500 text-white text-[10px] py-0.5 px-2">LIGADO</span>}
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              {turboMode
+                ? 'Estuda TUDO do edital, mas dobra o tempo nas 5 matérias top do verticalizado.'
+                : 'Estuda tudo proporcional ao peso do edital. Ligar pra dar peso extra ao que mais cai.'}
+            </p>
+          </div>
+          <button
+            onClick={toggleTurbo}
+            disabled={recalculating}
+            className={cn(
+              'relative w-11 h-6 rounded-full transition-colors shrink-0 disabled:opacity-50',
+              turboMode ? 'bg-orange-500' : 'bg-muted',
+            )}
+            title={turboMode ? 'Desligar modo turbo' : 'Ligar modo turbo'}
+          >
+            <span className={cn(
+              'absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all',
+              turboMode ? 'left-5' : 'left-0.5',
+            )} />
+          </button>
         </div>
       </div>
 

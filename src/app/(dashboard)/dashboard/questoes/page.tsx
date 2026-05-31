@@ -24,6 +24,7 @@ type Questao = {
 
 type Curso = { courseId: string; slug: string; name: string }
 type Materia = { subjectId: string; name: string; pct: number; total: number }
+type BancaOpt = { slug: string; name: string }
 
 type Estado = 'pendente' | 'enviando' | 'gabarito'
 
@@ -32,6 +33,8 @@ export default function QuestoesPage() {
   const [questoes, setQuestoes] = useState<Questao[]>([])
   const [cursos, setCursos] = useState<Curso[]>([])
   const [materias, setMaterias] = useState<Materia[]>([])
+  const [bancas, setBancas] = useState<BancaOpt[]>([])
+  const [anos, setAnos] = useState<number[]>([])
 
   // Filtros
   const [mostrarFiltros, setMostrarFiltros] = useState(false)
@@ -39,6 +42,8 @@ export default function QuestoesPage() {
   const [filtMateria, setFiltMateria] = useState('')
   const [filtSource, setFiltSource] = useState<'' | 'OFFICIAL' | 'AI_GENERATED'>('')
   const [filtDific, setFiltDific] = useState<'' | 'EASY' | 'MEDIUM' | 'HARD'>('')
+  const [filtBanca, setFiltBanca] = useState('')
+  const [filtAno, setFiltAno] = useState('')
 
   // Sessão
   const [idxAtual, setIdxAtual] = useState(0)
@@ -54,14 +59,17 @@ export default function QuestoesPage() {
   const [respostaIA, setRespostaIA] = useState('')
   const [mostrarExplicacaoIA, setMostrarExplicacaoIA] = useState(false)
 
-  // Carrega cursos + matérias com mastery (filtros)
+  // Carrega cursos + matérias + bancas/anos disponíveis pros filtros
   useEffect(() => {
     Promise.all([
       api.get('/me/cursos').then((r) => r.data).catch(() => ({ cursos: [] })),
       api.get('/me/progresso').then((r) => r.data).catch(() => ({ byMateria: [] })),
-    ]).then(([c, p]) => {
+      api.get('/me/questoes/filtros').then((r) => r.data).catch(() => ({ bancas: [], anos: [] })),
+    ]).then(([c, p, f]) => {
       setCursos(c.cursos ?? [])
       setMaterias(p.byMateria ?? [])
+      setBancas(f.bancas ?? [])
+      setAnos(f.anos ?? [])
     })
   }, [])
 
@@ -74,6 +82,8 @@ export default function QuestoesPage() {
       if (filtMateria) params.subjectId = filtMateria
       if (filtSource) params.source = filtSource
       if (filtDific) params.difficulty = filtDific
+      if (filtBanca) params.bancaSlug = filtBanca
+      if (filtAno) params.ano = filtAno
       const { data } = await api.get('/me/questoes', { params })
       setQuestoes(data.questions ?? [])
       setIdxAtual(0)
@@ -96,7 +106,7 @@ export default function QuestoesPage() {
     fetchQuestoes()
   }
   function limparFiltros() {
-    setFiltCurso(''); setFiltMateria(''); setFiltSource(''); setFiltDific('')
+    setFiltCurso(''); setFiltMateria(''); setFiltSource(''); setFiltDific(''); setFiltBanca(''); setFiltAno('')
   }
 
   const questao = questoes[idxAtual]
@@ -159,7 +169,7 @@ Matéria: ${questao.subject?.name ?? '?'}
 
   const acertos = respondidas.filter((r) => r.correct).length
   const taxa = respondidas.length > 0 ? Math.round((acertos / respondidas.length) * 100) : 0
-  const filtrosAtivos = !!(filtCurso || filtMateria || filtSource || filtDific)
+  const filtrosAtivos = !!(filtCurso || filtMateria || filtSource || filtDific || filtBanca || filtAno)
 
   if (loading) {
     return (
@@ -259,6 +269,20 @@ Matéria: ${questao.subject?.name ?? '?'}
                 <option value="EASY">Fácil</option>
                 <option value="MEDIUM">Média</option>
                 <option value="HARD">Difícil</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Banca</label>
+              <select className="input" value={filtBanca} onChange={(e) => setFiltBanca(e.target.value)}>
+                <option value="">Todas</option>
+                {bancas.map((b) => <option key={b.slug} value={b.slug}>{b.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Ano</label>
+              <select className="input" value={filtAno} onChange={(e) => setFiltAno(e.target.value)}>
+                <option value="">Todos</option>
+                {anos.map((a) => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
           </div>

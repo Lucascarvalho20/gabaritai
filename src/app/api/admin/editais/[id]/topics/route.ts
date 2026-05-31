@@ -10,7 +10,9 @@ export const dynamic = 'force-dynamic'
  *  - quantas fontes anexadas a cada tópico
  *  - status do resumo (none, DRAFT, REVIEWED, PUBLISHED, REJECTED)
  *
- * É o que alimenta a UI de revisão de conteúdo.
+ * OTIMIZADO: 3 queries totais. Antes fazia ~2 queries por tópico
+ * (count materials + findFirst resumo), o que pra um edital de 15 matérias
+ * com ~20 tópicos cada virava 600+ queries e travava a página.
  */
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireAdmin(req)
@@ -22,59 +24,106 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   })
   if (!edital) return NextResponse.json({ message: 'Edital não encontrado' }, { status: 404 })
 
-  // Matérias do curso (CourseSubject)
+  // QUERY 1 — Matérias do curso
   const courseSubjects = await prisma.courseSubject.findMany({
     where: { courseId: edital.courseId },
     include: { subject: { select: { id: true, name: true, slug: true } } },
     orderBy: { order: 'asc' },
   })
+  const subjectIds = courseSubjects.map((cs) => cs.subjectId)
 
-  const result = await Promise.all(
-    courseSubjects.map(async (cs) => {
-      // Carrega tópicos (raiz + filhos) da matéria
-      const topics = await prisma.topic.findMany({
-        where: { subjectId: cs.subjectId, parentId: null },
-        include: {
-          children: {
-            include: {
-              _count: { select: { materials: true } },
-            },
-            orderBy: { order: 'asc' },
-          },
-          _count: { select: { materials: true } },
-        },
-        orderBy: { order: 'asc' },
+  if (subjectIds.length === 0) {
+    return NextResponse.json({
+      edital: { id: edital.id, titulo: edital.titulo, ano: edital.ano },
+      materias: [],
+    })
+  }
+
+  // QUERY 2 — TODOS os tópicos das matérias do edital (raiz + filhos)
+  const allTopics = await prisma.topic.findMany({
+    where: { subjectId: { in: subjectIds }, archivedAt: null },
+    select: { id: true, name: true, order: true, parentId: true, subjectId: true },
+    orderBy: { order: 'asc' },
+  })
+  const topicIds = allTopics.map((t) => t.id)
+
+  // QUERY 3 — TODOS os materials desses tópicos (filtra por type e origin em memória)
+  const materials = topicIds.length > 0
+    ? await prisma.material.findMany({
+        where: { topicId: { in: topicIds } },
+        select: { id: true, topicId: true, type: true, origin: true, status: true, updatedAt: true },
       })
+    : []
 
-      // Pra cada tópico (raiz e filho), conta sources e busca status do resumo
-      async function enrich(t: any): Promise<any> {
-        const sourcesCount = await prisma.material.count({
-          where: { topicId: t.id, origin: 'source' },
-        })
-        const resumo = await prisma.material.findFirst({
-          where: { topicId: t.id, type: 'RESUMO' },
-          select: { id: true, status: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-        })
-        return {
-          id: t.id,
-          name: t.name,
-          order: t.order,
-          sourcesCount,
-          resumo: resumo ?? null,
-          children: t.children ? await Promise.all(t.children.map(enrich)) : [],
-        }
+  // Agrega em memória
+  const sourcesCountByTopic = new Map<string, number>()
+  const resumoByTopic = new Map<string, { id: string; status: string; updatedAt: Date }>()
+  for (const m of materials) {
+    if (!m.topicId) continue
+    if (m.origin === 'source') {
+      sourcesCountByTopic.set(m.topicId, (sourcesCountByTopic.get(m.topicId) ?? 0) + 1)
+    }
+    if (m.type === 'RESUMO') {
+      const existing = resumoByTopic.get(m.topicId)
+      if (!existing || m.updatedAt > existing.updatedAt) {
+        resumoByTopic.set(m.topicId, { id: m.id, status: String(m.status), updatedAt: m.updatedAt })
       }
-      const enriched = await Promise.all(topics.map(enrich))
+    }
+  }
 
-      return {
-        subjectId: cs.subjectId,
-        name: cs.subject.name,
-        slug: cs.subject.slug,
-        topics: enriched,
-      }
-    }),
-  )
+  // Constrói árvore matéria → tópicos (raiz) → children
+  type EnrichedTopic = {
+    id: string
+    name: string
+    order: number
+    sourcesCount: number
+    resumo: { id: string; status: string; updatedAt: string } | null
+    children: EnrichedTopic[]
+  }
+
+  function enrich(t: { id: string; name: string; order: number }): EnrichedTopic {
+    const resumo = resumoByTopic.get(t.id)
+    return {
+      id: t.id,
+      name: t.name,
+      order: t.order,
+      sourcesCount: sourcesCountByTopic.get(t.id) ?? 0,
+      resumo: resumo
+        ? { id: resumo.id, status: resumo.status, updatedAt: resumo.updatedAt.toISOString() }
+        : null,
+      children: [],
+    }
+  }
+
+  // Indexa tópicos por parentId
+  const childrenByParent = new Map<string, typeof allTopics>()
+  for (const t of allTopics) {
+    if (!t.parentId) continue
+    if (!childrenByParent.has(t.parentId)) childrenByParent.set(t.parentId, [])
+    childrenByParent.get(t.parentId)!.push(t)
+  }
+
+  function buildSubtree(t: { id: string; name: string; order: number }): EnrichedTopic {
+    const node = enrich(t)
+    const children = childrenByParent.get(t.id) ?? []
+    node.children = children.map(buildSubtree)
+    return node
+  }
+
+  // Por matéria, pega tópicos raiz e monta a árvore
+  const topicsBySubject = new Map<string, typeof allTopics>()
+  for (const t of allTopics) {
+    if (t.parentId) continue
+    if (!topicsBySubject.has(t.subjectId)) topicsBySubject.set(t.subjectId, [])
+    topicsBySubject.get(t.subjectId)!.push(t)
+  }
+
+  const result = courseSubjects.map((cs) => ({
+    subjectId: cs.subjectId,
+    name: cs.subject.name,
+    slug: cs.subject.slug,
+    topics: (topicsBySubject.get(cs.subjectId) ?? []).map(buildSubtree),
+  }))
 
   return NextResponse.json({
     edital: { id: edital.id, titulo: edital.titulo, ano: edital.ano },

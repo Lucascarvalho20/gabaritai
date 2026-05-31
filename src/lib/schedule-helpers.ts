@@ -11,35 +11,62 @@ export type ScheduleDto = {
   endDate: string
   sessionDurationMin?: number
   includeMocks?: boolean
+  // Modo turbo: cobre TODAS as matérias do edital (regra do produto), mas DOBRA
+  // o tempo nas TOP N (mais pesadas, equivalente ao "verticalizado"). Aluno
+  // escolhe ligar/desligar no /dashboard/cronograma.
+  turbo?: boolean
+  // Quantas matérias top vão receber peso 2x quando turbo=true (default 5).
+  turboTopN?: number
 }
 
-export async function resolveSubjects(dto: { courseId: string; editalId?: string }) {
+export async function resolveSubjects(dto: { courseId: string; editalId?: string; turbo?: boolean; turboTopN?: number }) {
+  let subjects: Array<{ id: string; name: string; weight: number }>
   if (dto.editalId) {
     const editalSubjects = await prisma.editalSubject.findMany({
       where: { editalId: dto.editalId },
       include: { subject: true },
       orderBy: { order: 'asc' },
     })
-    return editalSubjects.map((es) => ({
+    subjects = editalSubjects.map((es) => ({
       id: es.subjectId,
       name: es.subject.name,
       weight: es.weight,
     }))
+  } else {
+    const courseSubjects = await prisma.courseSubject.findMany({
+      where: { courseId: dto.courseId },
+      include: { subject: true },
+      orderBy: { order: 'asc' },
+    })
+    subjects = courseSubjects.map((cs) => ({
+      id: cs.subjectId,
+      name: cs.subject.name,
+      weight: cs.weight,
+    }))
   }
-  const courseSubjects = await prisma.courseSubject.findMany({
-    where: { courseId: dto.courseId },
-    include: { subject: true },
-    orderBy: { order: 'asc' },
-  })
-  return courseSubjects.map((cs) => ({
-    id: cs.subjectId,
-    name: cs.subject.name,
-    weight: cs.weight,
-  }))
+
+  // Turbo mode: dobra peso das TOP N matérias (mais pesadas). Todas as
+  // outras continuam aparecendo no cronograma — não pode pular nenhuma.
+  if (dto.turbo && subjects.length > 0) {
+    const topN = Math.max(1, Math.min(dto.turboTopN ?? 5, subjects.length))
+    const sortedByWeight = [...subjects].sort((a, b) => b.weight - a.weight)
+    const topIds = new Set(sortedByWeight.slice(0, topN).map((s) => s.id))
+    subjects = subjects.map((s) => ({
+      ...s,
+      weight: topIds.has(s.id) ? s.weight * 2 : s.weight,
+    }))
+  }
+
+  return subjects
 }
 
 export async function runSchedule(dto: ScheduleDto): Promise<ScheduleResult> {
-  const subjects = await resolveSubjects(dto)
+  const subjects = await resolveSubjects({
+    courseId: dto.courseId,
+    editalId: dto.editalId,
+    turbo: dto.turbo,
+    turboTopN: dto.turboTopN,
+  })
   if (subjects.length === 0) throw new Error('Curso/edital sem matérias cadastradas.')
 
   const input: ScheduleInput = {

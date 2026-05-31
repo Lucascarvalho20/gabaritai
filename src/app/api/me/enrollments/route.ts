@@ -56,6 +56,8 @@ export async function GET(req: NextRequest) {
     area: e.course.area,
     description: e.course.description,
     isActive: e.isActive,
+    isPrimary: e.isPrimary,
+    lastDiagnosticAt: e.lastDiagnosticAt,
     enrolledAt: e.enrolledAt,
     lastStudyAt: e.lastStudyAt,
     progress: e.progress,

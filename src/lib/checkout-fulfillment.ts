@@ -95,9 +95,14 @@ export async function fulfillPayment(paymentId: string): Promise<{ ok: boolean; 
       },
     })
 
-    // 2. Cria/atualiza matrículas
+    // 2. Cria/atualiza matrículas. Primeiro enrollment do user vira principal.
     let enrolledCount = 0
+    const hasOtherPrimary = await tx.userCourseEnrollment.count({
+      where: { userId: payment.userId, isPrimary: true },
+    })
+    let shouldMarkNextAsPrimary = hasOtherPrimary === 0
     for (const courseId of courseIds) {
+      const willBePrimary = shouldMarkNextAsPrimary
       await tx.userCourseEnrollment.upsert({
         where: { userId_courseId: { userId: payment.userId, courseId } },
         update: {
@@ -105,15 +110,18 @@ export async function fulfillPayment(paymentId: string): Promise<{ ok: boolean; 
           expiresAt,
           source: 'PAID',
           enrolledAt: new Date(),
+          ...(willBePrimary && { isPrimary: true }),
         },
         create: {
           userId: payment.userId,
           courseId,
           isActive: true,
+          isPrimary: willBePrimary,
           expiresAt,
           source: 'PAID',
         },
       })
+      shouldMarkNextAsPrimary = false // só o primeiro vira principal
       enrolledCount++
     }
 

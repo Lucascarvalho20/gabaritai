@@ -138,72 +138,177 @@ export async function POST(req: NextRequest) {
   const newPath = (subject: string, topic: string, sub?: string, gc?: string) =>
     [subject, topic, sub, gc].filter(Boolean).join(' → ')
 
-  // Coleta subjectIds + dados pra criar EditalSubject depois
-  const subjectsForEdital: Array<{ subjectId: string; weight: number; expectedQuestions: number | null; order: number }> = []
+  const materiasValidas = materias.filter((m: any) => m?.nome)
 
-  for (let mi = 0; mi < materias.length; mi++) {
-    const m = materias[mi]
-    if (!m.nome) continue
+  // ── ETAPA A — Pré-carrega subjects e cria os faltantes em batch ─────
+  const subjectNames: string[] = materiasValidas.map((m: any) => m.nome)
+  const subjectSlugs = subjectNames.map((n: string) => slugify(n))
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+  const existingSubjects = subjectNames.length > 0
+    ? await prisma.subject.findMany({
+        where: { OR: [{ slug: { in: subjectSlugs } }, { name: { in: subjectNames } }] },
+      })
+    : []
+  const subjectByKey = new Map<string, typeof existingSubjects[number]>()
+  for (const s of existingSubjects) {
+    subjectByKey.set(s.slug, s)
+    subjectByKey.set(norm(s.name), s)
+  }
 
-    // Subject (reusa se já existe global)
-    let subjectId = m.subjectId
+  const toCreateSubjects: Array<{ name: string; slug: string }> = []
+  for (const m of materiasValidas) {
+    if (m.subjectId) continue
+    const slug = slugify(m.nome)
+    if (subjectByKey.get(slug) ?? subjectByKey.get(norm(m.nome))) continue
+    if (toCreateSubjects.find((c) => c.slug === slug)) continue
+    toCreateSubjects.push({ name: m.nome, slug })
+  }
+  if (toCreateSubjects.length > 0) {
+    await prisma.subject.createMany({ data: toCreateSubjects, skipDuplicates: true })
+    const fresh = await prisma.subject.findMany({
+      where: { slug: { in: toCreateSubjects.map((s) => s.slug) } },
+    })
+    for (const s of fresh) {
+      subjectByKey.set(s.slug, s)
+      subjectByKey.set(norm(s.name), s)
+    }
+  }
+
+  // Resolve subjectId pra cada matéria
+  const materiaResolved: Array<{
+    m: any
+    subjectId: string
+    weight: number
+    expectedQuestions: number | null
+    order: number
+  }> = []
+  for (let mi = 0; mi < materiasValidas.length; mi++) {
+    const m = materiasValidas[mi]
+    let subjectId: string = m.subjectId
     if (!subjectId) {
       const slug = slugify(m.nome)
-      const existing = await prisma.subject.findFirst({ where: { OR: [{ slug }, { name: m.nome }] } })
-      subjectId = existing ? existing.id : (await prisma.subject.create({ data: { name: m.nome, slug } })).id
+      const cached = subjectByKey.get(slug) ?? subjectByKey.get(norm(m.nome))
+      if (!cached) continue
+      subjectId = cached.id
     }
-
-    // CourseSubject (re-cria os vinculos do edital atual)
-    await prisma.courseSubject.upsert({
-      where: { courseId_subjectId: { courseId, subjectId } },
-      update: { weight: m.peso ?? 1, order: m.ordem ?? mi },
-      create: { courseId, subjectId, order: m.ordem ?? mi, weight: m.peso ?? 1 },
-    }).catch(() => null)
-
-    subjectsForEdital.push({
+    materiaResolved.push({
+      m,
       subjectId,
       weight: m.peso ?? 1,
       expectedQuestions: m.qtdQuestoes ?? null,
       order: m.ordem ?? mi,
     })
-
-    // Tópicos (re-cria, dedupe por nome+parent)
-    async function createTopics(items: any[], parentId: string | null, parentPath: string[]) {
-      for (let ti = 0; ti < items.length; ti++) {
-        const t = items[ti]
-        if (!t.nome) continue
-        const existing = await prisma.topic.findFirst({
-          where: { subjectId, name: t.nome, parentId: parentId ?? null, archivedAt: null },
-        })
-        const topic = existing ?? await prisma.topic.create({
-          data: {
-            subjectId, parentId: parentId ?? null, name: t.nome,
-            slug: slugify(t.nome), order: t.ordem ?? ti,
-          },
-        })
-        const path = [...parentPath, t.nome]
-        newTopicIds.set(path.join(' → '), topic.id)
-        if (Array.isArray(t.subtopicos) && t.subtopicos.length > 0) {
-          await createTopics(t.subtopicos, topic.id, path)
-        }
-      }
-    }
-    await createTopics(m.topicos ?? [], null, [m.nome])
   }
 
-  // 3b. Vincula EditalSubject com peso + qtdQuestões específicos
-  for (const es of subjectsForEdital) {
-    await prisma.editalSubject.upsert({
-      where: { editalId_subjectId: { editalId: newEdital.id, subjectId: es.subjectId } },
-      update: { weight: es.weight, expectedQuestions: es.expectedQuestions, order: es.order },
-      create: {
-        editalId: newEdital.id,
-        subjectId: es.subjectId,
-        weight: es.weight,
-        expectedQuestions: es.expectedQuestions,
-        order: es.order,
-      },
-    }).catch(() => null)
+  // ── ETAPA B — Pré-busca TODOS topics dos subjects relevantes (1 query) ─
+  const allSubjectIds = [...new Set(materiaResolved.map((r) => r.subjectId))]
+  const allExistingTopics = allSubjectIds.length > 0
+    ? await prisma.topic.findMany({
+        where: { subjectId: { in: allSubjectIds }, archivedAt: null },
+        select: { id: true, name: true, parentId: true, subjectId: true },
+      })
+    : []
+  const topicsByKey = new Map<string, typeof allExistingTopics>()
+  for (const t of allExistingTopics) {
+    const key = `${t.subjectId}|${t.parentId ?? 'root'}`
+    if (!topicsByKey.has(key)) topicsByKey.set(key, [])
+    topicsByKey.get(key)!.push(t)
+  }
+
+  // ── ETAPA C — Cria topics novos em paralelo + popula newTopicIds ────
+  async function processTopics(
+    subjectId: string,
+    items: any[],
+    parentId: string | null,
+    parentPath: string[],
+  ): Promise<void> {
+    const key = `${subjectId}|${parentId ?? 'root'}`
+    const siblings = topicsByKey.get(key) ?? []
+
+    type Pending = { item: any; index: number }
+    const toCreate: Pending[] = []
+    const resolved: Array<{ id: string; item: any }> = []
+
+    for (let ti = 0; ti < items.length; ti++) {
+      const t = items[ti]
+      if (!t?.nome) continue
+      const existing = siblings.find((s) => s.name === t.nome)
+      if (existing) resolved.push({ id: existing.id, item: t })
+      else toCreate.push({ item: t, index: ti })
+    }
+
+    const created = await Promise.all(
+      toCreate.map(({ item, index }) =>
+        prisma.topic.create({
+          data: {
+            subjectId,
+            parentId: parentId ?? null,
+            name: item.nome,
+            slug: slugify(item.nome),
+            order: item.ordem ?? index,
+          },
+        }),
+      ),
+    )
+    for (const c of created) {
+      const k = `${c.subjectId}|${c.parentId ?? 'root'}`
+      if (!topicsByKey.has(k)) topicsByKey.set(k, [])
+      topicsByKey.get(k)!.push({ id: c.id, name: c.name, parentId: c.parentId, subjectId: c.subjectId })
+    }
+
+    const allResolved = [
+      ...resolved,
+      ...created.map((c, i) => ({ id: c.id, item: toCreate[i].item })),
+    ]
+    for (const r of allResolved) {
+      const path = [...parentPath, r.item.nome]
+      newTopicIds.set(path.join(' → '), r.id)
+    }
+
+    await Promise.all(
+      allResolved
+        .filter((r) => Array.isArray(r.item.subtopicos) && r.item.subtopicos.length > 0)
+        .map((r) => processTopics(subjectId, r.item.subtopicos, r.id, [...parentPath, r.item.nome])),
+    )
+  }
+
+  // Processa todas as matérias em paralelo
+  await Promise.all(
+    materiaResolved.map((r) => processTopics(r.subjectId, r.m.topicos ?? [], null, [r.m.nome])),
+  )
+
+  // ── ETAPA D — CourseSubject + EditalSubject em batch ────────────────
+  if (materiaResolved.length > 0) {
+    await Promise.all([
+      prisma.courseSubject.createMany({
+        data: materiaResolved.map((r) => ({
+          courseId,
+          subjectId: r.subjectId,
+          order: r.order,
+          weight: r.weight,
+        })),
+        skipDuplicates: true,
+      }),
+      prisma.editalSubject.createMany({
+        data: materiaResolved.map((r, i) => ({
+          editalId: newEdital.id,
+          subjectId: r.subjectId,
+          weight: r.weight,
+          expectedQuestions: r.expectedQuestions,
+          order: i,
+        })),
+        skipDuplicates: true,
+      }),
+    ])
+    // Atualiza weight/order de quem já existia (updateMany por par — em paralelo)
+    await Promise.all(
+      materiaResolved.map((r) =>
+        prisma.courseSubject.updateMany({
+          where: { courseId, subjectId: r.subjectId },
+          data: { order: r.order, weight: r.weight },
+        }),
+      ),
+    )
   }
 
   // 4. Pra renames marcados como tal: move conteúdo do tópico antigo → tópico novo
@@ -240,48 +345,54 @@ export async function POST(req: NextRequest) {
     merged++
   }
 
-  // 5. Pra tópicos removidos com action=archive: arquiva
+  // 5. Pra tópicos removidos com action=archive: arquiva (PARALELO)
   let archived = 0
   let materialsArchived = 0
   let flashcardsArchived = 0
-  for (const [oldTopicId, action] of removedDecisions.entries()) {
-    if (action !== 'archive') continue
-
-    const topic = await prisma.topic.findUnique({ where: { id: oldTopicId }, select: { name: true } })
-    if (!topic) continue
-
-    // Arquiva Topic
-    await prisma.topic.update({
-      where: { id: oldTopicId },
-      data: { archivedAt: new Date(), archivedReason: 'removido do edital ' + ano },
+  const toArchive = Array.from(removedDecisions.entries())
+    .filter(([, action]) => action === 'archive')
+    .map(([oldTopicId]) => oldTopicId)
+  if (toArchive.length > 0) {
+    const topicsToArchive = await prisma.topic.findMany({
+      where: { id: { in: toArchive } },
+      select: { id: true, name: true },
     })
+    const topicNameById = new Map(topicsToArchive.map((t) => [t.id, t.name]))
 
-    // Materials: vão pra ARCHIVED
-    const mUpd = await prisma.material.updateMany({
-      where: { topicId: oldTopicId, status: { not: 'ARCHIVED' } },
-      data: { status: 'ARCHIVED' },
-    })
-    materialsArchived += mUpd.count
+    const archiveResults = await Promise.all(
+      topicsToArchive.map(async (t) => {
+        const [_, mUpd, fUpd] = await Promise.all([
+          prisma.topic.update({
+            where: { id: t.id },
+            data: { archivedAt: new Date(), archivedReason: 'removido do edital ' + ano },
+          }),
+          prisma.material.updateMany({
+            where: { topicId: t.id, status: { not: 'ARCHIVED' } },
+            data: { status: 'ARCHIVED' },
+          }),
+          prisma.flashcard.updateMany({
+            where: { topicId: t.id, active: true },
+            data: { active: false },
+          }),
+          prisma.question.updateMany({
+            where: { topicId: t.id, source: 'AI_GENERATED', active: true },
+            data: { active: false },
+          }),
+        ])
+        return { topicId: t.id, name: t.name, materialsArchived: mUpd.count, flashcardsArchived: fUpd.count }
+      }),
+    )
 
-    // Flashcards: inactive (preserva pro caso de voltar)
-    const fUpd = await prisma.flashcard.updateMany({
-      where: { topicId: oldTopicId, active: true },
-      data: { active: false },
-    })
-    flashcardsArchived += fUpd.count
-
-    // Questões OFICIAIS ficam ativas (patrimônio). Questões AI ficam inativas.
-    await prisma.question.updateMany({
-      where: { topicId: oldTopicId, source: 'AI_GENERATED', active: true },
-      data: { active: false },
-    })
-
-    log.push({
-      type: 'ARCHIVED',
-      description: `Tópico arquivado: '${topic.name}'`,
-      data: { topicId: oldTopicId, materialsArchived: mUpd.count, flashcardsArchived: fUpd.count },
-    })
-    archived++
+    for (const r of archiveResults) {
+      materialsArchived += r.materialsArchived
+      flashcardsArchived += r.flashcardsArchived
+      log.push({
+        type: 'ARCHIVED',
+        description: `Tópico arquivado: '${r.name}'`,
+        data: { topicId: r.topicId, materialsArchived: r.materialsArchived, flashcardsArchived: r.flashcardsArchived },
+      })
+      archived++
+    }
   }
 
   // Loga adições (tópicos novos foram criados acima via createTopics)
@@ -290,17 +401,17 @@ export async function POST(req: NextRequest) {
     log.push({ type: 'ADDED', description: `${added} tópicos novos`, data: { count: added } })
   }
 
-  // 6. Cria entradas no EditalChangeLog
-  for (const entry of log) {
-    await prisma.editalChangeLog.create({
-      data: {
+  // 6. Cria entradas no EditalChangeLog (BATCH)
+  if (log.length > 0) {
+    await prisma.editalChangeLog.createMany({
+      data: log.map((entry) => ({
         newEditalId: newEdital.id,
         previousEditalId: previousEdital?.id ?? null,
         changeType: entry.type,
         description: entry.description,
         diffData: (entry.data ?? null) as any,
-      },
-    }).catch(() => null)
+      })),
+    })
   }
 
   return NextResponse.json({

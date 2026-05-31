@@ -73,22 +73,92 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     },
   })
 
-  // Flashcards compartilhados desse tópico
-  const flashcards = await prisma.flashcard.findMany({
-    where: {
-      active: true,
-      isShared: true,
-      ...(topicId ? { topicId } : { subjectId: subjectId ?? undefined }),
-    },
-    take: 20,
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, frente: true, verso: true },
-  })
+  // Flashcards: lógica DIFERENTE pra sessão REVISAO
+  let flashcards: Array<{ id: string; frente: string; verso: string }>
+  if (session.type === 'REVISAO') {
+    // REVISAO usa fila SM-2 PERSONALIZADA do aluno — cards com nextReview <= hoje
+    // OU cards do tópico/matéria que o aluno nunca viu ainda
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    const dueReviews = await prisma.flashcardReview.findMany({
+      where: { userId: user.id, nextReview: { lte: today } },
+      orderBy: { nextReview: 'asc' },
+      take: 20,
+      include: {
+        flashcard: { select: { id: true, frente: true, verso: true, active: true } },
+      },
+    })
+    const dueCards = dueReviews
+      .filter((r) => r.flashcard?.active)
+      .map((r) => ({ id: r.flashcard.id, frente: r.flashcard.frente, verso: r.flashcard.verso }))
 
-  // Resumo via cache (gera se não existe)
+    // Se a fila SM-2 está vazia ou < 5, completa com cards do tópico/matéria
+    if (dueCards.length < 5) {
+      const fallback = await prisma.flashcard.findMany({
+        where: {
+          active: true,
+          isShared: true,
+          ...(topicId ? { topicId } : { subjectId: subjectId ?? undefined }),
+          NOT: { id: { in: dueCards.map((c) => c.id) } },
+        },
+        take: 20 - dueCards.length,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, frente: true, verso: true },
+      })
+      flashcards = [...dueCards, ...fallback]
+    } else {
+      flashcards = dueCards
+    }
+  } else {
+    // ESTUDO/QUESTOES: cards do tópico atual (comportamento original)
+    flashcards = await prisma.flashcard.findMany({
+      where: {
+        active: true,
+        isShared: true,
+        ...(topicId ? { topicId } : { subjectId: subjectId ?? undefined }),
+      },
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, frente: true, verso: true },
+    })
+  }
+
+  // Resumo: preferência admin NotebookLM > IA gerada
+  // Ordem: 1. Material PUBLISHED do tópico (admin colou via /admin/editais/[id]/conteudo)
+  //        2. AIGenerationCache modelUsed='notebooklm' (admin colou via /api/admin/topics/[id]/resumo)
+  //        3. IA gerada on-the-fly (cache via generateOrFetchCached)
   let resumo: string | null = null
   let resumoCached = false
+  let resumoSource: 'notebooklm-material' | 'notebooklm-cache' | 'ai-banca' | 'ai-global' | 'ia-generated' | null = null
   try {
+    // 1. Material PUBLISHED do tópico (jeito oficial de cola admin)
+    if (topicId) {
+      const material = await prisma.material.findFirst({
+        where: { topicId, type: 'RESUMO', status: 'PUBLISHED', active: true },
+        orderBy: { updatedAt: 'desc' },
+        select: { content: true, origin: true },
+      })
+      if (material?.content && material.content.trim().length > 50) {
+        resumo = material.content
+        resumoCached = true
+        resumoSource = 'notebooklm-material'
+      }
+    }
+    // 2. Fallback: AIGenerationCache com modelUsed='notebooklm' (via /api/admin/topics/[id]/resumo)
+    if (!resumo && topicId) {
+      const { getTopicResumo } = await import('@/lib/topic-resumo')
+      const adminResumo = await getTopicResumo({ topicId, subjectId, bancaSlug })
+      if (adminResumo.content) {
+        resumo = adminResumo.content
+        resumoCached = true
+        resumoSource = adminResumo.source === 'notebooklm' ? 'notebooklm-cache' : adminResumo.source
+      }
+    }
+  } catch (err: any) {
+    console.warn('[sessao] admin resumo lookup failed:', err.message)
+  }
+  try {
+    if (!resumo) {
     const topicName = session.topic?.name ?? subject?.name ?? 'Conteúdo geral'
     const subjectName = subject?.name ?? '—'
 
@@ -120,17 +190,23 @@ Máximo 800 palavras. Use negritos pra termos técnicos.`
     })
     resumo = typeof content === 'string' ? content : JSON.stringify(content)
     resumoCached = cached
+    resumoSource = 'ia-generated'
+    } // fecha if (!resumo)
   } catch (err: any) {
     console.warn('[sessao] resumo gen failed:', err.message)
   }
 
-  // Estatísticas pessoais
+  // Estatísticas pessoais + status de conclusão
   let myTopicStats: any = null
+  let topicCompletedAt: string | null = null
   if (topicId) {
     const t = await prisma.topicAttempt.findUnique({
       where: { userId_topicId: { userId: user.id, topicId } },
     })
-    if (t) myTopicStats = { total: t.totalAttempts, corretos: t.correctAttempts, mastery: t.masteryScore }
+    if (t) {
+      myTopicStats = { total: t.totalAttempts, corretos: t.correctAttempts, mastery: t.masteryScore }
+      topicCompletedAt = t.completedAt?.toISOString() ?? null
+    }
   }
 
   trackFeatureUsage({ userId: user.id, feature: 'sessao' })
@@ -160,10 +236,12 @@ Máximo 800 palavras. Use negritos pra termos técnicos.`
     bancaSlug,
     resumo,
     resumoCached,
+    resumoSource,
     officialQuestions,
     aiQuestions,
     flashcards,
     myTopicStats,
+    topicCompletedAt,
   })
 }
 

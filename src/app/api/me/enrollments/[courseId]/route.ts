@@ -51,6 +51,12 @@ export async function POST(
   // Pega expiresAt do plano ativo pra propagar pra enrollment
   const limits = await getUserPlanLimits(auth.user.id)
 
+  // Se é o PRIMEIRO enrollment ativo do user, marca como principal automaticamente
+  const hasOtherPrimary = await prisma.userCourseEnrollment.count({
+    where: { userId: auth.user.id, isPrimary: true },
+  })
+  const shouldMarkPrimary = hasOtherPrimary === 0
+
   // Upsert: cria nova ou ativa existente
   const enrollment = await prisma.userCourseEnrollment.upsert({
     where: { userId_courseId: { userId: auth.user.id, courseId } },
@@ -58,16 +64,18 @@ export async function POST(
       isActive: true,
       // se não tinha expiresAt mas o plano tem, propaga
       expiresAt: limits.expiresAt ?? undefined,
+      ...(shouldMarkPrimary && { isPrimary: true }),
     },
     create: {
       userId: auth.user.id,
       courseId,
       isActive: true,
+      isPrimary: shouldMarkPrimary,
       source: 'SELF_ACTIVATED',
       expiresAt: limits.expiresAt,
     },
     select: {
-      id: true, isActive: true, enrolledAt: true, expiresAt: true,
+      id: true, isActive: true, isPrimary: true, enrolledAt: true, expiresAt: true,
     },
   })
 
