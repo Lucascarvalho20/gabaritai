@@ -35,6 +35,8 @@ model User {
   cpfHash        String?  @unique
   cpfEncrypted   String?
   phone          String?
+  phoneHash      String?  @unique
+  phoneEncrypted String?
   birthDate      DateTime?
 
   // Acesso liberado pelo admin (testador/beta) — bypassa plan e enrollments

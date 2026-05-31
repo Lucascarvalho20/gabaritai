@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { isValidCpf, hashCpf, encryptCpf } from '@/lib/cpf'
+import { isValidPhone, cleanPhone, hashPhone, encryptPhone } from '@/lib/phone'
 import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
 import { telegramTrialFraudAttempt } from '@/lib/telegram'
@@ -9,10 +10,13 @@ import { createDefaultStudyPlan } from '@/lib/create-default-study-plan'
 
 /**
  * POST /api/me/completar-cadastro
- * Body: { cpf: string, phone: string }
+ * Body: { cpf: string, phone: string, courseSlug?: string }
  *
- * Usado depois do cadastro via Google OAuth (que não pede CPF/telefone).
- * Valida CPF (algoritmo + banlist + dedup), salva criptografado, e grava telefone.
+ * Usado depois do cadastro via Google OAuth (que não pede CPF/telefone)
+ * e também pelo gate de cadastro forte.
+ *
+ * Valida CPF + phone (algoritmo + banlist + dedup com hash),
+ * salva ambos criptografados, e opcionalmente matricula no curso.
  */
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -21,60 +25,96 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
   const { cpf, phone, courseSlug } = await req.json()
 
-  if (!cpf || !phone) {
-    return NextResponse.json({ message: 'CPF e telefone obrigatórios' }, { status: 400 })
+  // Carrega user completo pra saber o que falta
+  const me = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { cpfHash: true, phoneHash: true, email: true },
+  })
+  if (!me) return NextResponse.json({ message: 'Usuário não encontrado' }, { status: 404 })
+
+  const needsCpf = !me.cpfHash
+  const needsPhone = !me.phoneHash
+
+  if (needsCpf && !cpf) {
+    return NextResponse.json({ message: 'CPF obrigatório' }, { status: 400 })
   }
-  if (!isValidCpf(cpf)) {
+  if (needsPhone && !phone) {
+    return NextResponse.json({ message: 'Telefone obrigatório' }, { status: 400 })
+  }
+  if (cpf && !isValidCpf(cpf)) {
     return NextResponse.json({ message: 'CPF inválido. Verifique os dígitos.' }, { status: 400 })
   }
-  const cleanPhone = String(phone).replace(/\D/g, '')
-  if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-    return NextResponse.json({ message: 'Telefone deve ter DDD + número (10 ou 11 dígitos)' }, { status: 400 })
+  if (phone && !isValidPhone(phone)) {
+    return NextResponse.json({ message: 'Telefone inválido. Use DDD + número (com 9 se celular).' }, { status: 400 })
   }
 
-  const cpfHashed = hashCpf(cpf)
-  const cpfEncryptedValue = encryptCpf(cpf)
+  const updateData: Record<string, unknown> = {}
 
-  // Banlist
-  const banned = await prisma.cpfBlocklist.findUnique({ where: { cpfHash: cpfHashed } })
-  if (banned) {
-    await audit({
-      actorId: user.id,
-      action: 'TRIAL_BLOCKED_DUPLICATE',
-      ip,
-      metadata: { reason: 'cpf_banned', oauth: true },
+  // Processa CPF se foi enviado e ainda não tem
+  if (needsCpf && cpf) {
+    const cpfHashed = hashCpf(cpf)
+    const banned = await prisma.cpfBlocklist.findUnique({ where: { cpfHash: cpfHashed } })
+    if (banned) {
+      await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'cpf_banned', oauth: true } })
+      return NextResponse.json({ message: 'Cadastro indisponível. Entre em contato com o suporte.' }, { status: 403 })
+    }
+    const dupCpf = await prisma.user.findFirst({
+      where: { cpfHash: cpfHashed, NOT: { id: user.id } },
+      select: { id: true },
     })
-    return NextResponse.json({ message: 'Cadastro indisponível. Entre em contato com o suporte.' }, { status: 403 })
+    if (dupCpf) {
+      await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'cpf_duplicate_oauth' } })
+      telegramTrialFraudAttempt({
+        reason: 'CPF já cadastrado em outra conta (via completar-cadastro)',
+        ip,
+        attemptedEmail: me.email ?? '(sem email)',
+      }).catch(() => {})
+      return NextResponse.json({ message: 'Este CPF já está cadastrado em outra conta' }, { status: 409 })
+    }
+    updateData.cpfHash = cpfHashed
+    updateData.cpfEncrypted = encryptCpf(cpf)
   }
 
-  // Dedup — só rejeita se for OUTRO usuário
-  const dup = await prisma.user.findFirst({
-    where: { cpfHash: cpfHashed, NOT: { id: user.id } },
-    select: { id: true },
-  })
-  if (dup) {
-    await audit({
-      actorId: user.id,
-      action: 'TRIAL_BLOCKED_DUPLICATE',
-      ip,
-      metadata: { reason: 'cpf_duplicate_oauth' },
+  // Processa PHONE se foi enviado e ainda não tem
+  if (needsPhone && phone) {
+    const phoneHashed = hashPhone(phone)
+    const dupPhone = await prisma.user.findFirst({
+      where: { phoneHash: phoneHashed, NOT: { id: user.id } },
+      select: { id: true },
     })
-    telegramTrialFraudAttempt({
-      reason: 'CPF já cadastrado em outra conta (via OAuth)',
-      ip,
-      attemptedEmail: user.email ?? '(sem email)',
-    }).catch(() => {})
-    return NextResponse.json({ message: 'Este CPF já está cadastrado em outra conta' }, { status: 409 })
+    if (dupPhone) {
+      await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'phone_duplicate_oauth' } })
+      telegramTrialFraudAttempt({
+        reason: 'Telefone já cadastrado em outra conta',
+        ip,
+        attemptedEmail: me.email ?? '(sem email)',
+      }).catch(() => {})
+      return NextResponse.json({ message: 'Este telefone já está cadastrado em outra conta' }, { status: 409 })
+    }
+    updateData.phone = cleanPhone(phone)
+    updateData.phoneHash = phoneHashed
+    updateData.phoneEncrypted = encryptPhone(phone)
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      cpfHash: cpfHashed,
-      cpfEncrypted: cpfEncryptedValue,
-      phone: cleanPhone,
-    },
+  if (Object.keys(updateData).length > 0) {
+    await prisma.user.update({ where: { id: user.id }, data: updateData })
+  }
+
+  // Garante TrialPeriod ativo — se aluno cadastrou via Google e callback falhou em criar
+  // ou se trial já expirou e ele tá completando depois.
+  const ativeTrial = await prisma.trialPeriod.findFirst({
+    where: { userId: user.id, endsAt: { gte: new Date() } },
   })
+  if (!ativeTrial) {
+    await prisma.trialPeriod.create({
+      data: {
+        userId: user.id,
+        endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    }).catch((err) => {
+      console.error('[completar-cadastro] trial create failed', err)
+    })
+  }
 
   // Se aluno escolheu um curso, matricula + gera plano de estudo padrão.
   // Não bloqueia o cadastro se algo falhar — aluno entra no dashboard e

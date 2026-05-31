@@ -7,27 +7,27 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 
 /**
- * Gate de cadastro: força aluno a ter pelo menos 1 enrollment ativo
- * (ou plano via trial/pagamento) antes de acessar features de estudo.
+ * Gate forte de cadastro:
  *
- * Decisão de produto (2026-05-31): aluno não pode entrar no app sem ter
- * escolhido curso/plano. Cria fricção controlada — pessoa que cadastra
- * é encaminhada direto pro funil de ativação.
+ * 1. PROFILE GATE (alta prioridade): aluno PRECISA ter CPF + telefone preenchidos.
+ *    Se faltar qualquer um, redireciona pra /completar-cadastro IMEDIATAMENTE.
+ *    Isso fecha a brecha onde aluno via Google OAuth podia criar conta sem
+ *    preencher e cadastrar com mesmo CPF/phone em outro email depois.
  *
- * Rotas LIBERADAS (mesmo sem curso):
- *  - /dashboard/comecar (o wizard de escolha de curso/plano)
- *  - /dashboard/meus-cursos (lista cursos disponíveis pra ativar)
- *  - /dashboard/configuracoes (perfil/conta)
- *  - /dashboard/notificacoes (avisos do sistema)
- *  - /dashboard/indicacoes (referral)
- *  - /dashboard/comunidade (canais externos)
+ * 2. ENROLLMENT GATE: aluno precisa de pelo menos 1 enrollment ativo OU plano.
+ *    Sem isso, redireciona pra /dashboard/comecar.
  *
- * Rotas BLOQUEADAS (precisam de curso):
- *  - / (dashboard home), /cronograma, /simulados, /provas, /questoes,
- *    /flashcards, /resumos, /diagnostico, /sessao/*, /mentor, /chat,
- *    /historico, /progresso, /ranking, /edital-verticalizado, /mapas-mentais
+ * Decisão de produto (2026-05-31): gate forte total. Aluno sem CPF/phone
+ * não vê NADA além de /completar-cadastro e /configuracoes.
  *
- * Admin sempre passa.
+ * Rotas LIBERADAS de profile gate (sem CPF/phone funciona):
+ *  - /dashboard/configuracoes (perfil/conta — onde aluno preenche)
+ *
+ * Rotas LIBERADAS de enrollment gate (com CPF/phone mas sem curso/plano):
+ *  - /dashboard/comecar, /dashboard/meus-cursos, /dashboard/configuracoes,
+ *    /dashboard/notificacoes, /dashboard/indicacoes, /dashboard/comunidade
+ *
+ * Admin sempre passa em ambos.
  */
 
 const ROTAS_LIBERADAS_SEM_CURSO = [
@@ -39,49 +39,80 @@ const ROTAS_LIBERADAS_SEM_CURSO = [
   '/dashboard/comunidade',
 ]
 
+// Só essas funcionam sem CPF/phone (pra aluno conseguir mudar dados e voltar)
+const ROTAS_LIBERADAS_SEM_PROFILE = [
+  '/dashboard/configuracoes',
+]
+
 export function EnrollmentGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname() ?? ''
   const user = useAuthStore((s) => s.user)
   const [status, setStatus] = useState<'checking' | 'ok' | 'redirecting'>('checking')
 
-  const isLiberated = ROTAS_LIBERADAS_SEM_CURSO.some((r) => pathname.startsWith(r))
+  const isEnrollmentLiberated = ROTAS_LIBERADAS_SEM_CURSO.some((r) => pathname.startsWith(r))
+  const isProfileLiberated = ROTAS_LIBERADAS_SEM_PROFILE.some((r) => pathname.startsWith(r))
   const isAdmin = user?.role === 'ADMIN'
   const isAdminArea = pathname.startsWith('/admin')
 
   useEffect(() => {
-    // Admin sempre passa. Rotas liberadas também.
     if (!user) { setStatus('ok'); return }
-    if (isAdmin || isAdminArea || isLiberated) { setStatus('ok'); return }
+    if (isAdmin || isAdminArea) { setStatus('ok'); return }
 
     let alive = true
-    api.get('/me/enrollments')
+    api.get('/auth/me')
       .then(({ data }) => {
         if (!alive) return
-        const ativos = (data.enrollments ?? []).filter((e: any) => e.isActive)
-        const hasPlan = data.plan?.hasPlan ?? false
-        // Tem enrollment ativo OU plano (bypass: admin/beta/cortesia)
-        if (ativos.length > 0 || hasPlan) {
-          setStatus('ok')
-        } else {
+        const hasCpf = !!data.hasCpf
+        const hasPhone = !!data.hasPhone
+
+        // PROFILE GATE: bloqueia se faltar CPF ou phone
+        if (!hasCpf || !hasPhone) {
+          if (isProfileLiberated) {
+            setStatus('ok')
+            return
+          }
           setStatus('redirecting')
-          router.replace('/dashboard/comecar')
+          router.replace('/completar-cadastro')
+          return
         }
+
+        // ENROLLMENT GATE: rotas liberadas sem curso passam
+        if (isEnrollmentLiberated) {
+          setStatus('ok')
+          return
+        }
+
+        // Checa enrollment/plano
+        api.get('/me/enrollments')
+          .then(({ data: enrollData }) => {
+            if (!alive) return
+            const ativos = (enrollData.enrollments ?? []).filter((e: any) => e.isActive)
+            const hasPlan = enrollData.plan?.hasPlan ?? false
+            if (ativos.length > 0 || hasPlan) {
+              setStatus('ok')
+            } else {
+              setStatus('redirecting')
+              router.replace('/dashboard/comecar')
+            }
+          })
+          .catch(() => {
+            if (alive) setStatus('ok')
+          })
       })
       .catch(() => {
-        // Erro de rede — não bloqueia, deixa passar (UX > segurança aqui)
         if (alive) setStatus('ok')
       })
 
     return () => { alive = false }
-  }, [pathname, user?.id, isAdmin, isAdminArea, isLiberated, router])
+  }, [pathname, user?.id, isAdmin, isAdminArea, isEnrollmentLiberated, isProfileLiberated, router])
 
   if (status === 'checking' || status === 'redirecting') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-2">
         <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
         <p className="text-xs text-muted-foreground">
-          {status === 'redirecting' ? 'Redirecionando…' : 'Verificando seu plano…'}
+          {status === 'redirecting' ? 'Redirecionando…' : 'Verificando seu acesso…'}
         </p>
       </div>
     )

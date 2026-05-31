@@ -1,76 +1,155 @@
 'use client'
 
-import { useState } from 'react'
-import { CURSOS_DISPONIVEIS, DEMO_USERS } from '@/lib/demo-users'
-import { BookOpen, Users, DollarSign, Edit2, ToggleLeft, ToggleRight, Plus, TrendingUp, Save, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { BookOpen, Users, Edit2, ToggleLeft, ToggleRight, Plus, Save, X, FileText, Trash2, Loader2, ExternalLink, AlertTriangle } from 'lucide-react'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
-interface CourseData {
+type EditalAtual = {
   id: string
-  label: string
-  categoria: string
-  icon: string
-  ativo: boolean
-  precoMensal: number
-  precoAnual: number
+  titulo: string
+  ano: number
+  isActive: boolean
+  status: string
+  banca: { slug: string; name: string } | null
+} | null
+
+type Course = {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  area: string
+  uf: string | null
+  orgao: string | null
+  cargo: string | null
+  parentSlug: string | null
+  active: boolean
+  createdAt: string
   alunos: number
-  taxaAcertoMedia: number
+  editaisCount: number
+  studyPlansCount: number
+  editalAtual: EditalAtual
 }
 
-function countAlunos(courseId: string): number {
-  return DEMO_USERS.filter(u =>
-    u.role === 'STUDENT' && (u.courses === 'all' || (u.courses as string[]).includes(courseId))
-  ).length
+const AREA_LABEL: Record<string, string> = {
+  POLICIAL: '🛡️ Policial',
+  MILITAR: '🎖️ Militar',
+  BOMBEIRO: '🚒 Bombeiro',
+  GUARDA_MUNICIPAL: '🏛️ Guarda Municipal',
+  OUTRO: '📋 Outro',
 }
 
-const initialCourses: CourseData[] = CURSOS_DISPONIVEIS.map(c => ({
-  ...c,
-  ativo: true,
-  precoMensal: c.categoria === 'policial' ? 89 : c.categoria === 'banco' ? 69 : c.categoria === 'militar' ? 89 : 79,
-  precoAnual: c.categoria === 'policial' ? 790 : c.categoria === 'banco' ? 590 : c.categoria === 'militar' ? 790 : 690,
-  alunos: countAlunos(c.id),
-  taxaAcertoMedia: Math.floor(Math.random() * 20) + 60,
-}))
-
-const CATEGORIA_LABEL: Record<string, string> = {
-  policial: '🛡️ Carreiras Policiais',
-  militar: '🚒 Carreiras Militares',
-  banco: '🏦 Bancos Públicos',
-  judiciario: '⚖️ Poder Judiciário',
-  federal: '🇧🇷 Federal (CNU)',
-}
+const AREAS = ['POLICIAL', 'MILITAR', 'BOMBEIRO', 'GUARDA_MUNICIPAL', 'OUTRO'] as const
 
 export default function AdminCursosPage() {
-  const [courses, setCourses] = useState<CourseData[]>(initialCourses)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editValues, setEditValues] = useState<{ mensal: string; anual: string }>({ mensal: '', anual: '' })
-  const [savedId, setSavedId] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Partial<Course>>({})
   const [showNovoCurso, setShowNovoCurso] = useState(false)
-  const [novoCurso, setNovoCurso] = useState({ label: '', categoria: 'policial', icon: '📋', precoMensal: '79', precoAnual: '690' })
+  const [novoCurso, setNovoCurso] = useState({
+    name: '', slug: '', area: 'POLICIAL', uf: '', orgao: '', cargo: '', parentSlug: '', description: '',
+  })
 
-  const categorias = [...new Set(courses.map(c => c.categoria))]
-  const totalAlunos = courses.reduce((acc, c) => acc + c.alunos, 0)
-  const totalAtivos = courses.filter(c => c.ativo).length
-  const receitaMensal = courses.filter(c => c.ativo).reduce((acc, c) => acc + c.alunos * c.precoMensal, 0)
+  async function load() {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/admin/courses')
+      setCourses(data.courses ?? [])
+    } catch (e: any) {
+      toast.error('Erro ao carregar cursos')
+    } finally { setLoading(false) }
+  }
 
-  function startEdit(c: CourseData) {
+  useEffect(() => { load() }, [])
+
+  function startEdit(c: Course) {
     setEditingId(c.id)
-    setEditValues({ mensal: String(c.precoMensal), anual: String(c.precoAnual) })
+    setEditValues({
+      name: c.name,
+      slug: c.slug,
+      area: c.area,
+      uf: c.uf ?? '',
+      orgao: c.orgao ?? '',
+      cargo: c.cargo ?? '',
+      parentSlug: c.parentSlug ?? '',
+      description: c.description ?? '',
+    })
   }
 
-  function saveEdit(id: string) {
-    setCourses(prev => prev.map(c => c.id === id ? {
-      ...c,
-      precoMensal: Number(editValues.mensal) || c.precoMensal,
-      precoAnual: Number(editValues.anual) || c.precoAnual,
-    } : c))
-    setEditingId(null)
-    setSavedId(id)
-    setTimeout(() => setSavedId(null), 2000)
+  async function saveEdit(id: string) {
+    try {
+      await api.patch(`/admin/courses/${id}`, editValues)
+      toast.success('Curso atualizado')
+      setEditingId(null)
+      load()
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Erro ao salvar')
+    }
   }
 
-  function toggleAtivo(id: string) {
-    setCourses(prev => prev.map(c => c.id === id ? { ...c, ativo: !c.ativo } : c))
+  async function toggleAtivo(c: Course) {
+    try {
+      await api.patch(`/admin/courses/${c.id}`, { active: !c.active })
+      toast.success(c.active ? 'Curso desativado' : 'Curso ativado')
+      load()
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Erro')
+    }
+  }
+
+  async function deleteCourse(c: Course, force: boolean) {
+    const confirmMsg = force
+      ? `Deletar PERMANENTEMENTE "${c.name}"? Só funciona se não tiver matrículas/planos.`
+      : `Desativar "${c.name}"? Aluno matriculado mantém acesso mas curso some dos planos.`
+    if (!confirm(confirmMsg)) return
+    try {
+      await api.delete(`/admin/courses/${c.id}${force ? '?force=true' : ''}`)
+      toast.success(force ? 'Curso deletado' : 'Curso desativado')
+      load()
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Erro')
+    }
+  }
+
+  async function createCourse() {
+    if (!novoCurso.name.trim()) {
+      toast.error('Nome obrigatório')
+      return
+    }
+    try {
+      await api.post('/admin/courses', {
+        ...novoCurso,
+        uf: novoCurso.uf || undefined,
+        orgao: novoCurso.orgao || undefined,
+        cargo: novoCurso.cargo || undefined,
+        parentSlug: novoCurso.parentSlug || undefined,
+        description: novoCurso.description || undefined,
+        slug: novoCurso.slug || undefined,
+      })
+      toast.success('Curso criado!')
+      setShowNovoCurso(false)
+      setNovoCurso({ name: '', slug: '', area: 'POLICIAL', uf: '', orgao: '', cargo: '', parentSlug: '', description: '' })
+      load()
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Erro ao criar')
+    }
+  }
+
+  const totalAlunos = courses.reduce((acc, c) => acc + c.alunos, 0)
+  const totalAtivos = courses.filter(c => c.active).length
+  const totalSemEdital = courses.filter(c => !c.editalAtual).length
+  const cursosPorArea = AREAS.map(a => ({ area: a, count: courses.filter(c => c.area === a).length })).filter(x => x.count > 0)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+      </div>
+    )
   }
 
   return (
@@ -78,7 +157,7 @@ export default function AdminCursosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-foreground">Gerenciar Cursos</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Controle preços, disponibilidade e visualize alunos por curso</p>
+          <p className="text-muted-foreground text-sm mt-0.5">CRUD completo de cursos · vinculação com editais · soft-delete</p>
         </div>
         <button className="btn-primary btn-sm" onClick={() => setShowNovoCurso(true)}>
           <Plus className="w-3.5 h-3.5" /> Novo curso
@@ -89,9 +168,9 @@ export default function AdminCursosPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Cursos ativos', value: totalAtivos, icon: BookOpen, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-          { label: 'Total de alunos', value: totalAlunos, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-          { label: 'Receita estimada/mês', value: `R$ ${receitaMensal.toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-success-600', bg: 'bg-success-50 dark:bg-success-600/10' },
-          { label: 'Total de cursos', value: courses.length, icon: TrendingUp, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+          { label: 'Total de cursos', value: courses.length, icon: BookOpen, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+          { label: 'Alunos matriculados', value: totalAlunos, icon: Users, color: 'text-success-500', bg: 'bg-success-50 dark:bg-success-900/20' },
+          { label: 'Cursos sem edital', value: totalSemEdital, icon: AlertTriangle, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="card p-4">
             <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center mb-3`}>
@@ -103,88 +182,117 @@ export default function AdminCursosPage() {
         ))}
       </div>
 
-      {/* Cursos por categoria */}
-      {categorias.map(cat => {
-        const catCourses = courses.filter(c => c.categoria === cat)
+      {/* Cursos por área */}
+      {cursosPorArea.map(({ area }) => {
+        const catCourses = courses.filter(c => c.area === area)
         return (
-          <div key={cat} className="card overflow-hidden">
+          <div key={area} className="card overflow-hidden">
             <div className="px-5 py-3 bg-muted/30 border-b border-border flex items-center justify-between">
-              <h2 className="font-bold text-foreground text-sm">{CATEGORIA_LABEL[cat]}</h2>
-              <span className="text-xs text-muted-foreground">{catCourses.filter(c => c.ativo).length}/{catCourses.length} ativos</span>
+              <h2 className="font-bold text-foreground text-sm">{AREA_LABEL[area]}</h2>
+              <span className="text-xs text-muted-foreground">{catCourses.filter(c => c.active).length}/{catCourses.length} ativos</span>
             </div>
             <div className="divide-y divide-border">
-              {catCourses.map(course => (
-                <div key={course.id} className={cn('px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors', !course.ativo && 'opacity-50')}>
-                  {/* Info */}
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="text-2xl">{course.icon}</span>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-foreground text-sm">{course.label}</div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                        <span className="flex items-center gap-1"><Users className="w-3 h-3" />{course.alunos} alunos</span>
-                        <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" />{course.taxaAcertoMedia}% acerto médio</span>
-                      </div>
+              {catCourses.map(course => editingId === course.id ? (
+                <div key={course.id} className="px-5 py-4 bg-yellow-50/40 dark:bg-yellow-900/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Nome*</label>
+                      <input className="input" value={editValues.name ?? ''} onChange={e => setEditValues(v => ({ ...v, name: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Slug (URL)</label>
+                      <input className="input font-mono" value={editValues.slug ?? ''} onChange={e => setEditValues(v => ({ ...v, slug: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Cargo</label>
+                      <input className="input" value={editValues.cargo ?? ''} onChange={e => setEditValues(v => ({ ...v, cargo: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Órgão</label>
+                      <input className="input" value={editValues.orgao ?? ''} onChange={e => setEditValues(v => ({ ...v, orgao: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">UF</label>
+                      <input className="input uppercase" maxLength={2} value={editValues.uf ?? ''} onChange={e => setEditValues(v => ({ ...v, uf: e.target.value.toUpperCase() }))} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Área</label>
+                      <select className="input" value={editValues.area ?? 'POLICIAL'} onChange={e => setEditValues(v => ({ ...v, area: e.target.value }))}>
+                        {AREAS.map(a => <option key={a} value={a}>{AREA_LABEL[a]}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Parent slug (agrupador)</label>
+                      <input className="input font-mono" placeholder="ex: pf" value={editValues.parentSlug ?? ''} onChange={e => setEditValues(v => ({ ...v, parentSlug: e.target.value }))} />
+                    </div>
+                    <div className="col-span-full">
+                      <label className="text-[10px] text-muted-foreground">Descrição</label>
+                      <textarea className="input" rows={2} value={editValues.description ?? ''} onChange={e => setEditValues(v => ({ ...v, description: e.target.value }))} />
                     </div>
                   </div>
-
-                  {/* Preços */}
-                  {editingId === course.id ? (
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Mensal (R$)</div>
-                        <input
-                          className="input py-1 w-24 text-sm"
-                          value={editValues.mensal}
-                          onChange={e => setEditValues(v => ({ ...v, mensal: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Anual (R$)</div>
-                        <input
-                          className="input py-1 w-24 text-sm"
-                          value={editValues.anual}
-                          onChange={e => setEditValues(v => ({ ...v, anual: e.target.value }))}
-                        />
-                      </div>
-                      <div className="flex gap-1 mt-4">
-                        <button onClick={() => saveEdit(course.id)} className="btn-primary btn-sm p-2">
-                          <Save className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setEditingId(null)} className="btn-ghost btn-sm p-2">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setEditingId(null)} className="btn-outline btn-sm">
+                      <X className="w-3.5 h-3.5" /> Cancelar
+                    </button>
+                    <button onClick={() => saveEdit(course.id)} className="btn-primary btn-sm">
+                      <Save className="w-3.5 h-3.5" /> Salvar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div key={course.id} className={cn('px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors', !course.active && 'opacity-50')}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-foreground text-sm">{course.name}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{course.slug}</span>
+                      {course.uf && <span className="badge-blue text-[10px]">{course.uf}</span>}
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-sm font-bold text-foreground">R$ {course.precoMensal}</div>
-                        <div className="text-xs text-muted-foreground">mensal</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-sm font-bold text-foreground">R$ {course.precoAnual}</div>
-                        <div className="text-xs text-muted-foreground">anual</div>
-                      </div>
-                      {savedId === course.id && (
-                        <span className="badge-green text-xs">✓ Salvo</span>
-                      )}
-                      <button onClick={() => startEdit(course)} className="btn-ghost btn-sm p-2">
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                      {course.orgao && <span>{course.orgao}</span>}
+                      {course.cargo && <span>· {course.cargo}</span>}
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3" />{course.alunos} aluno{course.alunos !== 1 ? 's' : ''}</span>
+                      <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{course.editaisCount} edital{course.editaisCount !== 1 ? 'is' : ''}</span>
                     </div>
-                  )}
+                    {course.editalAtual ? (
+                      <Link
+                        href={`/admin/editais/${course.editalAtual.id}`}
+                        className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-brand-500 hover:underline"
+                      >
+                        <FileText className="w-3 h-3" />
+                        Edital {course.editalAtual.ano}: {course.editalAtual.titulo}
+                        {course.editalAtual.banca && <span className="text-muted-foreground">· {course.editalAtual.banca.name}</span>}
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/admin/editais/extrair"
+                        className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-yellow-600 hover:underline font-semibold"
+                      >
+                        <AlertTriangle className="w-3 h-3" />
+                        Sem edital — clique pra subir PDF
+                      </Link>
+                    )}
+                  </div>
 
-                  {/* Toggle ativo */}
-                  <button
-                    onClick={() => toggleAtivo(course.id)}
-                    className={cn('flex items-center gap-1.5 text-xs font-medium transition-colors', course.ativo ? 'text-success-600' : 'text-muted-foreground')}
-                  >
-                    {course.ativo
-                      ? <ToggleRight className="w-5 h-5 text-success-500" />
-                      : <ToggleLeft className="w-5 h-5" />
-                    }
-                    {course.ativo ? 'Ativo' : 'Inativo'}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => startEdit(course)} className="btn-ghost btn-sm p-2" title="Editar dados">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => toggleAtivo(course)}
+                      className={cn('btn-ghost btn-sm p-2', course.active ? 'text-success-600' : 'text-muted-foreground')}
+                      title={course.active ? 'Desativar' : 'Ativar'}
+                    >
+                      {course.active ? <ToggleRight className="w-4 h-4 text-success-500" /> : <ToggleLeft className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => deleteCourse(course, course.alunos === 0 && course.editaisCount === 0)}
+                      className="btn-ghost btn-sm p-2 text-danger-500"
+                      title={course.alunos > 0 ? 'Desativar (tem alunos)' : 'Deletar permanente'}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -192,67 +300,56 @@ export default function AdminCursosPage() {
         )
       })}
 
+      {/* Modal novo curso */}
       {showNovoCurso && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md space-y-4">
+          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-lg space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-lg text-foreground">Novo Curso</h3>
               <button onClick={() => setShowNovoCurso(false)} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4" /></button>
             </div>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="col-span-full">
+                <label className="label text-xs">Nome do curso*</label>
+                <input className="input" placeholder="Ex: PMGO — Soldado" value={novoCurso.name} onChange={e => setNovoCurso(p => ({ ...p, name: e.target.value }))} />
+              </div>
               <div>
-                <label className="label text-xs">Nome do curso</label>
-                <input className="input" placeholder="Ex: PCDF — Delegado" value={novoCurso.label} onChange={e => setNovoCurso(p => ({ ...p, label: e.target.value }))} />
+                <label className="label text-xs">Slug (auto se vazio)</label>
+                <input className="input font-mono" placeholder="pmgo-soldado" value={novoCurso.slug} onChange={e => setNovoCurso(p => ({ ...p, slug: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label text-xs">Categoria</label>
-                  <select className="input" value={novoCurso.categoria} onChange={e => setNovoCurso(p => ({ ...p, categoria: e.target.value }))}>
-                    <option value="policial">Policial</option>
-                    <option value="militar">Militar</option>
-                    <option value="banco">Banco</option>
-                    <option value="judiciario">Judiciário</option>
-                    <option value="federal">Federal</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label text-xs">Ícone (emoji)</label>
-                  <input className="input" placeholder="🚔" value={novoCurso.icon} onChange={e => setNovoCurso(p => ({ ...p, icon: e.target.value }))} />
-                </div>
+              <div>
+                <label className="label text-xs">Área</label>
+                <select className="input" value={novoCurso.area} onChange={e => setNovoCurso(p => ({ ...p, area: e.target.value }))}>
+                  {AREAS.map(a => <option key={a} value={a}>{AREA_LABEL[a]}</option>)}
+                </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label text-xs">Preço mensal (R$)</label>
-                  <input className="input" type="number" value={novoCurso.precoMensal} onChange={e => setNovoCurso(p => ({ ...p, precoMensal: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label text-xs">Preço anual (R$)</label>
-                  <input className="input" type="number" value={novoCurso.precoAnual} onChange={e => setNovoCurso(p => ({ ...p, precoAnual: e.target.value }))} />
-                </div>
+              <div>
+                <label className="label text-xs">Órgão</label>
+                <input className="input" placeholder="Ex: Polícia Militar de GO" value={novoCurso.orgao} onChange={e => setNovoCurso(p => ({ ...p, orgao: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label text-xs">Cargo</label>
+                <input className="input" placeholder="Ex: Soldado" value={novoCurso.cargo} onChange={e => setNovoCurso(p => ({ ...p, cargo: e.target.value }))} />
+              </div>
+              <div>
+                <label className="label text-xs">UF</label>
+                <input className="input uppercase" maxLength={2} placeholder="GO" value={novoCurso.uf} onChange={e => setNovoCurso(p => ({ ...p, uf: e.target.value.toUpperCase() }))} />
+              </div>
+              <div>
+                <label className="label text-xs">Parent slug (agrupador)</label>
+                <input className="input font-mono" placeholder="pmgo" value={novoCurso.parentSlug} onChange={e => setNovoCurso(p => ({ ...p, parentSlug: e.target.value }))} />
+              </div>
+              <div className="col-span-full">
+                <label className="label text-xs">Descrição</label>
+                <textarea className="input" rows={2} placeholder="Curta — aparece no checkout" value={novoCurso.description} onChange={e => setNovoCurso(p => ({ ...p, description: e.target.value }))} />
               </div>
             </div>
             <p className="text-xs text-muted-foreground bg-muted p-3 rounded-xl">
-              ℹ️ Após criar, o curso aparecerá na lista. Questões e flashcards serão gerados pela IA com base no nome do concurso.
+              ℹ️ Após criar, vá em <strong>/admin/editais/extrair</strong> pra subir o PDF do edital — isso popula matérias, pesos, banca e formato.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowNovoCurso(false)} className="btn-outline btn-md flex-1">Cancelar</button>
-              <button
-                disabled={!novoCurso.label.trim()}
-                onClick={() => {
-                  const newId = novoCurso.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
-                  const newCourse: CourseData = {
-                    id: newId, label: novoCurso.label, categoria: novoCurso.categoria,
-                    icon: novoCurso.icon || '📋', ativo: true,
-                    precoMensal: parseInt(novoCurso.precoMensal) || 79,
-                    precoAnual: parseInt(novoCurso.precoAnual) || 690,
-                    alunos: 0, taxaAcertoMedia: 0,
-                  }
-                  setCourses(prev => [...prev, newCourse])
-                  setShowNovoCurso(false)
-                  setNovoCurso({ label: '', categoria: 'policial', icon: '📋', precoMensal: '79', precoAnual: '690' })
-                }}
-                className="btn-primary btn-md flex-1"
-              >
+              <button disabled={!novoCurso.name.trim()} onClick={createCourse} className="btn-primary btn-md flex-1">
                 <Plus className="w-4 h-4" /> Criar Curso
               </button>
             </div>
