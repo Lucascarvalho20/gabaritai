@@ -20,15 +20,32 @@ const FALLBACK_DAYS = 90
 export async function createDefaultStudyPlan(opts: {
   userId: string
   courseId: string
+  // IDs de subjects identificados como fraqueza no diagnóstico inicial.
+  // Esses recebem peso DOBRADO no cronograma até o aluno melhorar.
+  priorityFraquezas?: string[]
+  // Se true, desativa qualquer plano ativo existente e cria um novo.
+  // Usado quando aluno troca de curso principal ou finaliza diagnóstico.
+  forceReplace?: boolean
 }): Promise<{ studyPlanId: string; sessionsCreated: number } | null> {
-  const { userId, courseId } = opts
+  const { userId, courseId, priorityFraquezas = [], forceReplace = false } = opts
 
-  // Já tem plano ativo pra esse curso? Pula.
+  // Já tem plano ativo pra esse curso?
   const existing = await prisma.studyPlan.findFirst({
     where: { userId, courseId, active: true },
     select: { id: true },
   })
-  if (existing) return { studyPlanId: existing.id, sessionsCreated: 0 }
+  if (existing) {
+    if (!forceReplace) return { studyPlanId: existing.id, sessionsCreated: 0 }
+    // Desativa o antigo + apaga sessões pendentes (mantém histórico de concluídas)
+    await prisma.studyPlanSession.deleteMany({
+      where: { studyPlanId: existing.id, status: 'PENDENTE' },
+    })
+    await prisma.studyPlan.update({
+      where: { id: existing.id },
+      data: { active: false },
+    })
+  }
+  const fraquezasSet = new Set(priorityFraquezas)
 
   // Busca edital ativo + matérias
   const course = await prisma.course.findUnique({
@@ -50,8 +67,9 @@ export async function createDefaultStudyPlan(opts: {
   if (!course) return null
 
   const edital = course.editais[0] ?? null
-  // Prefere matérias do edital (com pesos atualizados); fallback CourseSubject
-  const subjects = edital
+  // Prefere matérias do edital (com pesos atualizados); fallback CourseSubject.
+  // Matéria identificada como fraqueza no diagnóstico recebe peso DOBRADO.
+  const subjects = (edital
     ? edital.subjects.map((s) => ({
         subjectId: s.subjectId,
         name: s.subject.name,
@@ -62,6 +80,10 @@ export async function createDefaultStudyPlan(opts: {
         name: cs.subject.name,
         weight: cs.weight ?? 1,
       }))
+  ).map((s) => ({
+    ...s,
+    weight: fraquezasSet.has(s.subjectId) ? s.weight * 2 : s.weight,
+  }))
 
   if (subjects.length === 0) return null
 

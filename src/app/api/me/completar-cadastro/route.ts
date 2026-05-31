@@ -87,15 +87,24 @@ export async function POST(req: NextRequest) {
         select: { id: true, active: true },
       })
       if (course?.active) {
+        // Primeiro enrollment do usuário → automaticamente vira principal
+        const hasOtherPrimary = await prisma.userCourseEnrollment.count({
+          where: { userId: user.id, isPrimary: true },
+        })
+        const shouldMarkPrimary = hasOtherPrimary === 0
         await prisma.userCourseEnrollment.upsert({
           where: { userId_courseId: { userId: user.id, courseId: course.id } },
           create: {
             userId: user.id,
             courseId: course.id,
             isActive: true,
+            isPrimary: shouldMarkPrimary,
             source: 'signup',
           },
-          update: { isActive: true },
+          update: {
+            isActive: true,
+            ...(shouldMarkPrimary && { isPrimary: true }),
+          },
         })
 
         const planResult = await createDefaultStudyPlan({

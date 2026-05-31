@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { History, TrendingDown, TrendingUp, AlertTriangle, Loader2, Filter, ChevronDown, CheckCircle2, XCircle, MinusCircle, Sparkles, Target } from 'lucide-react'
+import { History, TrendingDown, TrendingUp, AlertTriangle, Loader2, Filter, ChevronDown, CheckCircle2, XCircle, MinusCircle, Sparkles, Target, Timer } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -48,6 +48,7 @@ export default function HistoricoPage() {
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState<string | null>(null)
+  const [studyTime, setStudyTime] = useState<{ totalMin: number; perDay: Array<{ date: string; min: number }> } | null>(null)
 
   // Filtros do histórico
   const [filterCorrect, setFilterCorrect] = useState<'all' | 'wrong' | 'right'>('all')
@@ -58,10 +59,12 @@ export default function HistoricoPage() {
     Promise.all([
       api.get('/me/fraquezas').then((r) => r.data),
       api.get('/me/historico?limit=100').then((r) => r.data),
+      api.get('/me/study-time?days=7').then((r) => r.data).catch(() => null),
     ])
-      .then(([f, h]) => {
+      .then(([f, h, st]) => {
         setMasteries({ fracas: f.fracas, medias: f.medias, fortes: f.fortes })
         setAttempts(h.attempts)
+        if (st) setStudyTime({ totalMin: st.totalMin, perDay: st.perDay })
       })
       .catch(() => toast.error('Erro ao carregar histórico'))
       .finally(() => setLoading(false))
@@ -114,6 +117,29 @@ export default function HistoricoPage() {
           Onde você anda errando + onde precisa reforçar.
         </p>
       </div>
+
+      {studyTime && studyTime.totalMin > 0 && (
+        <div className="card p-4 flex items-center gap-4">
+          <div className="rounded-full p-2.5 bg-brand-500/10 text-brand-500">
+            <Timer className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <div className="text-xs text-muted-foreground">Tempo cronometrado nos últimos 7 dias</div>
+            <div className="font-black text-lg tabular-nums">
+              {Math.floor(studyTime.totalMin / 60)}h {studyTime.totalMin % 60}min
+            </div>
+          </div>
+          <div className="flex items-end gap-0.5 h-10">
+            {studyTime.perDay.slice(-7).map((d) => {
+              const max = Math.max(1, ...studyTime.perDay.map((x) => x.min))
+              const h = Math.max(4, Math.round((d.min / max) * 40))
+              return (
+                <div key={d.date} className="w-3 rounded-sm bg-brand-500/70" style={{ height: `${h}px` }} title={`${d.date}: ${d.min}min`} />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-1 border-b border-border">
         {([

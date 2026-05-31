@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Loader2, ArrowLeft, BookOpen, Brain, Target, CheckCircle2, Clock,
-  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download,
+  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download, Flame,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -32,6 +32,7 @@ type SessionData = {
   aiQuestions: Array<any>
   flashcards: Array<{ id: string; frente: string; verso: string }>
   myTopicStats: { total: number; corretos: number; mastery: number } | null
+  topicCompletedAt: string | null
 }
 
 type Tab = 'resumo' | 'questoes-oficiais' | 'questoes-ia' | 'flashcards' | 'pomodoro'
@@ -43,6 +44,9 @@ export default function SessaoPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('resumo')
   const [saving, setSaving] = useState(false)
+  const [cicloMode, setCicloMode] = useState(false)
+  const [cicloFase, setCicloFase] = useState<'ler' | 'questoes' | 'fixar'>('ler')
+  const [erradasNoCiclo, setErradasNoCiclo] = useState(0)
 
   // Pomodoro state
   const [pomoMode, setPomoMode] = useState<'estudo' | 'pausa' | 'revisao'>('estudo')
@@ -127,9 +131,46 @@ export default function SessaoPage() {
               {data.subject?.name ?? 'Estudo livre'}
             </h1>
             {data.topic && (
-              <div className="text-sm text-muted-foreground mt-0.5">
-                {data.topic.parentName && <span>{data.topic.parentName} → </span>}
-                <strong>{data.topic.name}</strong>
+              <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                <span>
+                  {data.topic.parentName && <span>{data.topic.parentName} → </span>}
+                  <strong>{data.topic.name}</strong>
+                </span>
+                {data.topicCompletedAt && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-500 text-white text-[10px] font-black px-2 py-0.5">
+                    <CheckCircle2 className="w-3 h-3" /> DOMINADO
+                  </span>
+                )}
+              </div>
+            )}
+            {data.topic && (
+              <div className="mt-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      if (data.topicCompletedAt) {
+                        await api.delete(`/me/topics/${data.topic!.id}/complete`)
+                        setData({ ...data, topicCompletedAt: null })
+                        toast('Tópico volta pra fila de estudo')
+                      } else {
+                        const { data: res } = await api.post(`/me/topics/${data.topic!.id}/complete`)
+                        setData({ ...data, topicCompletedAt: res.completedAt })
+                        toast.success('✅ Tópico marcado como dominado — não cai mais em estudo novo')
+                      }
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.message ?? 'Erro')
+                    }
+                  }}
+                  className={cn(
+                    'text-[11px] font-bold inline-flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors',
+                    data.topicCompletedAt
+                      ? 'bg-card border border-border hover:bg-muted text-foreground'
+                      : 'bg-green-500 hover:bg-green-600 text-white',
+                  )}
+                  title={data.topicCompletedAt ? 'Desmarcar (volta pra estudo)' : 'Marca este tópico como dominado'}
+                >
+                  {data.topicCompletedAt ? '↩ Desmarcar dominado' : '✅ Já dominei este tópico'}
+                </button>
               </div>
             )}
           </div>
@@ -179,6 +220,61 @@ export default function SessaoPage() {
         </div>
       </div>
 
+      {/* Toggle MODO CICLO GUIADO */}
+      <div className={cn(
+        'card p-3 flex items-center gap-3 transition-colors',
+        cicloMode
+          ? 'bg-orange-50/60 dark:bg-orange-900/15 border-orange-300 dark:border-orange-700/60'
+          : '',
+      )}>
+        <div className={cn(
+          'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-lg',
+          cicloMode ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground',
+        )}>
+          {cicloMode ? <Flame className="w-4 h-4" /> : '📚'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-sm flex items-center gap-1.5">
+            Modo Ciclo Guiado
+            {cicloMode && <span className="badge bg-orange-500 text-white text-[10px] py-0.5 px-2">FASE: {cicloFase.toUpperCase()}</span>}
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            {cicloMode
+              ? `Vai te guiar: LER resumo → fazer QUESTÕES → FIXAR (revisar flashcards das erradas). Total ~50min.`
+              : `Modo livre: navega pelas abas como quiser. Liga pra ter um ciclo guiado de estudo.`}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            const novo = !cicloMode
+            setCicloMode(novo)
+            if (novo) { setCicloFase('ler'); setErradasNoCiclo(0) }
+          }}
+          className={cn(
+            'relative w-11 h-6 rounded-full transition-colors shrink-0',
+            cicloMode ? 'bg-orange-500' : 'bg-muted',
+          )}
+        >
+          <span className={cn(
+            'absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all',
+            cicloMode ? 'left-5' : 'left-0.5',
+          )} />
+        </button>
+      </div>
+
+      {/* MODO CICLO GUIADO — fluxo sequencial */}
+      {cicloMode ? (
+        <CicloGuiado
+          fase={cicloFase}
+          setFase={setCicloFase}
+          data={data}
+          erradas={erradasNoCiclo}
+          setErradas={setErradasNoCiclo}
+          onUpdateChecklist={updateChecklist}
+          onConcluir={concluirSessao}
+        />
+      ) : (
+      <>
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border overflow-x-auto">
         {([
@@ -250,6 +346,145 @@ export default function SessaoPage() {
           onReset={() => { setPomoRunning(false); setPomoMode('estudo'); setPomoSeconds(50 * 60) }}
         />
       )}
+      </>
+      )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Modo Ciclo Guiado — 3 fases sequenciais
+// ──────────────────────────────────────────────────────────────────────
+
+function CicloGuiado({
+  fase, setFase, data, erradas, setErradas, onUpdateChecklist, onConcluir,
+}: {
+  fase: 'ler' | 'questoes' | 'fixar'
+  setFase: (f: 'ler' | 'questoes' | 'fixar') => void
+  data: SessionData
+  erradas: number
+  setErradas: (n: number) => void
+  onUpdateChecklist: (field: keyof SessionData['session']['checklist'], value: any) => void
+  onConcluir: () => void
+}) {
+  const questoes = data.officialQuestions.length > 0 ? data.officialQuestions : data.aiQuestions
+  const recapFcds = data.flashcards.slice(0, 5)
+
+  return (
+    <div className="space-y-4">
+      {/* Stepper visual */}
+      <div className="flex items-center gap-2">
+        <CicloStep label="LER" active={fase === 'ler'} done={fase !== 'ler'} icon="📖" />
+        <div className="flex-1 h-0.5 bg-muted relative">
+          <div className={cn('absolute inset-0 bg-orange-500 transition-all',
+            fase === 'ler' ? 'w-0' : fase === 'questoes' ? 'w-1/2' : 'w-full')} />
+        </div>
+        <CicloStep label="QUESTÕES" active={fase === 'questoes'} done={fase === 'fixar'} icon="✍️" />
+        <div className="flex-1 h-0.5 bg-muted relative">
+          <div className={cn('absolute inset-0 bg-orange-500 transition-all',
+            fase === 'fixar' ? 'w-full' : 'w-0')} />
+        </div>
+        <CicloStep label="FIXAR" active={fase === 'fixar'} done={false} icon="🎴" />
+      </div>
+
+      {/* FASE 1 — LER */}
+      {fase === 'ler' && (
+        <div className="card p-5 space-y-4">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            📖 Leia o resumo do tópico
+            <span className="text-[10px] text-muted-foreground font-normal">~15 min</span>
+          </h3>
+          {data.resumo ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>{data.resumo}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Resumo indisponível pra este tópico.</p>
+          )}
+          <button
+            onClick={() => { onUpdateChecklist('resumoLido', true); setFase('questoes') }}
+            className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white py-3 text-sm font-bold inline-flex items-center justify-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Estudei! Ir pras questões
+          </button>
+        </div>
+      )}
+
+      {/* FASE 2 — QUESTÕES */}
+      {fase === 'questoes' && (
+        <div className="space-y-3">
+          <div className="card p-3 bg-orange-50/40 dark:bg-orange-900/15 text-xs flex items-center gap-2">
+            <Target className="w-4 h-4 text-orange-500" />
+            <span>Responde {questoes.length > 0 ? questoes.length : 5} questões. As erradas viram flashcard automaticamente.</span>
+          </div>
+          <QuestoesPanel
+            questoes={questoes}
+            onAnswer={() => onUpdateChecklist('questoesFeitas', data.session.checklist.questoesFeitas + 1)}
+            onWrong={() => setErradas(erradas + 1)}
+            source="oficiais"
+          />
+          <button
+            onClick={() => setFase('fixar')}
+            className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white py-3 text-sm font-bold inline-flex items-center justify-center gap-2"
+          >
+            <Zap className="w-4 h-4" /> Concluí as questões {erradas > 0 && `(${erradas} erradas viraram flashcard)`}
+          </button>
+        </div>
+      )}
+
+      {/* FASE 3 — FIXAR */}
+      {fase === 'fixar' && (
+        <div className="space-y-3">
+          <div className="card p-4 bg-purple-50/40 dark:bg-purple-900/15 space-y-2">
+            <h3 className="font-bold text-sm inline-flex items-center gap-2">
+              🎴 Fixar o conceito
+              <span className="text-[10px] text-muted-foreground font-normal">~10 min</span>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Você errou <strong>{erradas}</strong> questão{erradas === 1 ? '' : 's'} nesse ciclo.
+              {erradas > 0
+                ? ` Cada uma virou um flashcard que volta amanhã (SM-2). Revise antes de concluir.`
+                : ` Você gabaritou! Continue mantendo o ritmo.`}
+            </p>
+          </div>
+          {recapFcds.length > 0 ? (
+            <FlashcardsPanel
+              flashcards={recapFcds}
+              onReview={() => onUpdateChecklist('flashcardsRevisados', data.session.checklist.flashcardsRevisados + 1)}
+            />
+          ) : (
+            <div className="card p-6 text-center text-sm text-muted-foreground">
+              Sem flashcards revisáveis agora. Clica em "Concluir" pra fechar o ciclo.
+            </div>
+          )}
+          <button
+            onClick={onConcluir}
+            disabled={data.session.status === 'CONCLUIDO'}
+            className="w-full rounded-xl bg-green-500 hover:bg-green-600 text-white py-3 text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Concluir ciclo de estudo
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CicloStep({ label, active, done, icon }: { label: string; active: boolean; done: boolean; icon: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 shrink-0">
+      <div className={cn(
+        'w-9 h-9 rounded-full flex items-center justify-center text-base transition-colors',
+        done ? 'bg-green-500 text-white' : active ? 'bg-orange-500 text-white' : 'bg-muted text-muted-foreground',
+      )}>
+        {done ? '✓' : icon}
+      </div>
+      <span className={cn(
+        'text-[10px] font-bold',
+        active ? 'text-orange-600 dark:text-orange-400' : done ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
+      )}>
+        {label}
+      </span>
     </div>
   )
 }
@@ -266,11 +501,13 @@ function Checkbox({ label, checked, onChange, icon: Icon }: { label: string; che
   )
 }
 
-function QuestoesPanel({ questoes, onAnswer, source }: { questoes: any[]; onAnswer: () => void; source: string }) {
+function QuestoesPanel({ questoes, onAnswer, onWrong, source }: { questoes: any[]; onAnswer: () => void; onWrong?: () => void; source: string }) {
   const [idx, setIdx] = useState(0)
   const [answered, setAnswered] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<string | null>(null)
   const [showAnswer, setShowAnswer] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [lastResult, setLastResult] = useState<{ correct: boolean; gabarito: string; explicacao?: string | null; autoFlashcard?: boolean } | null>(null)
 
   if (questoes.length === 0) {
     return (
@@ -284,13 +521,40 @@ function QuestoesPanel({ questoes, onAnswer, source }: { questoes: any[]; onAnsw
   const q = questoes[idx]
   const isCE = !q.alternativas || q.alternativas.length === 0
 
-  function answer(letter: string) {
-    if (showAnswer) return
+  async function answer(letter: string) {
+    if (showAnswer || submitting) return
     setSelected(letter)
-    setShowAnswer(true)
-    if (!answered.has(q.id)) {
-      setAnswered(new Set([...answered, q.id]))
-      onAnswer()
+    setSubmitting(true)
+    try {
+      // Chama API real — registra QuestionAttempt + dispara auto-flashcard se errar
+      const { data } = await api.post(`/me/questoes/${q.id}/attempt`, { selected: letter })
+      setLastResult(data)
+      setShowAnswer(true)
+      if (!answered.has(q.id)) {
+        setAnswered(new Set([...answered, q.id]))
+        onAnswer()
+      }
+      if (!data.correct) {
+        onWrong?.()
+        if (data.autoFlashcard) {
+          toast('🎴 Flashcard adicionado pra você revisar', { icon: '✨', duration: 3000 })
+        }
+      }
+    } catch (err: any) {
+      const status = err.response?.status
+      if (status === 429) {
+        toast.error(err.response?.data?.message ?? 'Limite do trial atingido', { duration: 5000 })
+      } else {
+        // Fallback offline: mostra gabarito do front mesmo (não bloqueia estudo)
+        setShowAnswer(true)
+        setLastResult({ correct: letter === q.gabarito, gabarito: q.gabarito, explicacao: q.explicacao })
+      }
+      if (!answered.has(q.id)) {
+        setAnswered(new Set([...answered, q.id]))
+        onAnswer()
+      }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -303,12 +567,13 @@ function QuestoesPanel({ questoes, onAnswer, source }: { questoes: any[]; onAnsw
       <p className="text-sm mb-4 whitespace-pre-wrap">{q.enunciado}</p>
       <div className="space-y-1.5">
         {isCE ? ['C', 'E'].map((l) => {
-          const isCorrect = showAnswer && l === q.gabarito
-          const isWrong = showAnswer && selected === l && l !== q.gabarito
+          const gab = (lastResult?.gabarito ?? q.gabarito)
+          const isCorrect = showAnswer && l === gab
+          const isWrong = showAnswer && selected === l && l !== gab
           return (
-            <button key={l} onClick={() => answer(l)}
+            <button key={l} onClick={() => answer(l)} disabled={submitting || showAnswer}
               className={cn(
-                'w-full text-left p-3 rounded-lg border-2 text-sm transition',
+                'w-full text-left p-3 rounded-lg border-2 text-sm transition disabled:cursor-default',
                 isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
                 isWrong ? 'border-red-500 bg-red-50 dark:bg-red-900/20' :
                 selected === l ? 'border-brand-500' : 'border-border hover:bg-muted',
@@ -317,12 +582,13 @@ function QuestoesPanel({ questoes, onAnswer, source }: { questoes: any[]; onAnsw
             </button>
           )
         }) : (q.alternativas || []).map((alt: any) => {
-          const isCorrect = showAnswer && alt.letra === q.gabarito
-          const isWrong = showAnswer && selected === alt.letra && alt.letra !== q.gabarito
+          const gab = (lastResult?.gabarito ?? q.gabarito)
+          const isCorrect = showAnswer && alt.letra === gab
+          const isWrong = showAnswer && selected === alt.letra && alt.letra !== gab
           return (
-            <button key={alt.letra} onClick={() => answer(alt.letra)}
+            <button key={alt.letra} onClick={() => answer(alt.letra)} disabled={submitting || showAnswer}
               className={cn(
-                'w-full text-left p-3 rounded-lg border-2 text-sm transition',
+                'w-full text-left p-3 rounded-lg border-2 text-sm transition disabled:cursor-default',
                 isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
                 isWrong ? 'border-red-500 bg-red-50 dark:bg-red-900/20' :
                 selected === alt.letra ? 'border-brand-500' : 'border-border hover:bg-muted',
@@ -332,9 +598,15 @@ function QuestoesPanel({ questoes, onAnswer, source }: { questoes: any[]; onAnsw
           )
         })}
       </div>
-      {showAnswer && q.explicacao && (
+      {showAnswer && (lastResult?.autoFlashcard) && (
+        <div className="mt-3 p-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-xs inline-flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+          <span>+1 flashcard adicionado pra você revisar amanhã (SM-2)</span>
+        </div>
+      )}
+      {showAnswer && (lastResult?.explicacao ?? q.explicacao) && (
         <div className="mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs">
-          <strong>Explicação:</strong> {q.explicacao}
+          <strong>Explicação:</strong> {lastResult?.explicacao ?? q.explicacao}
         </div>
       )}
       <div className="mt-4 flex justify-between">

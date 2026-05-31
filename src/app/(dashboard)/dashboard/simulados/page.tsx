@@ -46,9 +46,15 @@ export default function SimuladosPage() {
 
   useEffect(() => {
     api.get('/courses').then(({ data }) => {
-      setCourses(data.courses ?? [])
-      if (data.courses?.[0]) setActiveCourse(data.courses[0].slug)
-    })
+      const cs = data.courses ?? []
+      setCourses(cs)
+      if (cs[0]) {
+        setActiveCourse(cs[0].slug)
+      } else {
+        // Aluno sem nenhum curso ativo → libera a tela do loading
+        setLoading(false)
+      }
+    }).catch(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -98,6 +104,14 @@ export default function SimuladosPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
+      ) : courses.length === 0 ? (
+        <div className="card p-8 text-center text-sm space-y-3">
+          <Target className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+          <p className="text-muted-foreground">Você ainda não tem nenhum curso ativo. Sem curso, não tem simulado pra fazer.</p>
+          <Link href="/dashboard/meus-cursos" className="inline-flex items-center gap-1 rounded-xl bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 text-xs font-bold">
+            Escolher um curso <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       ) : (
         <>
           <section>

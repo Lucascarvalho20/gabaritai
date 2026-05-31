@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const {
     courseId, ano, banca, numero, titulo, pdfHash, pdfUrl, materias,
     cargoNome, vagas, salario, escolaridade,
-    totalQuestoes, duracaoMin, hasRedacao, wrongAnnulsRight, examFormat,
+    totalQuestoes, duracaoMin, duracaoSoObjetivasMin, hasRedacao, wrongAnnulsRight, examFormat,
     regraAnulacaoTexto,
     dataAbertura, dataInscricaoIni, dataInscricaoFim, dataProva, taxaInscricao,
   } = body
@@ -125,10 +125,12 @@ export async function POST(req: NextRequest) {
     return inter / uni
   }
 
-  const createdMaterias: Array<{ subjectId: string; topicIds: string[]; weight: number; expectedQuestions: number | null }> = []
+  const materiasValidas = materias.filter((m: any) => m?.nome)
 
-  // ── OTIMIZAÇÃO: pré-busca TODOS subjects que vão ser usados (1 query)
-  const subjectNames = materias.map((m: any) => m.nome).filter(Boolean)
+  // ════════════════════════════════════════════════════════════════════════
+  // ETAPA 1 — Resolve subjects (cria os faltantes em batch)
+  // ════════════════════════════════════════════════════════════════════════
+  const subjectNames: string[] = materiasValidas.map((m: any) => m.nome)
   const subjectSlugs = subjectNames.map((n: string) => slugify(n))
   const existingSubjects = subjectNames.length > 0
     ? await prisma.subject.findMany({
@@ -141,119 +143,174 @@ export async function POST(req: NextRequest) {
     subjectByKey.set(norm(s.name), s)
   }
 
-  for (let mi = 0; mi < materias.length; mi++) {
-    const m = materias[mi]
-    if (!m.nome) continue
+  // Cria subjects faltantes em batch (createMany) — não dá pra retornar ids,
+  // então faz createMany e depois findMany pra pegar tudo de uma vez.
+  type SubjectStub = { name: string; slug: string }
+  const toCreateSubjects: SubjectStub[] = []
+  for (const m of materiasValidas) {
+    if (m.subjectId) continue
+    const slug = slugify(m.nome)
+    if (subjectByKey.get(slug) ?? subjectByKey.get(norm(m.nome))) continue
+    if (toCreateSubjects.find((c) => c.slug === slug)) continue
+    toCreateSubjects.push({ name: m.nome, slug })
+  }
+  if (toCreateSubjects.length > 0) {
+    await prisma.subject.createMany({ data: toCreateSubjects, skipDuplicates: true })
+    const fresh = await prisma.subject.findMany({
+      where: { slug: { in: toCreateSubjects.map((s) => s.slug) } },
+    })
+    for (const s of fresh) {
+      subjectByKey.set(s.slug, s)
+      subjectByKey.set(norm(s.name), s)
+    }
+  }
 
-    // 1. Subject — reusa se já existe (matéria global), senão cria
+  // Resolve subjectId final pra cada matéria
+  const materiaResolved: Array<{
+    m: any
+    subjectId: string
+    weight: number
+    expectedQuestions: number | null
+    order: number
+  }> = []
+  for (let mi = 0; mi < materiasValidas.length; mi++) {
+    const m = materiasValidas[mi]
     let subjectId: string = m.subjectId
     if (!subjectId) {
       const slug = slugify(m.nome)
       const cached = subjectByKey.get(slug) ?? subjectByKey.get(norm(m.nome))
-      if (cached) {
-        subjectId = cached.id
-      } else {
-        const created = await prisma.subject.create({ data: { name: m.nome, slug } })
-        subjectId = created.id
-        subjectByKey.set(slug, created)
-        subjectByKey.set(norm(m.nome), created)
-      }
+      if (!cached) continue
+      subjectId = cached.id
     }
-
-    // 2. Vincula Subject ao Course (CourseSubject)
-    await prisma.courseSubject.upsert({
-      where: { courseId_subjectId: { courseId, subjectId } },
-      update: { weight: m.peso ?? 1, order: m.ordem ?? mi },
-      create: { courseId, subjectId, order: m.ordem ?? mi, weight: m.peso ?? 1 },
-    }).catch(() => null)
-
-    // 3. OTIMIZAÇÃO: pré-busca TODOS topics do subject (1 query por matéria),
-    //    faz dedupe em memória, e cria os novos em PARALELO via Promise.all
-    const allTopics = await prisma.topic.findMany({
-      where: { subjectId, archivedAt: null },
-      select: { id: true, name: true, parentId: true },
-    })
-    // Index por (parentId || 'root') → array
-    const byParent = new Map<string, typeof allTopics>()
-    for (const t of allTopics) {
-      const key = t.parentId ?? 'root'
-      if (!byParent.has(key)) byParent.set(key, [])
-      byParent.get(key)!.push(t)
-    }
-
-    const topicIds: string[] = []
-    async function createTopics(items: any[], parentId: string | null) {
-      const parentKey = parentId ?? 'root'
-      const siblings = byParent.get(parentKey) ?? []
-
-      // Separa: o que já existe vs precisa criar
-      type Pending = { item: any; index: number }
-      const toCreate: Pending[] = []
-      const resolved: Array<{ id: string; item: any }> = []
-
-      for (let ti = 0; ti < items.length; ti++) {
-        const t = items[ti]
-        if (!t.nome) continue
-        // Match exato ou Jaccard >= 0.7 entre os siblings em memória
-        const tNorm = norm(t.nome)
-        let existing = siblings.find((s) => norm(s.name) === tNorm)
-        if (!existing) {
-          for (const s of siblings) {
-            if (jaccard(s.name, t.nome) >= 0.7) { existing = s; break }
-          }
-        }
-        if (existing) {
-          resolved.push({ id: existing.id, item: t })
-        } else {
-          toCreate.push({ item: t, index: ti })
-        }
-      }
-
-      // Cria todos os novos em paralelo
-      const created = await Promise.all(
-        toCreate.map(({ item, index }) =>
-          prisma.topic.create({
-            data: {
-              subjectId,
-              parentId: parentId ?? null,
-              name: item.nome,
-              slug: slugify(item.nome),
-              order: item.ordem ?? index,
-            },
-          }),
-        ),
-      )
-      // Atualiza cache em memória pra criações subsequentes (subtópicos)
-      for (const c of created) {
-        const key = c.parentId ?? 'root'
-        if (!byParent.has(key)) byParent.set(key, [])
-        byParent.get(key)!.push({ id: c.id, name: c.name, parentId: c.parentId })
-      }
-
-      // Agora todos os tópicos desse nível têm id. Processa subtópicos.
-      const allResolved = [
-        ...resolved,
-        ...created.map((c, i) => ({ id: c.id, item: toCreate[i].item })),
-      ]
-      for (const r of allResolved) topicIds.push(r.id)
-
-      // Processa subtópicos em paralelo por tópico pai
-      await Promise.all(
-        allResolved
-          .filter((r) => Array.isArray(r.item.subtopicos) && r.item.subtopicos.length > 0)
-          .map((r) => createTopics(r.item.subtopicos, r.id)),
-      )
-    }
-    if (Array.isArray(m.topicos)) await createTopics(m.topicos, null)
-    createdMaterias.push({
+    materiaResolved.push({
+      m,
       subjectId,
-      topicIds,
       weight: m.peso ?? 1,
       expectedQuestions: m.qtdQuestoes ?? null,
+      order: m.ordem ?? mi,
     })
   }
 
-  // 4. Cria o Edital COM metadados completos
+  // ════════════════════════════════════════════════════════════════════════
+  // ETAPA 2 — Pré-busca TODOS topics existentes de TODAS subjects (1 query)
+  // ════════════════════════════════════════════════════════════════════════
+  const allSubjectIds = [...new Set(materiaResolved.map((r) => r.subjectId))]
+  const allExistingTopics = allSubjectIds.length > 0
+    ? await prisma.topic.findMany({
+        where: { subjectId: { in: allSubjectIds }, archivedAt: null },
+        select: { id: true, name: true, parentId: true, subjectId: true },
+      })
+    : []
+  // Index: (subjectId|parentId) → topics[]
+  const topicsByKey = new Map<string, typeof allExistingTopics>()
+  for (const t of allExistingTopics) {
+    const key = `${t.subjectId}|${t.parentId ?? 'root'}`
+    if (!topicsByKey.has(key)) topicsByKey.set(key, [])
+    topicsByKey.get(key)!.push(t)
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ETAPA 3 — Cria topics novos em paralelo (por nível) e coleta topicIds
+  // ════════════════════════════════════════════════════════════════════════
+  const topicIdsByMateria = new Map<number, string[]>()
+
+  async function processTopics(
+    subjectId: string,
+    items: any[],
+    parentId: string | null,
+    collectInto: string[],
+  ): Promise<void> {
+    const key = `${subjectId}|${parentId ?? 'root'}`
+    const siblings = topicsByKey.get(key) ?? []
+
+    type Pending = { item: any; index: number }
+    const toCreate: Pending[] = []
+    const resolved: Array<{ id: string; item: any }> = []
+
+    for (let ti = 0; ti < items.length; ti++) {
+      const t = items[ti]
+      if (!t?.nome) continue
+      const tNorm = norm(t.nome)
+      let existing = siblings.find((s) => norm(s.name) === tNorm)
+      if (!existing) {
+        for (const s of siblings) {
+          if (jaccard(s.name, t.nome) >= 0.7) { existing = s; break }
+        }
+      }
+      if (existing) resolved.push({ id: existing.id, item: t })
+      else toCreate.push({ item: t, index: ti })
+    }
+
+    const created = await Promise.all(
+      toCreate.map(({ item, index }) =>
+        prisma.topic.create({
+          data: {
+            subjectId,
+            parentId: parentId ?? null,
+            name: item.nome,
+            slug: slugify(item.nome),
+            order: item.ordem ?? index,
+          },
+        }),
+      ),
+    )
+    for (const c of created) {
+      const k = `${c.subjectId}|${c.parentId ?? 'root'}`
+      if (!topicsByKey.has(k)) topicsByKey.set(k, [])
+      topicsByKey.get(k)!.push({ id: c.id, name: c.name, parentId: c.parentId, subjectId: c.subjectId })
+    }
+
+    const allResolved = [
+      ...resolved,
+      ...created.map((c, i) => ({ id: c.id, item: toCreate[i].item })),
+    ]
+    for (const r of allResolved) collectInto.push(r.id)
+
+    await Promise.all(
+      allResolved
+        .filter((r) => Array.isArray(r.item.subtopicos) && r.item.subtopicos.length > 0)
+        .map((r) => processTopics(subjectId, r.item.subtopicos, r.id, collectInto)),
+    )
+  }
+
+  // Processa todas as matérias em PARALELO (cada uma pega sua própria slot
+  // de topics; subjectIds são distintos então não há conflito).
+  await Promise.all(
+    materiaResolved.map(async (r, idx) => {
+      const ids: string[] = []
+      if (Array.isArray(r.m.topicos)) await processTopics(r.subjectId, r.m.topicos, null, ids)
+      topicIdsByMateria.set(idx, ids)
+    }),
+  )
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ETAPA 4 — CourseSubject em batch (createMany skipDuplicates + updateMany)
+  // ════════════════════════════════════════════════════════════════════════
+  if (materiaResolved.length > 0) {
+    await prisma.courseSubject.createMany({
+      data: materiaResolved.map((r) => ({
+        courseId,
+        subjectId: r.subjectId,
+        order: r.order,
+        weight: r.weight,
+      })),
+      skipDuplicates: true,
+    })
+    // Atualiza weight/order pra quem já existia (updateMany não faz por linha,
+    // então fazemos N updates em paralelo, sem await sequencial)
+    await Promise.all(
+      materiaResolved.map((r) =>
+        prisma.courseSubject.updateMany({
+          where: { courseId, subjectId: r.subjectId },
+          data: { order: r.order, weight: r.weight },
+        }),
+      ),
+    )
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ETAPA 5 — Cria Edital + EditalSubject + desativa antigos (em paralelo)
+  // ════════════════════════════════════════════════════════════════════════
   const edital = await prisma.edital.create({
     data: {
       courseId,
@@ -279,31 +336,40 @@ export async function POST(req: NextRequest) {
       pdfUrl: pdfUrl ?? null,
       status: 'HOMOLOGADO',
       isActive: true,
-      rawData: regraAnulacaoTexto ? { regraAnulacaoTexto } : undefined,
+      rawData: (regraAnulacaoTexto || duracaoSoObjetivasMin)
+        ? {
+            ...(regraAnulacaoTexto ? { regraAnulacaoTexto } : {}),
+            ...(duracaoSoObjetivasMin ? { duracaoSoObjetivasMin } : {}),
+          }
+        : undefined,
     },
   })
 
-  // 5. Vincula EditalSubject com weight + expectedQuestions
-  for (let i = 0; i < createdMaterias.length; i++) {
-    const cm = createdMaterias[i]
-    await prisma.editalSubject.upsert({
-      where: { editalId_subjectId: { editalId: edital.id, subjectId: cm.subjectId } },
-      update: { weight: cm.weight, expectedQuestions: cm.expectedQuestions, order: i },
-      create: {
-        editalId: edital.id,
-        subjectId: cm.subjectId,
-        weight: cm.weight,
-        expectedQuestions: cm.expectedQuestions,
-        order: i,
-      },
-    }).catch(() => null)
-  }
+  await Promise.all([
+    materiaResolved.length > 0
+      ? prisma.editalSubject.createMany({
+          data: materiaResolved.map((r, i) => ({
+            editalId: edital.id,
+            subjectId: r.subjectId,
+            weight: r.weight,
+            expectedQuestions: r.expectedQuestions,
+            order: i,
+          })),
+          skipDuplicates: true,
+        })
+      : Promise.resolve(),
+    prisma.edital.updateMany({
+      where: { courseId, isActive: true, NOT: { id: edital.id } },
+      data: { isActive: false },
+    }),
+  ])
 
-  // 6. Desativa editais antigos do mesmo curso
-  await prisma.edital.updateMany({
-    where: { courseId, isActive: true, NOT: { id: edital.id } },
-    data: { isActive: false },
-  })
+  const createdMaterias = materiaResolved.map((r, idx) => ({
+    subjectId: r.subjectId,
+    topicIds: topicIdsByMateria.get(idx) ?? [],
+    weight: r.weight,
+    expectedQuestions: r.expectedQuestions,
+  }))
 
   return NextResponse.json({
     ok: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { computeObjetivasDuration } from '@/lib/exam-duration'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { provaId: st
     where: { id: params.provaId },
     include: {
       banca: { select: { slug: true } },
-      edital: { select: { duracaoMin: true, wrongAnnulsRight: true, examFormat: true, hasRedacao: true } },
+      edital: { select: { duracaoMin: true, wrongAnnulsRight: true, examFormat: true, hasRedacao: true, rawData: true } },
       questions: { where: { active: true }, select: { id: true }, orderBy: { numeroQuestao: 'asc' } },
     },
   })
@@ -37,8 +38,9 @@ export async function POST(req: NextRequest, { params }: { params: { provaId: st
   }
 
   const totalQuestoes = prova.questions.length
-  // Duração: usa do edital se houver, senão 4min por questão
-  const durationMin = prova.edital?.duracaoMin ?? totalQuestoes * 4
+  // Duração: usa edital + subtrai proporcional da redação se mock não tem redação
+  const duration = computeObjetivasDuration(prova.edital, totalQuestoes, { mockHasRedacao: false })
+  const durationMin = duration.durationMin
 
   // Reusa ou cria MockExam template (1 por prova)
   const title = `Prova ${prova.titulo}`
@@ -71,7 +73,12 @@ export async function POST(req: NextRequest, { params }: { params: { provaId: st
     where: { userId_mockExamId: { userId: user.id, mockExamId: mockExam.id } },
   })
   if (existing && existing.status === 'IN_PROGRESS') {
-    return NextResponse.json({ mockExamId: mockExam.id, resultId: existing.id, resumed: true })
+    return NextResponse.json({
+      mockExamId: mockExam.id,
+      resultId: existing.id,
+      resumed: true,
+      durationNote: duration.note ?? null,
+    })
   }
 
   // Se tem result SUBMITTED, reseta pra permitir refazer (regra "ilimitado")
@@ -91,5 +98,10 @@ export async function POST(req: NextRequest, { params }: { params: { provaId: st
     },
   })
 
-  return NextResponse.json({ mockExamId: mockExam.id, resultId: result.id, resumed: false })
+  return NextResponse.json({
+    mockExamId: mockExam.id,
+    resultId: result.id,
+    resumed: false,
+    durationNote: duration.note ?? null,
+  })
 }

@@ -55,9 +55,14 @@ export async function POST(req: NextRequest) {
 
   const base64 = Buffer.from(pdfBuffer).toString('base64')
 
-  const prompt = `Você é um EXTRATOR ESPECIALISTA de editais de concurso público brasileiro. Sua função é ler o edital anexo e devolver um JSON estruturado com TUDO que está nele — sem inventar nada que não esteja no documento.
+  const prompt = `Você é um EXTRATOR ESPECIALISTA de editais de concurso público brasileiro. Sua função é ler o edital anexo INTEIRO (do começo ao fim, todas as páginas) e devolver um JSON estruturado com TUDO que está nele — sem inventar nada que não esteja no documento, mas TAMBÉM sem omitir nada.
 
 ESTE EDITAL PODE TER MÚLTIPLOS CARGOS (perito + delegado + agente + escrivão no mesmo PDF é comum em PF, PC). Você DEVE identificar e listar TODOS os cargos descritos, separadamente, mesmo que compartilhem o mesmo conteúdo programático.
+
+⚠️ AVISO CRÍTICO — OMISSÃO É O ERRO MAIS GRAVE:
+Editais de concurso têm DEZENAS de matérias por cargo (Cebraspe/FGV PF tem 12-18 matérias só pra Agente). Se você listar 3, 4, 5 matérias por cargo, está ERRADO. Você omitiu a maior parte. Verifique no fim: cada cargo deve ter o NÚMERO COMPLETO de matérias do conteúdo programático correspondente. Releia o anexo de conteúdo programático antes de fechar o JSON.
+
+REGRA DE OURO: ao terminar, conte mentalmente quantas matérias você listou pra cada cargo. Se for menos que 6, você quase certamente pulou alguma — volte e revise.
 
 ═══════════════════════════════════════════════════════════════
 O QUE VOCÊ DEVE EXTRAIR
@@ -80,7 +85,8 @@ B) cargos[] — para CADA cargo descrito no edital:
    - salario: remuneração mensal inicial (Float em reais)
    - escolaridade: ex "Superior em qualquer área", "Médio", "Superior em Direito"
    - totalQuestoes: total de questões da prova objetiva pra esse cargo (Int)
-   - duracaoMin: duração da prova em MINUTOS (Int — converta "4 horas" em 240)
+   - duracaoMin: duração da prova em MINUTOS (Int — converta "4 horas" em 240). IMPORTANTE: se o edital diz "4h30 incluindo redação", coloque 270 e marque hasRedacao=true (o servidor desconta proporcional depois).
+   - duracaoSoObjetivasMin: se o edital separa tempo objetivas/discursiva ("3h pras objetivas, 1h pra redação"), coloque aqui APENAS o tempo das objetivas. Senão, null.
    - hasRedacao: true se o cargo tem prova discursiva/redação obrigatória, false caso contrário
    - examFormat: formato das questões objetivas. Use APENAS um destes códigos:
        * "CE"     → certo/errado (estilo Cebraspe clássico)
@@ -95,7 +101,7 @@ B) cargos[] — para CADA cargo descrito no edital:
 C) materias[] (dentro de cada cargo):
    Array de objetos, na ORDEM em que aparecem no edital. Cada objeto:
    {
-     "nome": "Direito Constitucional",          // nome EXATO como no edital
+     "nome": "Direito Constitucional",          // nome LIMPO (sem numeração "1." ou "I.", sem prefixo "MATÉRIA:", sem "—")
      "ordem": 1,                                // posição no edital
      "qtdQuestoes": 20,                         // qtas questões dessa matéria (Int ou null se não informado)
      "peso": 1.5,                               // peso/multiplicador (Float, default 1, null se não informado)
@@ -110,6 +116,19 @@ C) materias[] (dentro de cada cargo):
      ]
    }
    Preserve HIERARQUIA: se edital diz "1. Direito Constitucional / 1.1 Princípios / 1.1.1 Soberania", retorne 3 níveis (matéria→tópico→subtópico).
+
+   ⚠️ NOMES DE MATÉRIA: sempre o NOME CANÔNICO BRASILEIRO, sem lixo:
+     ❌ "1.1 DIREITO CONSTITUCIONAL —"
+     ✅ "Direito Constitucional"
+     ❌ "CONHECIMENTOS BÁSICOS - LÍNGUA PORTUGUESA"
+     ✅ "Língua Portuguesa"
+     ❌ "ANEXO II - CONTEÚDO PROGRAMÁTICO - INFORMÁTICA"
+     ✅ "Informática"
+   Se o edital agrupa "Conhecimentos Básicos" e "Conhecimentos Específicos", IGNORE esse agrupamento e liste cada disciplina interna como matéria separada.
+
+D) totalMateriasDeclaradas (dentro de cada cargo, OBRIGATÓRIO):
+   Int — conte e devolva quantas matérias VOCÊ está retornando em materias[]. É um sanity check pra você mesmo conferir antes de fechar o JSON.
+   Se o edital lista 14 disciplinas no conteúdo programático e você retorna 5, está OBVIAMENTE errado — volte e revise.
 
 ═══════════════════════════════════════════════════════════════
 REGRAS RÍGIDAS
@@ -147,10 +166,12 @@ Responda APENAS o JSON puro (sem markdown, sem texto antes ou depois):
       "escolaridade": "Superior em qualquer área",
       "totalQuestoes": 120,
       "duracaoMin": 240,
+      "duracaoSoObjetivasMin": null,
       "hasRedacao": true,
       "examFormat": "CE",
       "wrongAnnulsRight": true,
       "regraAnulacaoTexto": "Cada item errado anulará um item certo.",
+      "totalMateriasDeclaradas": 14,
       "materias": [
         {
           "nome": "Direito Constitucional",
@@ -187,6 +208,44 @@ Responda APENAS o JSON puro (sem markdown, sem texto antes ou depois):
       { message: 'IA não identificou nenhum cargo no PDF. Verifique se o PDF é o edital oficial.' },
       { status: 422 },
     )
+  }
+
+  // ── Limpa nomes de matéria contra lixo da IA ────────────────────────────
+  // Remove numeração inicial ("1.", "1.1", "I.", "II -"), prefixos
+  // "CONTEÚDO PROGRAMÁTICO", "ANEXO", "DISCIPLINA", e MAIÚSCULAS forçadas.
+  const cleanMateriaNome = (raw: string): string => {
+    let s = raw.trim()
+    s = s.replace(/^(anexo\s+[ivx\d]+\s*[-—:.]?\s*)/i, '')
+    s = s.replace(/^(conte[uú]do\s+program[aá]tico\s*[-—:.]?\s*)/i, '')
+    s = s.replace(/^(conhecimentos?\s+(b[aá]sicos?|espec[ií]ficos?)\s*[-—:.]?\s*)/i, '')
+    s = s.replace(/^(disciplina|mat[eé]ria)\s*[-—:.]?\s*/i, '')
+    s = s.replace(/^[\dIVX]+(\.[\dIVX]+)*\.?\s*[-—:)]?\s*/i, '')
+    s = s.replace(/\s*[-—:]\s*$/, '')
+    s = s.trim()
+    // Se ficou tudo MAIÚSCULA, vira Title Case
+    if (s === s.toUpperCase() && s.length > 3) {
+      s = s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())
+      // Corrige preposições/artigos pra minúscula
+      s = s.replace(/\s(De|Da|Do|Das|Dos|E|Em|Na|No|A|O|Para|Por)\b/g, (m) => m.toLowerCase())
+    }
+    return s
+  }
+  for (const c of extracted.cargos) {
+    if (Array.isArray(c.materias)) {
+      for (const m of c.materias) {
+        if (m?.nome) m.nome = cleanMateriaNome(m.nome)
+      }
+    }
+  }
+
+  // ── Detecta omissão: IA declarou X mas retornou Y materias ─────────────
+  const omissoes: Array<{ cargo: string; declarado: number; retornado: number }> = []
+  for (const c of extracted.cargos) {
+    const declarado = Number(c.totalMateriasDeclaradas ?? 0)
+    const retornado = Array.isArray(c.materias) ? c.materias.length : 0
+    if (declarado > 0 && retornado < declarado) {
+      omissoes.push({ cargo: c.nome ?? '(sem nome)', declarado, retornado })
+    }
   }
 
   // ── Cruza cargos detectados com Courses cadastrados ─────────────────────
@@ -269,6 +328,7 @@ Responda APENAS o JSON puro (sem markdown, sem texto antes ou depois):
     cargos: cargosWithMatches,
     knownCourses,
     knownSubjects,
+    omissoes,
     stats: {
       cargos: cargosWithMatches.length,
       cargosComMatch: cargosWithMatches.filter((c: any) => c.suggestedCourseId).length,

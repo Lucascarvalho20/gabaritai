@@ -75,6 +75,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   })
 
+  // Cria QuestionAttempt pra cada resposta — alimenta /dashboard/historico
+  const attemptsData = answeredWithCorrectness
+    .filter((a) => a.selected != null)
+    .map((a) => ({
+      userId: user.id,
+      questionId: a.questionId,
+      selected: String(a.selected),
+      correct: a.correct,
+      timeMs: a.timeMs ?? null,
+    }))
+  if (attemptsData.length > 0) {
+    await prisma.questionAttempt.createMany({ data: attemptsData })
+  }
+
+  // Auto-flashcard pras erradas (fire-and-forget — não bloqueia resposta).
+  // Decisão João 2026-05-30: erro = flashcard automático sem perguntar.
+  // Em simulado pode ter dezenas de erradas — não esperamos pra responder.
+  const erradas = answeredWithCorrectness.filter((a) => a.selected != null && !a.correct)
+  if (erradas.length > 0) {
+    import('@/lib/auto-flashcard').then(({ autoCreateFlashcardFromWrongAnswer }) => {
+      for (const a of erradas) {
+        autoCreateFlashcardFromWrongAnswer({ userId: user.id, questionId: a.questionId })
+          .catch((err) => console.warn(`[auto-flashcard simulado] q=${a.questionId}:`, err.message))
+      }
+    }).catch((err) => console.warn('[auto-flashcard] import failed:', err))
+  }
+
   // Atualiza UserSubjectMastery (a IA aprende)
   if (exam.courseId) {
     const bySubject = new Map<string, { total: number; correct: number }>()

@@ -465,10 +465,14 @@ model TopicAttempt {
   correctAttempts Int      @default(0)
   masteryScore    Float    @default(0)
   lastAttemptAt   DateTime?
+  // Aluno marcou esse tópico como "dominado". Sai da fila de ESTUDO novo no
+  // cronograma; continua na fila de REVISAO via SM-2 dos flashcards.
+  completedAt     DateTime?
   updatedAt       DateTime @updatedAt
 
   @@unique([userId, topicId])
   @@index([userId])
+  @@index([userId, completedAt])
   @@map("topic_attempts")
 }
 
@@ -853,11 +857,18 @@ model UserCourseEnrollment {
   enrolledAt  DateTime  @default(now())
   expiresAt   DateTime?
   isActive    Boolean   @default(true)
+  // Curso principal — base do cronograma e do diagnóstico inicial (20 questões).
+  // Só 1 enrollment isPrimary=true por usuário (garantido na lógica de upsert).
+  isPrimary   Boolean   @default(false)
   source      String?
   progress    Float     @default(0)
   lastStudyAt DateTime?
+  // Quando o aluno fez o último diagnóstico inicial pra este curso.
+  // null = nunca fez. Permite oferecer "refazer" se o aluno trocar curso principal.
+  lastDiagnosticAt DateTime?
 
   @@unique([userId, courseId])
+  @@index([userId, isPrimary])
   @@map("user_course_enrollments")
 }
 

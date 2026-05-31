@@ -54,6 +54,7 @@ type EditalGeral = {
 }
 type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null }
 type KnownSubject = { id: string; name: string; slug: string }
+type Omissao = { cargo: string; declarado: number; retornado: number }
 type ExtractResponse = {
   ok: true
   pdfHash: string
@@ -62,6 +63,7 @@ type ExtractResponse = {
   cargos: CargoExtracted[]
   knownCourses: Course[]
   knownSubjects: KnownSubject[]
+  omissoes: Omissao[]
   stats: { cargos: number; cargosComMatch: number; materias: number; topicos: number }
 }
 
@@ -88,6 +90,7 @@ export default function ExtrairEditalPage() {
   const [knownCourses, setKnownCourses] = useState<Course[]>([])
   const [knownSubjects, setKnownSubjects] = useState<KnownSubject[]>([])
   const [cargosUi, setCargosUi] = useState<CargoUi[]>([])
+  const [omissoes, setOmissoes] = useState<Omissao[]>([])
 
   async function handleExtract() {
     if (!file) return toast.error('Anexe o PDF do edital')
@@ -104,6 +107,7 @@ export default function ExtrairEditalPage() {
       setKnownCourses(data.knownCourses)
       setKnownSubjects(data.knownSubjects)
       setPdfHash(data.pdfHash)
+      setOmissoes(data.omissoes ?? [])
 
       // Auto-match matérias contra subjects globais
       const cargosUi: CargoUi[] = data.cargos.map((c, idx) => {
@@ -269,6 +273,22 @@ export default function ExtrairEditalPage() {
           <p className="text-[10px] text-muted-foreground">
             Funciona com editais multi-cargo (PF, PC). A IA identifica perito, agente, escrivão etc separadamente.
           </p>
+        </div>
+      )}
+
+      {/* ── Aviso de matérias possivelmente omitidas pela IA ──────────────── */}
+      {editalGeral && omissoes.length > 0 && (
+        <div className="card p-4 bg-yellow-50/40 dark:bg-yellow-900/15 border-yellow-200 dark:border-yellow-800/40 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-yellow-800 dark:text-yellow-200">
+            <AlertTriangle className="w-4 h-4" /> A IA pode ter pulado matérias
+          </div>
+          <ul className="text-xs text-yellow-800 dark:text-yellow-200 space-y-0.5 list-disc pl-5">
+            {omissoes.map((o, i) => (
+              <li key={i}>
+                <strong>{o.cargo}</strong>: a IA declarou {o.declarado} matérias mas só retornou {o.retornado}. Confira o conteúdo programático abaixo e adicione manualmente o que faltou.
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

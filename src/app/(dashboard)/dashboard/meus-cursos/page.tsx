@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Loader2, ChevronRight, BookOpen, Target, Trophy, Calendar, Shield,
-  Plus, X, Pause, Play, AlertTriangle, Crown, ArrowUpRight, Search, CheckCircle2,
+  Plus, X, Pause, Play, AlertTriangle, Crown, ArrowUpRight, Search, CheckCircle2, Star, Sparkles,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,8 @@ type Enrollment = {
   area: 'POLICIAL' | 'MILITAR' | 'BOMBEIRO' | 'GUARDA_MUNICIPAL' | 'OUTRO'
   description: string | null
   isActive: boolean
+  isPrimary: boolean
+  lastDiagnosticAt: string | null
   enrolledAt: string
   lastStudyAt: string | null
   progress: number
@@ -68,11 +71,13 @@ const AREA_ICON: Record<string, string> = {
 }
 
 export default function MeusCursosPage() {
+  const router = useRouter()
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [plan, setPlan] = useState<PlanInfo | null>(null)
   const [usage, setUsage] = useState<Usage | null>(null)
   const [loading, setLoading] = useState(true)
   const [browserOpen, setBrowserOpen] = useState(false)
+  const [primaryModal, setPrimaryModal] = useState<{ courseName: string; shouldReDiagnose: boolean } | null>(null)
 
   async function load() {
     setLoading(true)
@@ -100,6 +105,21 @@ export default function MeusCursosPage() {
       load()
     } catch (err: any) {
       toast.error(err.response?.data?.message ?? 'Erro ao desativar')
+    }
+  }
+
+  async function setPrimary(courseId: string, courseName: string) {
+    try {
+      const { data } = await api.post(`/me/enrollments/${courseId}/primary`)
+      if (data.noChange) {
+        toast(`"${courseName}" já é seu curso principal`)
+        return
+      }
+      toast.success(`"${courseName}" agora é seu curso principal`)
+      setPrimaryModal({ courseName, shouldReDiagnose: data.shouldReDiagnose })
+      load()
+    } catch (err: any) {
+      toast.error(err.response?.data?.message ?? 'Erro ao trocar curso principal')
     }
   }
 
@@ -158,7 +178,13 @@ export default function MeusCursosPage() {
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
             {ativos.map((e) => (
-              <ActiveCourseCard key={e.id} e={e} onDeactivate={() => deactivate(e.courseId)} />
+              <ActiveCourseCard
+                key={e.id}
+                e={e}
+                canChoosePrimary={ativos.length > 1}
+                onDeactivate={() => deactivate(e.courseId)}
+                onSetPrimary={() => setPrimary(e.courseId, e.courseName)}
+              />
             ))}
           </div>
         )}
@@ -191,6 +217,78 @@ export default function MeusCursosPage() {
           onActivated={() => { setBrowserOpen(false); load() }}
         />
       )}
+
+      {primaryModal && (
+        <PrimaryChangeModal
+          courseName={primaryModal.courseName}
+          shouldReDiagnose={primaryModal.shouldReDiagnose}
+          onClose={() => setPrimaryModal(null)}
+          onDiagnose={() => { setPrimaryModal(null); router.push('/dashboard/diagnostico') }}
+          onJustRecalc={async () => {
+            setPrimaryModal(null)
+            try {
+              await api.post('/schedule/recalculate-for-primary')
+              toast.success('Cronograma recalculado pro novo curso principal')
+              router.push('/dashboard/cronograma')
+            } catch (err: any) {
+              toast.error(err.response?.data?.message ?? 'Não consegui recalcular agora — tenta no /dashboard/cronograma')
+            }
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function PrimaryChangeModal({
+  courseName, shouldReDiagnose, onClose, onDiagnose, onJustRecalc,
+}: {
+  courseName: string
+  shouldReDiagnose: boolean
+  onClose: () => void
+  onDiagnose: () => void
+  onJustRecalc: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="card max-w-md w-full p-5 space-y-4 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <Crown className="w-5 h-5 text-yellow-500" />
+          <h3 className="font-black text-lg">Curso principal atualizado</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          <strong>"{courseName}"</strong> agora é seu curso principal — cronograma e diagnóstico passam a se basear nele.
+        </p>
+        {shouldReDiagnose ? (
+          <div className="rounded-xl bg-brand-50/40 dark:bg-brand-900/15 border border-brand-300/40 p-3 text-xs space-y-1">
+            <div className="font-bold inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-brand-500" /> Quer fazer o diagnóstico inicial?</div>
+            <p className="text-muted-foreground">
+              20 questões nivelando suas fraquezas no edital deste curso, em ~10 minutos. Cronograma fica priorizando o que você mais precisa.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Você já fez o diagnóstico deste curso antes. Pode refazer pra atualizar (recomendado se faz tempo) ou só recalcular o cronograma sem refazer.
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={onDiagnose}
+            className="rounded-xl bg-brand-500 hover:bg-brand-600 text-white py-2.5 text-sm font-bold inline-flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="w-4 h-4" /> {shouldReDiagnose ? 'Fazer diagnóstico' : 'Refazer'}
+          </button>
+          <button
+            onClick={onJustRecalc}
+            className="rounded-xl border border-border bg-card hover:bg-muted py-2.5 text-sm font-bold"
+          >
+            Só recalcular cronograma
+          </button>
+        </div>
+        <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground w-full text-center">
+          Decidir depois
+        </button>
+      </div>
     </div>
   )
 }
@@ -208,7 +306,7 @@ function PlanBanner({
           <div className="flex-1">
             <div className="font-bold text-sm">Sem plano ativo</div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Pra estudar é só escolher um plano. 3 dias grátis, sem cartão.
+              Pra estudar é só escolher um plano. 7 dias grátis, sem cartão.
             </p>
           </div>
           <Link href="/planos" className="rounded-xl bg-amber-500 text-white px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1 hover:bg-amber-600 shrink-0">
@@ -266,13 +364,25 @@ function PlanBanner({
 
 // ─── Card de curso ATIVO ─────────────────────────────────────────────────────
 
-function ActiveCourseCard({ e, onDeactivate }: { e: Enrollment; onDeactivate: () => void }) {
+function ActiveCourseCard({
+  e, canChoosePrimary, onDeactivate, onSetPrimary,
+}: {
+  e: Enrollment
+  canChoosePrimary: boolean
+  onDeactivate: () => void
+  onSetPrimary: () => void
+}) {
   const [confirming, setConfirming] = useState(false)
   const grad = AREA_GRADIENT[e.area] ?? AREA_GRADIENT.OUTRO
   const icon = AREA_ICON[e.area] ?? '📚'
 
   return (
-    <div className="card overflow-hidden flex flex-col">
+    <div className={cn('card overflow-hidden flex flex-col relative', e.isPrimary && 'ring-2 ring-yellow-400/70 ring-offset-2 ring-offset-background')}>
+      {e.isPrimary && (
+        <div className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 rounded-full bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-0.5 shadow">
+          <Crown className="w-3 h-3" /> PRINCIPAL
+        </div>
+      )}
       <div className={cn('h-28 sm:h-32 relative bg-gradient-to-br flex items-center justify-center', grad)}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
         <div className="relative z-10 text-center px-3">
@@ -320,20 +430,31 @@ function ActiveCourseCard({ e, onDeactivate }: { e: Enrollment; onDeactivate: ()
         </div>
 
         {!confirming ? (
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href={`/dashboard/cronograma?courseSlug=${e.courseSlug}`}
-              className="rounded-xl bg-brand-500 text-white py-2.5 text-xs font-bold text-center hover:bg-brand-600 inline-flex items-center justify-center gap-1.5"
-            >
-              Continuar <ChevronRight className="w-3 h-3" />
-            </Link>
-            <button
-              onClick={() => setConfirming(true)}
-              className="rounded-xl border border-border bg-card hover:bg-muted py-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5"
-              title="Pausa o curso (mantém progresso) pra liberar vaga e ativar outro"
-            >
-              <Pause className="w-3 h-3" /> Pausar
-            </button>
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href={`/dashboard/cronograma?courseSlug=${e.courseSlug}`}
+                className="rounded-xl bg-brand-500 text-white py-2.5 text-xs font-bold text-center hover:bg-brand-600 inline-flex items-center justify-center gap-1.5"
+              >
+                Continuar <ChevronRight className="w-3 h-3" />
+              </Link>
+              <button
+                onClick={() => setConfirming(true)}
+                className="rounded-xl border border-border bg-card hover:bg-muted py-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5"
+                title="Pausa o curso (mantém progresso) pra liberar vaga e ativar outro"
+              >
+                <Pause className="w-3 h-3" /> Pausar
+              </button>
+            </div>
+            {canChoosePrimary && !e.isPrimary && (
+              <button
+                onClick={onSetPrimary}
+                className="w-full rounded-xl border border-yellow-300 dark:border-yellow-700/60 bg-yellow-50/40 dark:bg-yellow-900/15 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 py-2 text-[11px] font-bold inline-flex items-center justify-center gap-1.5"
+                title="Cronograma e diagnóstico passam a se basear neste curso"
+              >
+                <Star className="w-3 h-3" /> Definir como principal
+              </button>
+            )}
           </div>
         ) : (
           <div className="rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50/60 dark:bg-amber-900/15 p-3 space-y-2">

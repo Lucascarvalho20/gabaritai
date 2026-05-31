@@ -147,12 +147,12 @@ export default function CursosPublicoPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Estamos focados em militares e policiais. Mas se quiser sugerir, manda mensagem que avaliamos.
           </p>
-          <Link
-            href="/contato"
+          <a
+            href="mailto:contato@gabaritai.com.br?subject=Sugest%C3%A3o%20de%20concurso"
             className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-bold hover:bg-brand-600"
           >
             Sugerir concurso <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
+          </a>
         </div>
       </main>
     </div>

@@ -28,6 +28,11 @@ export type ScheduleInput = {
   includeMocks?: boolean        // default true
   mockEveryNDays?: number       // default 14
   hoursPerSubjectRecommended?: number // baseline pra cálculo de "vai dar tempo" (default 60)
+  // Modo "30 dias pra prova": dentro dos últimos 30 dias antes do endDate,
+  // cronograma corta ESTUDO novo e foca em REVISAO + SIMULADO + QUESTOES.
+  // Reduz ansiedade pré-prova e maximiza fixação.
+  prePresenceMode?: boolean // default true
+  prePresenceWindowDays?: number // default 30
 }
 
 export type ScheduledSessionType = 'ESTUDO' | 'REVISAO' | 'QUESTOES' | 'SIMULADO' | 'DESCANSO'
@@ -55,8 +60,12 @@ export type ScheduleResult = {
 const DEFAULT_SESSION_MIN = 50
 const DEFAULT_MOCK_INTERVAL = 14
 const DEFAULT_RECOMMENDED_HOURS = 60
+const DEFAULT_PRE_PRESENCE_WINDOW = 30
 
+// Mix padrão durante o período normal
 const MIX = { ESTUDO: 0.65, REVISAO: 0.2, QUESTOES: 0.15 } as const
+// Mix dos últimos 30 dias (modo intensivo pré-prova): zero ESTUDO novo
+const MIX_PRE_PROVA = { ESTUDO: 0, REVISAO: 0.55, QUESTOES: 0.45 } as const
 
 function startOfDay(d: Date): Date {
   const x = new Date(d)
@@ -213,8 +222,24 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
     let lastPicked: string | null = null
 
     mockDayCounter++
-    const isMockDay = (input.includeMocks ?? true) && mockDayCounter % mockInterval === 0
+    // Modo pré-prova: simulado mais frequente (a cada 7 dias em vez de 14)
+    const isInPrePresence = (input.prePresenceMode ?? true) && (() => {
+      const window = input.prePresenceWindowDays ?? DEFAULT_PRE_PRESENCE_WINDOW
+      const msToEnd = startOfDay(input.endDate).getTime() - startOfDay(date).getTime()
+      const daysToEnd = Math.floor(msToEnd / 86400000)
+      return daysToEnd >= 0 && daysToEnd <= window
+    })()
+    const effectiveMockInterval = isInPrePresence ? Math.min(7, mockInterval) : mockInterval
+    const isMockDay = (input.includeMocks ?? true) && mockDayCounter % effectiveMockInterval === 0
     const effectiveSlots = isMockDay ? Math.max(1, sessionsPerDay - 2) : sessionsPerDay
+
+    // Detecta modo "30 dias pré-prova": substitui tipo ESTUDO por REVISAO/QUESTOES
+    const usePrePresence = (input.prePresenceMode ?? true) && (() => {
+      const window = input.prePresenceWindowDays ?? DEFAULT_PRE_PRESENCE_WINDOW
+      const msToEnd = startOfDay(input.endDate).getTime() - startOfDay(date).getTime()
+      const daysToEnd = Math.floor(msToEnd / 86400000)
+      return daysToEnd >= 0 && daysToEnd <= window
+    })()
 
     for (let slotIdx = 0; slotIdx < effectiveSlots; slotIdx++) {
       const sid = pickNextSubject(lastPicked)
@@ -222,12 +247,19 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
       const q = queues.get(sid)!
       const next = q[cursors[sid]++]
       lastPicked = sid
+
+      // Pré-prova: força tipo REVISAO ou QUESTOES (alterna), mesmo se a fila pediu ESTUDO
+      let effectiveType: ScheduledSessionType = next.type
+      if (usePrePresence && next.type === 'ESTUDO') {
+        effectiveType = slotIdx % 2 === 0 ? 'REVISAO' : 'QUESTOES'
+      }
+
       slots.push({
         date,
         subjectId: next.subjectId,
         subjectName: next.subjectName,
         durationMin: sessionMin,
-        type: next.type,
+        type: effectiveType,
         order: slotIdx,
       })
     }

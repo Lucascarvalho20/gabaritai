@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { canAttemptQuestion } from '@/lib/plan-access'
+import { autoCreateFlashcardFromWrongAnswer } from '@/lib/auto-flashcard'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,6 +129,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   }
 
+  // Auto-flashcard ao errar (fire-and-forget — não bloqueia resposta)
+  // Decisão João 2026-05-30: erro = flashcard automático sem perguntar
+  if (!correct) {
+    autoCreateFlashcardFromWrongAnswer({ userId: user.id, questionId: question.id })
+      .then((res) => {
+        if (res.ok && res.created) {
+          console.log(`[auto-flashcard] gerado pra user=${user.id} q=${question.id}`)
+        }
+      })
+      .catch((err) => console.warn('[auto-flashcard] falhou:', err))
+  }
+
   return NextResponse.json({
     ok: true,
     attemptId: attempt.id,
@@ -135,5 +148,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     gabarito: gabaritoNorm,
     explicacao: question.explicacao ?? null,
     masteryDelta,
+    autoFlashcard: !correct, // hint pro front mostrar "+1 flashcard na fila"
   })
 }

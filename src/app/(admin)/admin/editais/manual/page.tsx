@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ChevronLeft, Save, FileText, Plus, Trash2, ChevronRight, ChevronDown,
-  CheckCircle2, AlertTriangle, Loader2, FilePlus2,
+  CheckCircle2, AlertTriangle, Loader2, FilePlus2, Sparkles,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -68,6 +68,7 @@ export default function ManualEditalPage() {
   const [editedMaterias, setEditedMaterias] = useState<Materia[] | null>(null)
   const [cargoIndex, setCargoIndex] = useState(0)   // índice do cargo a importar (se multi)
   const [saving, setSaving] = useState(false)
+  const [reformatting, setReformatting] = useState(false)
 
   // Diff (mostrado quando já existe edital ativo pro curso)
   const [diff, setDiff] = useState<any | null>(null)
@@ -165,6 +166,25 @@ export default function ManualEditalPage() {
       toast.error(e.response?.data?.message ?? 'Falha ao salvar')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function reformatWithAI() {
+    if (!text.trim() || text.trim().length < 50) {
+      return toast.error('Cole pelo menos 50 caracteres antes de reformatar')
+    }
+    setReformatting(true)
+    try {
+      const { data } = await api.post('/admin/editais/reformat-text', { text })
+      if (data.reformatted) {
+        setText(data.reformatted)
+        setEditedMaterias(null)
+        toast.success('Texto reformatado pela IA — confere a árvore abaixo')
+      }
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Falha ao reformatar')
+    } finally {
+      setReformatting(false)
     }
   }
 
@@ -334,6 +354,20 @@ export default function ManualEditalPage() {
           rows={16}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono"
         />
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={reformatWithAI}
+            disabled={reformatting || !text.trim()}
+            className="rounded-lg bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {reformatting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            Reformatar com IA
+          </button>
+          <span className="text-[10px] text-muted-foreground">
+            Cola direto do PDF e clica aqui se o preview ficou vazio ou bagunçado.
+          </span>
+        </div>
 
         {/* Seletor de cargo (só aparece se múltiplos cargos detectados) */}
         {isMultiCargo && (

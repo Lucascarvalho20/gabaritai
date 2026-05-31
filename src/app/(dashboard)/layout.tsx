@@ -15,6 +15,8 @@ import { Logo } from '@/components/ui/logo'
 import { ImpersonationBanner } from '@/components/impersonation-banner'
 import { OnboardingTour } from '@/components/onboarding-tour'
 import { OfflineIndicator } from '@/components/offline-indicator'
+import { StudyTimerWidget } from '@/components/study/study-timer-widget'
+import { EnrollmentGate } from '@/components/EnrollmentGate'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -22,6 +24,7 @@ import toast from 'react-hot-toast'
 const NAV_ALUNO = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/meus-cursos', label: 'Meus Cursos', icon: BookOpen },
+  { href: '/dashboard/diagnostico', label: 'Diagnóstico inicial', icon: Brain, badge: 'IA' },
   { href: '/dashboard/cronograma', label: 'Cronograma', icon: Calendar },
   { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen },
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap },
@@ -45,6 +48,8 @@ const NAV_ADMIN = [
   { href: '/admin/cursos', label: 'Cursos', icon: BookOpen },
   { href: '/admin/concursos', label: 'Concursos abertos', icon: Calendar, badge: 'API' },
   { href: '/admin/edital-changes', label: 'Mudanças em editais', icon: Calendar },
+  { href: '/admin/diagnostico', label: 'Pool de diagnóstico', icon: Brain, badge: 'IA' },
+  { href: '/admin/provas', label: 'Importar provas', icon: FileText, badge: 'IA' },
   { href: '/admin/planos', label: 'Planos e Preços', icon: DollarSign },
   { href: '/admin/pagamentos', label: 'Pagamentos', icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },
@@ -231,6 +236,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <ImpersonationBanner />
       <OnboardingTour />
       <OfflineIndicator />
+      <StudyTimerWidget />
       <div className="flex flex-1 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
@@ -346,9 +352,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Page content */}
+        {/* Page content (com gate de enrollment — força aluno a ter curso) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
-          {children}
+          <EnrollmentGate>{children}</EnrollmentGate>
         </main>
       </div>
       </div>

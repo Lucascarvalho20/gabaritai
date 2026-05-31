@@ -57,7 +57,17 @@ export default function CheckoutPage() {
       fetch('/api/plans/public').then((r) => r.json()),
       fetch('/api/courses?all=true').then((r) => r.json()),
     ]).then(([plansData, coursesData]) => {
-      const p = plansData.plans.find((x: Plan) => x.slug === params.planSlug)
+      const plans: Plan[] = plansData.plans ?? []
+      let p = plans.find((x) => x.slug === params.planSlug)
+      // Fallback: se admin pediu trial-7-dias mas o banco tem trial-3d ou trial-7d,
+      // pega qualquer trial ativo (compat com seeds antigos)
+      if (!p && params.planSlug.startsWith('trial-')) {
+        const fallback = plans.find((x) => x.slug.startsWith('trial-'))
+        if (fallback) {
+          router.replace(`/checkout/${fallback.slug}`)
+          return
+        }
+      }
       if (!p) {
         toast.error('Plano não encontrado')
         router.push('/planos')
