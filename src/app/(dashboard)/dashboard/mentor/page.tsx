@@ -25,18 +25,42 @@ const SUGESTOES = [
 
 export default function MentorPage() {
   const user = useAuthStore(s => s.user)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '0',
-      role: 'assistant',
-      content: `Olá, ${user?.name?.split(' ')[0] ?? 'concurseiro'}! 👋 Sou seu **Mentor IA** personalizado.\n\nEstou analisando seu histórico de estudos e desempenho. Posso te ajudar com:\n\n- 📊 **Análise do seu desempenho** e pontos fracos\n- 📅 **Ajuste do seu cronograma** de estudos\n- 📝 **Explicações detalhadas** de qualquer matéria\n- 🎯 **Planos de revisão** personalizados\n- 💡 **Dicas e estratégias** para melhorar\n\nO que você precisa hoje?`,
-      createdAt: new Date(),
-    }
-  ])
+  const greeting: Message = {
+    id: 'greet-0',
+    role: 'assistant',
+    content: `Olá, ${user?.name?.split(' ')[0] ?? 'concurseiro'}! 👋 Sou seu **Mentor IA** personalizado.\n\nEstou analisando seu histórico de estudos e desempenho. Posso te ajudar com:\n\n- 📊 **Análise do seu desempenho** e pontos fracos\n- 📅 **Ajuste do seu cronograma** de estudos\n- 📝 **Explicações detalhadas** de qualquer matéria\n- 🎯 **Planos de revisão** personalizados\n- 💡 **Dicas e estratégias** para melhorar\n\nO que você precisa hoje?`,
+    createdAt: new Date(),
+  }
+  const [messages, setMessages] = useState<Message[]>([greeting])
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Carrega histórico salvo no DB (Mentor IA persistido)
+  useEffect(() => {
+    api.get('/me/mentor-history?limit=30')
+      .then(({ data }) => {
+        if (data.conversation?.id) setConversationId(data.conversation.id)
+        const dbMsgs = (data.messages ?? []) as Array<{ id: string; role: string; content: string; createdAt: string }>
+        if (dbMsgs.length > 0) {
+          setMessages([
+            greeting,
+            ...dbMsgs.map((m) => ({
+              id: m.id,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              createdAt: new Date(m.createdAt),
+            })),
+          ])
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -53,7 +77,10 @@ export default function MentorPage() {
 
     try {
       const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
-      const res = await api.post('/ai/chat', { message: text, history })
+      const res = await api.post('/ai/chat', { message: text, history, conversationId })
+      if (res.data.conversationId && res.data.conversationId !== conversationId) {
+        setConversationId(res.data.conversationId)
+      }
       if (res.data.cronogramaUpdate) {
         const existing = JSON.parse(localStorage.getItem('gabaritai_cronograma_config') ?? '{}')
         const updated = { ...existing, ...res.data.cronogramaUpdate, updatedAt: new Date().toISOString() }
@@ -95,7 +122,10 @@ export default function MentorPage() {
     }
   }
 
-  function clearChat() {
+  async function clearChat() {
+    // Apaga histórico do DB pra não confundir IA com contexto antigo
+    try { await api.delete('/me/mentor-history') } catch {}
+    setConversationId(null)
     setMessages([{
       id: Date.now().toString(),
       role: 'assistant',
