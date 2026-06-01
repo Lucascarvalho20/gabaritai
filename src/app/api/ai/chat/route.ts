@@ -4,6 +4,53 @@ import { DEMO_USERS } from '@/lib/demo-users'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * Persiste mensagem do user + resposta da IA na AiConversation.
+ * Fire-and-forget: não bloqueia resposta se DB falhar.
+ *
+ * Retorna o conversationId (novo ou existente) pra o frontend poder
+ * continuar a mesma conversa entre sessões.
+ */
+async function persistConversation(opts: {
+  userId: string
+  conversationId: string | null
+  userMessage: string
+  aiResponse: string
+}): Promise<string | null> {
+  try {
+    let convoId = opts.conversationId
+    if (convoId) {
+      const exists = await prisma.aiConversation.findFirst({
+        where: { id: convoId, userId: opts.userId },
+        select: { id: true },
+      })
+      if (!exists) convoId = null
+    }
+    if (!convoId) {
+      const created = await prisma.aiConversation.create({
+        data: { userId: opts.userId },
+        select: { id: true },
+      })
+      convoId = created.id
+    } else {
+      await prisma.aiConversation.update({
+        where: { id: convoId },
+        data: { updatedAt: new Date() },
+      })
+    }
+    await prisma.aiMessage.createMany({
+      data: [
+        { conversationId: convoId, role: 'user', content: opts.userMessage },
+        { conversationId: convoId, role: 'assistant', content: opts.aiResponse },
+      ],
+    })
+    return convoId
+  } catch (err) {
+    console.error('[ai/chat] persistConversation failed', err)
+    return opts.conversationId
+  }
+}
+
 function detectCronogramaUpdate(userMessage: string, _aiResponse: string): { horas_dia?: number; dias_semana?: number[] } | null {
   const msg = userMessage.toLowerCase()
   const isCronogramaRequest = msg.includes('cronograma') || msg.includes('horário') || msg.includes('horas') || msg.includes('dias de estudo') || msg.includes('segunda') || msg.includes('dias da semana')
@@ -48,8 +95,7 @@ export async function POST(req: NextRequest) {
   const payload = await verifyToken(auth.split(' ')[1])
   if (!payload?.sub) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
 
-  const user = DEMO_USERS.find(u => u.id === payload.sub)
-  const { message, history = [] } = await req.json()
+  const { message, history = [], conversationId: incomingConvoId = null } = await req.json()
 
   if (!message?.trim()) {
     return NextResponse.json({ message: 'Mensagem não pode ser vazia' }, { status: 400 })
@@ -58,12 +104,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Mensagem muito longa (máx 4000 caracteres)' }, { status: 400 })
   }
 
-  // Quota diária por aluno (anti-abuso) — protege custo de IA.
-  // Usuários DEMO não estão no DB então pulamos a quota pra eles.
+  // Tenta carregar user REAL do banco (com profile pra personalizar prompt).
+  // Se não existe (token velho de demo), faz fallback pro DEMO_USERS.
   const realUser = await prisma.user.findUnique({
     where: { id: String(payload.sub) },
-    select: { id: true, hasFullAccess: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      hasFullAccess: true,
+      profile: { select: { concursoLabel: true, nivel: true, horasDia: true, meta: true } },
+    },
   })
+  const demoUser = !realUser ? DEMO_USERS.find(u => u.id === payload.sub) : null
+  // Normaliza pra forma que buildMentorPrompt espera (concursoAlvo, nivel, etc.)
+  const user = realUser
+    ? {
+        name: realUser.name,
+        email: realUser.email,
+        concursoAlvo: realUser.profile?.concursoLabel ?? null,
+        nivel: realUser.profile?.nivel ?? 'intermediario',
+        horasDia: realUser.profile?.horasDia ?? '3',
+        meta: realUser.profile?.meta ?? null,
+      }
+    : (demoUser ?? null)
+
   if (realUser) {
     try {
       await consumeQuota({ userId: realUser.id, kind: 'mentor_chat', hasFullAccess: realUser.hasFullAccess })
@@ -75,7 +140,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const systemPrompt = buildMentorPrompt(user)
+  // Helper local: persiste E retorna response com conversationId
+  const persistAndRespond = async (resp: string, provider: string, cronogramaUpdate: any) => {
+    const convoId = realUser
+      ? await persistConversation({
+          userId: realUser.id,
+          conversationId: incomingConvoId,
+          userMessage: message,
+          aiResponse: resp,
+        })
+      : null
+    return NextResponse.json({ response: resp, provider, cronogramaUpdate, conversationId: convoId })
+  }
+
+  const systemPrompt = buildMentorPrompt(user as any)
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
@@ -89,8 +167,7 @@ export async function POST(req: NextRequest) {
       try {
         const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
           'https://api.groq.com/openai/v1/chat/completions', gm)
-        const cronogramaUpdate = detectCronogramaUpdate(message, r)
-        return NextResponse.json({ response: r, provider: 'groq', cronogramaUpdate })
+        return persistAndRespond(r, 'groq', detectCronogramaUpdate(message, r))
       } catch (e) { console.error(`[Groq ${gm}]`, e) }
     }
   }
@@ -98,24 +175,21 @@ export async function POST(req: NextRequest) {
   if (geminiKey) {
     try {
       const r = await callGemini(message, history, systemPrompt, geminiKey)
-      const cronogramaUpdate = detectCronogramaUpdate(message, r)
-      return NextResponse.json({ response: r, provider: 'gemini', cronogramaUpdate })
+      return persistAndRespond(r, 'gemini', detectCronogramaUpdate(message, r))
     } catch (e) { console.error('[Gemini]', e) }
   }
 
   if (anthropicKey) {
     try {
       const r = await callClaude(message, history, systemPrompt, anthropicKey)
-      const cronogramaUpdate = detectCronogramaUpdate(message, r)
-      return NextResponse.json({ response: r, provider: 'claude', cronogramaUpdate })
+      return persistAndRespond(r, 'claude', detectCronogramaUpdate(message, r))
     } catch (e) { console.error('[Claude]', e) }
   }
 
   if (openaiKey) {
     try {
       const r = await callOpenAI(message, history, systemPrompt, openaiKey)
-      const cronogramaUpdate = detectCronogramaUpdate(message, r)
-      return NextResponse.json({ response: r, provider: 'openai', cronogramaUpdate })
+      return persistAndRespond(r, 'openai', detectCronogramaUpdate(message, r))
     } catch (e) { console.error('[OpenAI]', e) }
   }
 
@@ -124,18 +198,12 @@ export async function POST(req: NextRequest) {
       const r = await callOpenAICompat(message, history, systemPrompt, deepseekKey,
         'https://api.deepseek.com/v1/chat/completions',
         process.env.DEEPSEEK_MODEL ?? 'deepseek-chat')
-      const cronogramaUpdate = detectCronogramaUpdate(message, r)
-      return NextResponse.json({ response: r, provider: 'deepseek', cronogramaUpdate })
+      return persistAndRespond(r, 'deepseek', detectCronogramaUpdate(message, r))
     } catch (e) { console.error('[DeepSeek]', e) }
   }
 
-  const r = generateFallbackResponse(message, user)
-  const cronogramaUpdate = detectCronogramaUpdate(message, r)
-  return NextResponse.json({
-    response: r,
-    provider: 'fallback',
-    cronogramaUpdate,
-  })
+  const r = generateFallbackResponse(message, user as any)
+  return persistAndRespond(r, 'fallback', detectCronogramaUpdate(message, r))
 }
 
 async function callClaude(message: string, history: any[], system: string, apiKey: string) {
