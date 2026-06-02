@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { FileText, Loader2, ArrowLeft, Sparkles, ChevronDown, Calendar, Users, Clock, Award, BookOpen, Target, CheckCircle2, Brain } from 'lucide-react'
+import { FileText, Loader2, ArrowLeft, Sparkles, ChevronDown, Calendar, Users, Clock, Award, BookOpen, Target, CheckCircle2, Brain, Download } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
@@ -90,9 +90,20 @@ export default function EditalVerticalizadoCursoPage() {
         <ArrowLeft className="w-3 h-3" /> Voltar
       </Link>
 
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black">{data.course.name}{data.course.cargo ? ` — ${data.course.cargo}` : ''}</h1>
-        <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">Edital verticalizado: matérias cobradas, peso e assuntos.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black">{data.course.name}{data.course.cargo ? ` — ${data.course.cargo}` : ''}</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">Edital verticalizado: matérias cobradas, peso e assuntos.</p>
+        </div>
+        <Link
+          href={`/dashboard/edital-verticalizado/${params.courseSlug}/imprimir`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg border border-border bg-card hover:bg-muted px-3 py-2 text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
+          title="Abre versão imprimível. Use Ctrl+P (ou Cmd+P) → Salvar como PDF."
+        >
+          <Download className="w-3.5 h-3.5" /> Baixar PDF
+        </Link>
       </div>
 
       {data.edital ? (
