@@ -124,6 +124,11 @@ export async function POST(req: NextRequest) {
 
   const POOL_TAG = `diagnostico-pool:${primaryEnrollment.course.slug}`
 
+  // BLINDAGEM: filtra por bancaSlug do edital ATIVO. Se banca mudar
+  // (ex: PMDF 2026 trocar Instituto AOCP por Cebraspe), questões antigas
+  // do pool ficam invisíveis automaticamente — admin precisa regenerar
+  // via /api/setup/generate-questions-bulk com a nova banca.
+  // bancaSlug=null permite questões legadas sem banca específica.
   const poolByMateria = new Map<string, QuestionLite[]>()
   for (const p of planos) {
     if (p.qtd <= 0) continue
@@ -133,6 +138,10 @@ export async function POST(req: NextRequest) {
         tags: { has: POOL_TAG },
         active: true,
         anulada: false,
+        // Só inclui questões da banca atual OU questões sem banca definida (legadas)
+        OR: bancaSlug
+          ? [{ bancaSlug }, { bancaSlug: null }]
+          : undefined,
       },
       select: {
         id: true, enunciado: true, alternativas: true, subjectId: true,
