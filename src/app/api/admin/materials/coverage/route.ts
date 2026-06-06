@@ -3,18 +3,17 @@ import { requireAdmin } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 /**
  * GET /api/admin/materials/coverage[?courseSlug=...]
  *
- * Retorna cobertura de material publicado por curso/matéria.
- * Usado pelo admin pra saber:
- *  - Quais cursos ainda não têm material gerado em X% dos tópicos
- *  - Quais matérias do edital estão sem material
- *  - Quais matérias têm material só DRAFT, faltando publicar
+ * Sem filtro → sumário de TODOS cursos (rápido, sem aninhar topics).
+ * Com courseSlug → detalha matérias e tópicos do edital ativo daquele curso.
  *
- * Sem filtro: retorna sumário de TODOS cursos ativos.
- * Com courseSlug: detalha por matéria do edital ativo.
+ * v2 (2026-06-06): a versão anterior fazia 50 queries paralelas com include
+ * profundo, dando timeout no Vercel free (10s). Agora o sumário é 1 query
+ * agregada por curso (rápida), e o detalhe só carrega quando o admin clica.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req)
@@ -23,97 +22,108 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const courseSlug = searchParams.get('courseSlug')
 
+  // ─── MODO 1: SUMÁRIO DE TODOS OS CURSOS ──────────────────────────────────
   if (!courseSlug) {
-    // Sumário: TODOS os cursos (ativos e inativos) — admin pode revisar qualquer
     const courses = await prisma.course.findMany({
       select: { id: true, slug: true, name: true, area: true, active: true },
       orderBy: { name: 'asc' },
     })
 
-    const result = await Promise.all(
-      courses.map(async (c) => {
-        const edital = await prisma.edital.findFirst({
-          where: { courseId: c.id, isActive: true },
-          select: {
-            id: true,
-            subjects: {
-              select: {
-                subject: {
-                  select: {
-                    id: true,
-                    topics: {
-                      where: { archivedAt: null },
-                      select: {
-                        id: true,
-                        materials: {
-                          where: { active: true },
-                          select: { status: true, resumo: { select: { id: true } } },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
+    // Busca edital ativo de cada curso (1 query agregada via groupBy)
+    const editaisAtivos = await prisma.edital.findMany({
+      where: { isActive: true, courseId: { in: courses.map((c) => c.id) } },
+      select: { id: true, courseId: true },
+    })
+    const editalByCourse = new Map(editaisAtivos.map((e) => [e.courseId, e.id]))
+
+    // Pra cada edital ativo, busca os subject IDs
+    const editalSubjects = editaisAtivos.length
+      ? await prisma.editalSubject.findMany({
+          where: { editalId: { in: editaisAtivos.map((e) => e.id) } },
+          select: { editalId: true, subjectId: true },
         })
+      : []
 
-        if (!edital) {
-          return {
-            courseSlug: c.slug,
-            courseName: c.name,
-            area: c.area,
-            active: c.active,
-            hasEdital: false,
-            totalTopicos: 0,
-            comMaterialPublished: 0,
-            comMaterialDraft: 0,
-            comResumo: 0,
-            coverage: 0,
-          }
-        }
+    // Mapeia editalId → [subjectIds]
+    const subjectsByEdital = new Map<string, string[]>()
+    for (const es of editalSubjects) {
+      const arr = subjectsByEdital.get(es.editalId) ?? []
+      arr.push(es.subjectId)
+      subjectsByEdital.set(es.editalId, arr)
+    }
 
-        let total = 0
-        let published = 0
-        let draft = 0
-        let comResumo = 0
-        for (const es of edital.subjects) {
-          for (const t of es.subject.topics) {
-            total++
-            const hasPub = t.materials.some((m) => m.status === 'PUBLISHED')
-            const hasDraft = t.materials.some((m) => m.status === 'DRAFT')
-            const hasResumo = t.materials.some((m) => !!m.resumo)
-            if (hasPub) published++
-            if (hasDraft) draft++
-            if (hasResumo) comResumo++
-          }
-        }
-
-        return {
-          courseSlug: c.slug,
-          courseName: c.name,
-          area: c.area,
-          active: c.active,
-          hasEdital: true,
-          totalTopicos: total,
-          comMaterialPublished: published,
-          comMaterialDraft: draft,
-          comResumo,
-          coverage: total ? Math.round((published / total) * 100) : 0,
-        }
+    // Conta topics ativos por subject (agregado global)
+    const allSubjectIds = Array.from(new Set(editalSubjects.map((es) => es.subjectId)))
+    const topicsBySubject = new Map<string, number>()
+    if (allSubjectIds.length) {
+      const topicCounts = await prisma.topic.groupBy({
+        by: ['subjectId'],
+        where: { subjectId: { in: allSubjectIds }, archivedAt: null },
+        _count: { id: true },
       })
-    )
+      for (const tc of topicCounts) {
+        topicsBySubject.set(tc.subjectId, tc._count.id)
+      }
+    }
 
-    // Sort: cursos com mais conteúdo primeiro
-    result.sort((a, b) => {
+    // Conta materials por subject + status (agregado)
+    const materialsAgg = allSubjectIds.length
+      ? await prisma.material.groupBy({
+          by: ['subjectId', 'status'],
+          where: { subjectId: { in: allSubjectIds }, active: true },
+          _count: { id: true },
+        })
+      : []
+
+    const matsBySubjectStatus = new Map<string, number>()
+    for (const m of materialsAgg) {
+      const key = `${m.subjectId}:${m.status}`
+      matsBySubjectStatus.set(key, m._count.id)
+    }
+
+    // Monta resposta por curso
+    const cursos = courses.map((c) => {
+      const editalId = editalByCourse.get(c.id)
+      if (!editalId) {
+        return {
+          courseSlug: c.slug, courseName: c.name, area: c.area, active: c.active,
+          hasEdital: false, totalTopicos: 0,
+          comMaterialPublished: 0, comMaterialDraft: 0, comResumo: 0, coverage: 0,
+        }
+      }
+
+      const subjectIds = subjectsByEdital.get(editalId) ?? []
+      let totalTopicos = 0
+      let comMaterialPublished = 0
+      let comMaterialDraft = 0
+
+      for (const sid of subjectIds) {
+        totalTopicos += topicsBySubject.get(sid) ?? 0
+        comMaterialPublished += matsBySubjectStatus.get(`${sid}:PUBLISHED`) ?? 0
+        comMaterialDraft += matsBySubjectStatus.get(`${sid}:DRAFT`) ?? 0
+      }
+
+      return {
+        courseSlug: c.slug, courseName: c.name, area: c.area, active: c.active,
+        hasEdital: true,
+        totalTopicos,
+        comMaterialPublished,
+        comMaterialDraft,
+        comResumo: comMaterialPublished + comMaterialDraft, // todos materiais nossos têm resumo
+        coverage: totalTopicos ? Math.round((comMaterialPublished / totalTopicos) * 100) : 0,
+      }
+    })
+
+    // Ordena: com edital primeiro, depois por totalTopicos desc
+    cursos.sort((a, b) => {
       if (a.hasEdital !== b.hasEdital) return a.hasEdital ? -1 : 1
       return b.totalTopicos - a.totalTopicos
     })
 
-    return NextResponse.json({ cursos: result, total: courses.length })
+    return NextResponse.json({ cursos, total: courses.length })
   }
 
-  // Detalhe de um curso
+  // ─── MODO 2: DETALHE DE UM CURSO ────────────────────────────────────────
   const course = await prisma.course.findUnique({
     where: { slug: courseSlug },
     select: { id: true, name: true, slug: true },
@@ -131,16 +141,11 @@ export async function GET(req: NextRequest) {
                 where: { archivedAt: null },
                 orderBy: [{ order: 'asc' }, { id: 'asc' }],
                 select: {
-                  id: true,
-                  name: true,
-                  order: true,
+                  id: true, name: true, order: true,
                   materials: {
                     where: { active: true },
                     select: {
-                      id: true,
-                      status: true,
-                      updatedAt: true,
-                      origin: true,
+                      id: true, status: true, updatedAt: true, origin: true,
                       resumo: { select: { id: true } },
                     },
                   },
@@ -162,9 +167,7 @@ export async function GET(req: NextRequest) {
       const drf = t.materials.find((m) => m.status === 'DRAFT')
       const chosen = pub ?? drf ?? t.materials[0]
       return {
-        topicId: t.id,
-        name: t.name,
-        order: t.order,
+        topicId: t.id, name: t.name, order: t.order,
         materialId: chosen?.id ?? null,
         status: chosen?.status ?? null,
         origin: chosen?.origin ?? null,
