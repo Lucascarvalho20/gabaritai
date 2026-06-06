@@ -21,7 +21,12 @@ type Props = {
   withCourseSelect?: boolean
 }
 
-type CourseGroup = { parentSlug: string; label: string; orgao: string | null }
+type CourseGroup = {
+  parentSlug: string
+  label: string
+  orgao: string | null
+  hasEdital?: boolean // true se algum curso do grupo tem edital ativo
+}
 
 /**
  * Form de captura de email pra lead magnet.
@@ -50,17 +55,25 @@ export function EmailCapture({
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Carrega lista de cursos quando withCourseSelect=true
+  // Carrega lista de cursos quando withCourseSelect=true.
+  // Pede TODOS (includeNoEdital=1) pra calcular hasEdital por grupo —
+  // grupos sem edital ativo aparecem em "Em breve" desabilitados.
   useEffect(() => {
     if (!withCourseSelect) return
-    fetch('/api/courses?all=true')
+    fetch('/api/courses?all=true&includeNoEdital=1&includeAll=1')
       .then((r) => r.json())
       .then((data) => {
-        const groups: CourseGroup[] = (data.groups ?? []).map((g: any) => ({
-          parentSlug: g.parentSlug,
-          label: g.label,
-          orgao: g.orgao,
-        }))
+        const groups: CourseGroup[] = (data.groups ?? []).map((g: any) => {
+          const hasEdital = (g.cargos ?? []).some(
+            (c: any) => (c.editais?.length ?? 0) > 0 || c._count?.editais > 0
+          )
+          return {
+            parentSlug: g.parentSlug,
+            label: g.label,
+            orgao: g.orgao,
+            hasEdital,
+          }
+        })
         setCourses(groups)
       })
       .catch(() => {})
@@ -148,9 +161,32 @@ export function EmailCapture({
             className="w-full pl-9 pr-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-colors disabled:opacity-50 appearance-none"
           >
             <option value="">— Concurso de interesse —</option>
-            {courses.map((c) => (
-              <option key={c.parentSlug} value={c.parentSlug}>{c.label}</option>
-            ))}
+            {/* Cursos com edital pronto — selecionáveis */}
+            {courses.filter((c) => c.hasEdital).length > 0 && (
+              <optgroup label="📘 Edital pronto pra receber">
+                {courses
+                  .filter((c) => c.hasEdital)
+                  .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+                  .map((c) => (
+                    <option key={c.parentSlug} value={c.parentSlug}>
+                      {c.label}
+                    </option>
+                  ))}
+              </optgroup>
+            )}
+            {/* Cursos sem edital — em standby, desabilitados */}
+            {courses.filter((c) => !c.hasEdital).length > 0 && (
+              <optgroup label="⏳ Em breve — edital sendo cadastrado">
+                {courses
+                  .filter((c) => !c.hasEdital)
+                  .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+                  .map((c) => (
+                    <option key={c.parentSlug} value={c.parentSlug} disabled>
+                      {c.label} (em preparação)
+                    </option>
+                  ))}
+              </optgroup>
+            )}
           </select>
         </div>
       )}

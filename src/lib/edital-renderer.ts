@@ -101,7 +101,7 @@ REGRAS:
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           generationConfig: { maxOutputTokens: 1500, temperature: 0.5 },
         }),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(6_000),
       }
     )
     if (!res.ok) return null

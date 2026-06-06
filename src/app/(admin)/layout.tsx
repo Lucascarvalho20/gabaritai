@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import {
   LayoutDashboard, Users, BookOpen, DollarSign, BarChart3,
-  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database, FileText, Megaphone
+  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database, FileText, Megaphone, Mail
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Logo } from '@/components/ui/logo'
@@ -27,6 +27,7 @@ const NAV = [
   { href: '/admin/banco-questoes', label: 'Banco de questões', icon: Database },
   { href: '/admin/broadcast',  label: 'Broadcast',       icon: Megaphone },
   { href: '/admin/chat',       label: 'Mensagens',       icon: Megaphone },
+  { href: '/admin/test-email', label: 'Teste de Email',  icon: Mail },
 ]
 
 function ThemeToggle() {

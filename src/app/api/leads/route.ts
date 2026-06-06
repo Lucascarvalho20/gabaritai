@@ -6,6 +6,7 @@ import { renderEditalEmail } from '@/lib/edital-renderer'
 import { checkRateLimit, recordFailedAttempt, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 15
 
 /**
  * POST /api/leads
@@ -91,16 +92,24 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Dispara email com edital verticalizado (ou genérico de boas-vindas se
-  // courseSlug não foi informado). Sem RESEND_API_KEY, vai pro console (dev).
-  // Não bloqueia a resposta — captura é o que importa, email é melhor-esforço.
+  // Dispara email FIRE-AND-FORGET (não bloqueia resposta).
+  // Antes, await em renderEditalEmail() podia demorar até 15s (Gemini timeout),
+  // estourando o limite de 10s do Vercel free e fazendo o email NUNCA chegar.
+  // Agora: renderiza+envia em background, resposta volta na hora.
   const courseSlugForEmail = body.courseSlug ?? body.parentSlug ?? null
-  try {
-    const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
-    await sendEmail({ to: emailRaw, subject, html, text })
-  } catch (err) {
-    console.warn('[leads] email send failed (não-bloqueante):', err)
-  }
+  void (async () => {
+    try {
+      const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
+      const result = await sendEmail({ to: emailRaw, subject, html, text })
+      if (!result.ok) {
+        console.warn('[leads] email send returned ok=false', { to: emailRaw, mode: result.mode })
+      } else {
+        console.log('[leads] email sent', { to: emailRaw, mode: result.mode, messageId: result.messageId })
+      }
+    } catch (err) {
+      console.error('[leads] email pipeline failed:', err)
+    }
+  })()
 
   return NextResponse.json({ ok: true, emailSent: true })
 }
