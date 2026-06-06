@@ -22,6 +22,7 @@ const NAV = [
   { href: '/admin/cupons',     label: 'Cupons',          icon: DollarSign },
   { href: '/admin/relatorios', label: 'Relatórios',      icon: BarChart3 },
   { href: '/admin/insights',   label: 'Insights',        icon: BarChart3 },
+  { href: '/admin/materials',  label: 'Materiais',       icon: BookOpen },
   { href: '/admin/conteudo',   label: 'Conteúdo do Site',icon: Sparkles },
   { href: '/admin/banco-questoes', label: 'Banco de questões', icon: Database },
   { href: '/admin/broadcast',  label: 'Broadcast',       icon: Megaphone },
