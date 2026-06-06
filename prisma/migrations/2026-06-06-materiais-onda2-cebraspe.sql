@@ -9,6 +9,7 @@
 --  - Processual Penal: Inquérito Policial
 --
 -- IDEMPOTENTE (UPSERT por cacheKey). DEPENDE da onda 1 (topics-universais).
+-- Status: DRAFT (aguarda revisão do admin). Preserva REVIEWED/PUBLISHED.
 -- ════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION upsert_material(
@@ -34,8 +35,15 @@ BEGIN
   END IF;
   v_cache_key := 'topic-' || v_topic_id;
   INSERT INTO "materials" (id, "subjectId", "topicId", "cacheKey", title, type, content, active, status, origin, "createdAt", "updatedAt")
-  VALUES (gen_random_uuid()::text, v_subject_id, v_topic_id, v_cache_key, p_title, 'TEXTO', p_content, true, 'PUBLISHED', 'ai', NOW(), NOW())
-  ON CONFLICT ("cacheKey") DO UPDATE SET title = EXCLUDED.title, content = EXCLUDED.content, status = 'PUBLISHED', "updatedAt" = NOW()
+  VALUES (gen_random_uuid()::text, v_subject_id, v_topic_id, v_cache_key, p_title, 'TEXTO', p_content, true, 'DRAFT', 'ai', NOW(), NOW())
+  ON CONFLICT ("cacheKey") DO UPDATE SET
+    title = EXCLUDED.title,
+    content = EXCLUDED.content,
+    status = CASE
+      WHEN "materials".status IN ('REVIEWED', 'PUBLISHED') THEN "materials".status
+      ELSE 'DRAFT'::"MaterialStatus"
+    END,
+    "updatedAt" = NOW()
   RETURNING id INTO v_material_id;
   IF v_material_id IS NULL THEN
     SELECT id INTO v_material_id FROM "materials" WHERE "cacheKey" = v_cache_key;
