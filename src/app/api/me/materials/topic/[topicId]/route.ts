@@ -26,14 +26,19 @@ export async function GET(
   })
   if (!topic) return NextResponse.json({ message: 'Tópico não encontrado' }, { status: 404 })
 
+  // Admin pode ver DRAFT/REVIEWED (pra revisar antes de publicar).
+  // Aluno comum só vê PUBLISHED.
+  const isAdmin = auth.user.role === 'ADMIN'
   const material = await prisma.material.findFirst({
     where: {
       topicId: topic.id,
-      status: 'PUBLISHED',
       active: true,
+      ...(isAdmin
+        ? { status: { in: ['DRAFT', 'REVIEWED', 'PUBLISHED'] } }
+        : { status: 'PUBLISHED' }),
     },
     include: { resumo: true },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: [{ status: 'desc' }, { updatedAt: 'desc' }],
   })
 
   const attempt = await prisma.topicAttempt.findUnique({
