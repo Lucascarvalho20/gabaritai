@@ -60,6 +60,8 @@ export default function MaterialImprimirPage() {
   const showCompleto = (modo === 'completo' || modo === 'ambos') && material
   const showResumo = (modo === 'resumo' || modo === 'ambos') && resumo
   const hoje = new Date().toLocaleDateString('pt-BR')
+  // ID do material pra anti-cópia (rastreabilidade)
+  const matId = (material?.id ?? resumo?.id ?? topicId).slice(0, 8).toUpperCase()
 
   return (
     <>
@@ -77,18 +79,28 @@ export default function MaterialImprimirPage() {
       `}</style>
 
       <div className="apostila">
-        {/* CAPA / HEADER */}
+        {/* MARCA D'ÁGUA DIAGONAL (anti-cópia) */}
+        <div className="apostila-watermark" aria-hidden="true">
+          <span>GABARITAI · {matId}</span>
+        </div>
+
+        {/* CAPA MINIMALISTA */}
         <header className="apostila-cover">
-          <div className="apostila-cover-bar" />
           <div className="apostila-cover-inner">
-            <p className="apostila-brand">GabaritAI · Material de Estudo</p>
+            <div className="apostila-cover-row">
+              <div className="apostila-logo">
+                <span className="apostila-logo-letter">G</span>
+                <span className="apostila-logo-text">GabaritAI</span>
+              </div>
+              <div className="apostila-meta">
+                <span>{hoje}</span>
+                <span className="apostila-meta-dot">·</span>
+                <span>ID {matId}</span>
+              </div>
+            </div>
             <p className="apostila-subject">{topic.subject.name}</p>
             <h1 className="apostila-title">{topic.name}</h1>
-            <div className="apostila-meta">
-              <span>Gerado em {hoje}</span>
-              <span>·</span>
-              <span>gabaritai.com.br</span>
-            </div>
+            <div className="apostila-cover-divider" />
           </div>
         </header>
 
@@ -123,263 +135,314 @@ export default function MaterialImprimirPage() {
         )}
 
         <footer className="apostila-footer">
-          <div className="apostila-footer-bar" />
-          <p>
-            <strong>GabaritAI</strong> — Mentoria de estudos para concursos públicos<br />
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-              gabaritai.com.br · Material gerado e revisado para sua aprovação
-            </span>
-          </p>
+          <div className="apostila-footer-grid">
+            <div className="apostila-footer-left">
+              <div className="apostila-logo apostila-logo-sm">
+                <span className="apostila-logo-letter">G</span>
+                <span className="apostila-logo-text">GabaritAI</span>
+              </div>
+              <p className="apostila-footer-tag">
+                Mentoria inteligente · concursos públicos
+              </p>
+            </div>
+            <div className="apostila-footer-right">
+              <p>gabaritai.com.br</p>
+              <p className="apostila-footer-id">Documento {matId}</p>
+              <p className="apostila-footer-warn">
+                Material de uso pessoal · proibida a redistribuição
+              </p>
+            </div>
+          </div>
         </footer>
       </div>
 
       <style jsx global>{`
         /* ─────────────────────────────────────────────────────────────────
-           APOSTILA — Estilo profissional GabaritAI
+           APOSTILA MINIMALISTA — GabaritAI 2026
+           Inspirações: Notion docs, Stripe Atlas guides, Linear changelog
            ───────────────────────────────────────────────────────────────── */
         .apostila {
-          max-width: 800px;
+          position: relative;
+          max-width: 720px;
           margin: 0 auto;
           padding: 0 20px;
           font-family: 'Inter', -apple-system, system-ui, sans-serif;
-          color: #1e293b;
+          color: #18181b;
           background: white;
-          line-height: 1.6;
+          line-height: 1.65;
         }
 
-        /* CAPA */
+        /* ── MARCA D'ÁGUA DIAGONAL (anti-cópia) ── */
+        .apostila-watermark {
+          position: fixed;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        .apostila-watermark span {
+          font-family: 'Inter', sans-serif;
+          font-size: 110pt;
+          font-weight: 900;
+          color: rgba(15, 23, 42, 0.04);
+          letter-spacing: 0.05em;
+          transform: rotate(-32deg);
+          white-space: nowrap;
+          user-select: none;
+        }
+        .apostila > * { position: relative; z-index: 1; }
+
+        /* ── CAPA MINIMALISTA ── */
         .apostila-cover {
-          position: relative;
-          padding: 40px 0 28px;
-          margin-bottom: 24px;
+          padding: 36px 0 24px;
+          margin-bottom: 18px;
         }
-        .apostila-cover-bar {
-          position: absolute;
-          top: 0;
-          left: -20px;
-          right: -20px;
-          height: 8px;
-          background: linear-gradient(90deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
-          border-radius: 0 0 4px 4px;
+        .apostila-cover-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 28px;
         }
-        .apostila-cover-inner { padding-top: 6px; }
-        .apostila-brand {
-          font-size: 10pt;
-          letter-spacing: 0.18em;
+        .apostila-logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .apostila-logo-letter {
+          width: 28px;
+          height: 28px;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          color: white;
+          font-weight: 900;
+          font-size: 13pt;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 7px;
+          letter-spacing: -0.02em;
+        }
+        .apostila-logo-text {
+          font-weight: 800;
+          font-size: 13pt;
+          color: #0f172a;
+          letter-spacing: -0.01em;
+        }
+        .apostila-logo-sm .apostila-logo-letter { width: 22px; height: 22px; font-size: 10pt; }
+        .apostila-logo-sm .apostila-logo-text { font-size: 10pt; }
+
+        .apostila-meta {
+          font-size: 9pt;
+          color: #71717a;
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+        }
+        .apostila-meta-dot { margin: 0 6px; opacity: 0.4; }
+
+        .apostila-subject {
+          font-size: 9pt;
+          letter-spacing: 0.16em;
           text-transform: uppercase;
           color: #2563eb;
           font-weight: 700;
-          margin: 0 0 6px;
-        }
-        .apostila-subject {
-          font-size: 13pt;
-          color: #475569;
-          font-weight: 600;
-          margin: 0 0 4px;
-          letter-spacing: 0.02em;
+          margin: 0 0 8px;
         }
         .apostila-title {
-          font-size: 24pt;
-          font-weight: 800;
+          font-size: 26pt;
+          font-weight: 900;
           color: #0f172a;
-          margin: 4px 0 14px;
-          line-height: 1.15;
-          letter-spacing: -0.015em;
+          margin: 0 0 22px;
+          line-height: 1.1;
+          letter-spacing: -0.025em;
         }
-        .apostila-meta {
-          font-size: 9pt;
-          color: #64748b;
-          display: flex;
-          gap: 8px;
-          padding-top: 8px;
-          border-top: 1px solid #e2e8f0;
+        .apostila-cover-divider {
+          height: 1px;
+          background: #e4e4e7;
+          margin: 0 -4px;
         }
 
-        /* SEÇÃO HEADER */
-        .apostila-section {
-          margin: 20px 0;
-        }
+        /* ── SEÇÃO ── */
+        .apostila-section { margin: 20px 0 28px; }
         .apostila-section-header {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 10px 14px;
-          font-size: 12pt;
+          gap: 8px;
+          font-size: 9pt;
           font-weight: 700;
-          color: white;
-          border-radius: 6px 6px 0 0;
-          margin-bottom: 0;
+          color: #2563eb;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          padding: 10px 0;
+          border-bottom: 2px solid #2563eb;
+          margin-bottom: 16px;
           page-break-after: avoid;
-        }
-        .apostila-section-header-blue {
-          background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
         }
         .apostila-section-header-green {
-          background: linear-gradient(90deg, #14532d 0%, #16a34a 100%);
+          color: #16a34a;
+          border-bottom-color: #16a34a;
         }
-        .apostila-section-icon { font-size: 14pt; }
+        .apostila-section-icon { font-size: 12pt; }
 
-        /* PROSE — CORPO DO MATERIAL */
+        /* ── PROSE / CORPO DO MATERIAL ── */
         .apostila-prose {
           font-size: 11pt;
-          line-height: 1.65;
-          color: #1e293b;
-          padding: 18px 16px 4px;
-          border: 1px solid #cbd5e1;
-          border-top: none;
-          border-radius: 0 0 6px 6px;
-          background: #fafafa;
+          line-height: 1.7;
+          color: #18181b;
         }
-        .apostila-prose-resumo { background: #f0fdf4; border-color: #bbf7d0; }
+        .apostila-prose h1 { display: none; }
 
-        /* HEADERS dentro do prose */
-        .apostila-prose h1 {
-          display: none; /* Já temos o título na capa */
-        }
         .apostila-prose h2 {
-          font-size: 14pt;
+          font-size: 13pt;
           font-weight: 800;
-          color: white;
-          background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
-          padding: 7px 14px;
-          margin: 22pt 0 12pt;
-          border-radius: 4px;
+          color: #0f172a;
+          margin: 22pt 0 8pt;
+          padding-bottom: 4pt;
+          border-bottom: 1px solid #e4e4e7;
+          letter-spacing: -0.01em;
           page-break-after: avoid;
-          letter-spacing: 0.01em;
         }
         .apostila-prose-resumo h2 {
-          background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
-        }
-        .apostila-prose h3 {
-          font-size: 11.5pt;
-          font-weight: 800;
-          color: #1e40af;
-          margin: 16pt 0 6pt;
-          padding-left: 10px;
-          border-left: 4px solid #2563eb;
-          page-break-after: avoid;
-        }
-        .apostila-prose-resumo h3 {
-          color: #166534;
-          border-left-color: #16a34a;
-        }
-        .apostila-prose h4 {
-          font-size: 10pt;
-          font-weight: 800;
-          color: #475569;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          margin: 14pt 0 4pt;
+          color: #15803d;
+          border-bottom-color: #bbf7d0;
         }
 
-        /* TEXTO */
-        .apostila-prose p { margin: 8pt 0; text-align: justify; }
+        .apostila-prose h3 {
+          font-size: 11pt;
+          font-weight: 700;
+          color: #27272a;
+          margin: 14pt 0 4pt;
+          page-break-after: avoid;
+        }
+
+        .apostila-prose h4 {
+          font-size: 8.5pt;
+          font-weight: 700;
+          color: #71717a;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin: 12pt 0 3pt;
+        }
+
+        /* texto */
+        .apostila-prose p { margin: 7pt 0; }
         .apostila-prose strong {
           color: #0f172a;
           font-weight: 700;
-          background: linear-gradient(180deg, transparent 55%, #fde68a 55%);
-          padding: 0 2px;
+          background: linear-gradient(180deg, transparent 60%, rgba(250, 204, 21, 0.4) 60%);
+          padding: 0 1px;
         }
-        .apostila-prose em { color: #475569; font-style: italic; }
+        .apostila-prose em { color: #52525b; font-style: italic; }
 
-        /* LISTAS */
+        /* listas */
         .apostila-prose ul, .apostila-prose ol {
-          margin: 6pt 0 6pt 4pt;
-          padding-left: 22pt;
+          margin: 5pt 0;
+          padding-left: 18pt;
         }
-        .apostila-prose li { margin: 4pt 0; line-height: 1.55; }
-        .apostila-prose ul li::marker { color: #2563eb; font-weight: 700; }
-        .apostila-prose ol li::marker { color: #2563eb; font-weight: 700; }
+        .apostila-prose li {
+          margin: 3pt 0;
+          line-height: 1.6;
+        }
+        .apostila-prose ul li::marker { color: #2563eb; }
+        .apostila-prose ol li::marker { color: #2563eb; font-weight: 600; }
 
-        /* CITAÇÃO (blockquote) — Lei ou Súmula em destaque */
+        /* blockquote — lei/súmula */
         .apostila-prose blockquote {
-          margin: 12pt 0;
-          padding: 10pt 14pt;
-          background: #fffbeb;
-          border-left: 5px solid #f59e0b;
-          color: #78350f;
-          font-style: italic;
-          border-radius: 0 6px 6px 0;
+          margin: 10pt 0;
+          padding: 8pt 14pt;
+          background: #fafafa;
+          border-left: 3px solid #2563eb;
+          color: #3f3f46;
+          font-size: 10pt;
           page-break-inside: avoid;
-          font-size: 10.5pt;
-          position: relative;
-        }
-        .apostila-prose blockquote::before {
-          content: '⚖️';
-          position: absolute;
-          top: 8pt;
-          right: 10pt;
-          font-style: normal;
-          font-size: 14pt;
-          opacity: 0.5;
         }
         .apostila-prose blockquote p { margin: 3pt 0; }
 
-        /* CÓDIGO INLINE */
+        /* code inline — Art XX, leis */
         .apostila-prose code {
-          background: #ede9fe;
-          color: #6d28d9;
+          background: #f4f4f5;
+          color: #1e40af;
           padding: 1pt 5pt;
           border-radius: 3pt;
           font-size: 9.5pt;
-          font-family: 'SF Mono', Menlo, monospace;
+          font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
           font-weight: 600;
         }
 
-        /* TABELAS */
+        /* tabelas — limpas */
         .apostila-prose table {
           width: 100%;
           border-collapse: collapse;
-          margin: 12pt 0;
-          font-size: 10pt;
+          margin: 10pt 0;
+          font-size: 9.5pt;
           page-break-inside: avoid;
-          border-radius: 4px;
-          overflow: hidden;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
-        .apostila-prose thead { background: linear-gradient(90deg, #1e3a8a, #2563eb); }
-        .apostila-prose-resumo thead { background: linear-gradient(90deg, #14532d, #16a34a); }
         .apostila-prose th {
-          color: white;
+          background: #fafafa;
+          color: #18181b;
           padding: 6pt 9pt;
           text-align: left;
           font-weight: 700;
-          font-size: 10pt;
+          font-size: 9pt;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 2px solid #18181b;
         }
         .apostila-prose td {
-          border: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e4e4e7;
           padding: 5pt 9pt;
           vertical-align: top;
-          background: white;
         }
-        .apostila-prose tr:nth-child(even) td { background: #f8fafc; }
+        .apostila-prose tr:last-child td { border-bottom: 1.5px solid #18181b; }
 
-        /* HR — separador entre subseções */
+        /* hr */
         .apostila-prose hr {
           border: none;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
-          margin: 18pt 0;
+          border-top: 1px dashed #d4d4d8;
+          margin: 16pt 0;
         }
 
-        /* RODAPÉ */
+        /* ── RODAPÉ MINIMALISTA ── */
         .apostila-footer {
-          margin-top: 30px;
-          padding: 14px 0 20px;
-          text-align: center;
-          font-size: 9pt;
-          color: #475569;
-          position: relative;
+          margin-top: 36px;
+          padding-top: 16px;
+          border-top: 1px solid #e4e4e7;
         }
-        .apostila-footer-bar {
-          height: 2px;
-          background: linear-gradient(90deg, transparent, #2563eb, transparent);
-          margin: 0 -20px 14px;
+        .apostila-footer-grid {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
         }
-        .apostila-footer p { margin: 0; }
+        .apostila-footer-left { flex: 1; }
+        .apostila-footer-right {
+          text-align: right;
+          font-size: 8.5pt;
+          color: #71717a;
+        }
+        .apostila-footer-right p { margin: 0; }
+        .apostila-footer-tag {
+          font-size: 8.5pt;
+          color: #71717a;
+          margin: 4px 0 0;
+        }
+        .apostila-footer-id {
+          font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+          font-size: 8pt !important;
+          color: #a1a1aa !important;
+          letter-spacing: 0.05em;
+        }
+        .apostila-footer-warn {
+          font-size: 7.5pt !important;
+          color: #a1a1aa !important;
+          margin-top: 4px !important;
+          font-style: italic;
+        }
 
-        /* ── REGRAS DE QUEBRA DE PÁGINA ── */
+        /* ── PRINT RULES ── */
         @media print {
+          .apostila-watermark { position: fixed !important; }
           .apostila-prose h2,
           .apostila-prose h3,
           .apostila-prose h4 { page-break-after: avoid; }
