@@ -311,142 +311,206 @@ export default function MaterialTopicoPage() {
       </div>
 
       <style jsx global>{`
-        .material-prose h1 {
-          font-size: 1.65rem;
-          font-weight: 800;
-          color: rgb(15 23 42);
-          margin: 1.5rem 0 0.75rem;
-          padding-bottom: 0.5rem;
-          border-bottom: 2px solid rgb(37 99 235);
-          letter-spacing: -0.01em;
-        }
-        :is(.dark) .material-prose h1 { color: rgb(241 245 249); border-bottom-color: rgb(96 165 250); }
+        /* H1 esconde (já temos no header da página) */
+        .material-prose h1 { display: none; }
 
+        /* H2 — banner colorido estilo apostila */
         .material-prose h2 {
-          font-size: 1.25rem;
+          font-size: 1.15rem;
+          font-weight: 800;
+          color: white;
+          background: linear-gradient(90deg, rgb(30 64 175) 0%, rgb(37 99 235) 100%);
+          padding: 0.5rem 0.875rem;
+          margin: 1.75rem 0 0.875rem;
+          border-radius: 0.375rem;
+          letter-spacing: 0.01em;
+          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.18);
+        }
+        :is(.dark) .material-prose h2 {
+          background: linear-gradient(90deg, rgb(30 58 138) 0%, rgb(59 130 246) 100%);
+        }
+        .material-prose-resumo h2 {
+          background: linear-gradient(90deg, rgb(22 101 52) 0%, rgb(34 197 94) 100%) !important;
+          box-shadow: 0 2px 6px rgba(34, 197, 94, 0.18);
+        }
+
+        /* H3 — borda esquerda colorida */
+        .material-prose h3 {
+          font-size: 1.02rem;
           font-weight: 800;
           color: rgb(30 58 138);
-          margin: 1.75rem 0 0.6rem;
+          margin: 1.25rem 0 0.5rem;
           padding-left: 0.75rem;
           border-left: 4px solid rgb(37 99 235);
           line-height: 1.3;
         }
-        :is(.dark) .material-prose h2 { color: rgb(147 197 253); border-left-color: rgb(96 165 250); }
-
-        .material-prose h3 {
-          font-size: 1.05rem;
-          font-weight: 700;
-          color: rgb(15 23 42);
-          margin: 1.2rem 0 0.4rem;
+        :is(.dark) .material-prose h3 {
+          color: rgb(147 197 253);
+          border-left-color: rgb(96 165 250);
         }
-        :is(.dark) .material-prose h3 { color: rgb(226 232 240); }
+        .material-prose-resumo h3 {
+          color: rgb(22 101 52);
+          border-left-color: rgb(34 197 94);
+        }
+        :is(.dark) .material-prose-resumo h3 { color: rgb(134 239 172); }
 
+        /* H4 — uppercase pequeno (subseção) */
         .material-prose h4 {
-          font-size: 0.95rem;
-          font-weight: 700;
-          color: rgb(51 65 85);
+          font-size: 0.85rem;
+          font-weight: 800;
+          color: rgb(71 85 105);
           margin: 1rem 0 0.3rem;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.08em;
         }
-        :is(.dark) .material-prose h4 { color: rgb(203 213 225); }
+        :is(.dark) .material-prose h4 { color: rgb(148 163 184); }
 
-        .material-prose p { line-height: 1.75; margin: 0.6rem 0; }
+        /* TEXTO base */
+        .material-prose p {
+          line-height: 1.75;
+          margin: 0.65rem 0;
+          color: rgb(30 41 59);
+        }
+        :is(.dark) .material-prose p { color: rgb(203 213 225); }
 
-        .material-prose ul, .material-prose ol { margin: 0.5rem 0; padding-left: 1.5rem; }
-        .material-prose li { margin: 0.3rem 0; line-height: 1.65; }
-        .material-prose ul li::marker { color: rgb(37 99 235); }
-        :is(.dark) .material-prose ul li::marker { color: rgb(96 165 250); }
-
+        /* STRONG — highlight amarelo translúcido (estilo marca-texto) */
         .material-prose strong {
           color: rgb(15 23 42);
           font-weight: 700;
-          background: linear-gradient(180deg, transparent 60%, rgb(254 240 138) 60%);
-          padding: 0 1px;
+          background: linear-gradient(180deg, transparent 55%, rgb(254 240 138) 55%);
+          padding: 0 2px;
         }
         :is(.dark) .material-prose strong {
           color: rgb(254 240 138);
-          background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.15) 60%);
+          background: linear-gradient(180deg, transparent 55%, rgba(254, 240, 138, 0.18) 55%);
         }
 
+        /* LISTAS */
+        .material-prose ul, .material-prose ol {
+          margin: 0.6rem 0;
+          padding-left: 1.6rem;
+        }
+        .material-prose li {
+          margin: 0.35rem 0;
+          line-height: 1.65;
+          color: rgb(30 41 59);
+        }
+        :is(.dark) .material-prose li { color: rgb(203 213 225); }
+        .material-prose ul li::marker {
+          color: rgb(37 99 235);
+          font-weight: 800;
+        }
+        .material-prose ol li::marker {
+          color: rgb(37 99 235);
+          font-weight: 800;
+        }
+        :is(.dark) .material-prose ul li::marker,
+        :is(.dark) .material-prose ol li::marker { color: rgb(96 165 250); }
+
+        /* BLOCKQUOTE — citação de lei/súmula com badge */
         .material-prose blockquote {
+          position: relative;
           margin: 1rem 0;
-          padding: 0.75rem 1rem;
-          border-left: 4px solid rgb(245 158 11);
-          background: rgb(255 251 235);
+          padding: 0.85rem 1rem 0.85rem 2.4rem;
+          background: linear-gradient(135deg, rgb(255 251 235) 0%, rgb(254 252 232) 100%);
+          border-left: 5px solid rgb(245 158 11);
           color: rgb(120 53 15);
           font-style: italic;
           border-radius: 0 0.5rem 0.5rem 0;
+          font-size: 0.92rem;
+        }
+        .material-prose blockquote::before {
+          content: '⚖️';
+          position: absolute;
+          left: 0.7rem;
+          top: 0.85rem;
+          font-style: normal;
+          font-size: 1.1rem;
         }
         :is(.dark) .material-prose blockquote {
-          background: rgba(245, 158, 11, 0.08);
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%);
           color: rgb(252 211 77);
         }
+        .material-prose blockquote p { margin: 0.25rem 0; }
 
+        /* CÓDIGO INLINE — destaque para Art XX, leis, etc. */
         .material-prose code {
-          background: rgb(241 245 249);
-          color: rgb(220 38 38);
+          background: rgb(238 233 254);
+          color: rgb(91 33 182);
           padding: 0.1rem 0.4rem;
           border-radius: 0.25rem;
-          font-size: 0.875em;
+          font-size: 0.85em;
           font-family: 'SF Mono', Menlo, monospace;
+          font-weight: 600;
         }
-        :is(.dark) .material-prose code { background: rgb(30 41 59); color: rgb(252 165 165); }
+        :is(.dark) .material-prose code {
+          background: rgba(139, 92, 246, 0.15);
+          color: rgb(196 181 253);
+        }
 
+        /* TABELAS — estilo apostila */
         .material-prose table {
           width: 100%;
           border-collapse: collapse;
           margin: 1rem 0;
-          font-size: 0.9rem;
+          font-size: 0.88rem;
           border-radius: 0.5rem;
           overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .material-prose thead {
+          background: linear-gradient(90deg, rgb(30 58 138), rgb(37 99 235));
+        }
+        :is(.dark) .material-prose thead {
+          background: linear-gradient(90deg, rgb(30 64 175), rgb(59 130 246));
+        }
+        .material-prose-resumo thead {
+          background: linear-gradient(90deg, rgb(22 101 52), rgb(34 197 94));
         }
         .material-prose th {
-          background: rgb(37 99 235);
-          color: white;
-          padding: 0.5rem 0.75rem;
+          color: white !important;
+          padding: 0.55rem 0.8rem;
           text-align: left;
           font-weight: 700;
-          font-size: 0.85rem;
+          font-size: 0.82rem;
+          letter-spacing: 0.02em;
         }
         .material-prose td {
           border: 1px solid rgb(226 232 240);
-          padding: 0.5rem 0.75rem;
+          padding: 0.5rem 0.8rem;
           vertical-align: top;
+          background: white;
         }
-        :is(.dark) .material-prose td { border-color: rgb(51 65 85); }
+        :is(.dark) .material-prose td {
+          background: rgb(15 23 42);
+          border-color: rgb(51 65 85);
+          color: rgb(203 213 225);
+        }
         .material-prose tr:nth-child(even) td { background: rgb(248 250 252); }
-        :is(.dark) .material-prose tr:nth-child(even) td { background: rgba(30, 41, 59, 0.4); }
+        :is(.dark) .material-prose tr:nth-child(even) td {
+          background: rgba(30, 41, 59, 0.6);
+        }
 
+        /* HR — separador elegante */
         .material-prose hr {
           border: none;
-          border-top: 2px dashed rgb(203 213 225);
-          margin: 2rem 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgb(203 213 225), transparent);
+          margin: 1.5rem 0;
         }
-        :is(.dark) .material-prose hr { border-top-color: rgb(51 65 85); }
+        :is(.dark) .material-prose hr {
+          background: linear-gradient(90deg, transparent, rgb(51 65 85), transparent);
+        }
 
-        /* RESUMO: visual mais compacto e destacado */
+        /* CONTAINER do resumo — fundo verde suave */
         .material-prose-resumo {
-          background: linear-gradient(135deg, rgb(240 253 244) 0%, rgb(255 255 255) 100%);
+          background: linear-gradient(135deg, rgb(240 253 244) 0%, rgb(255 255 255) 100%) !important;
           border-color: rgb(187 247 208) !important;
         }
         :is(.dark) .material-prose-resumo {
-          background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%);
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, transparent 100%) !important;
           border-color: rgba(34, 197, 94, 0.2) !important;
         }
-        .material-prose-resumo h2 {
-          color: rgb(22 101 52) !important;
-          border-left-color: rgb(34 197 94) !important;
-        }
-        :is(.dark) .material-prose-resumo h2 {
-          color: rgb(134 239 172) !important;
-          border-left-color: rgb(74 222 128) !important;
-        }
-        .material-prose-resumo h3 {
-          color: rgb(22 101 52);
-        }
-        :is(.dark) .material-prose-resumo h3 { color: rgb(167 243 208); }
       `}</style>
     </div>
   )

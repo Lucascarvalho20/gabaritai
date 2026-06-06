@@ -219,13 +219,14 @@ function wrapEmail(subject: string, contentHtml: string): string {
  * Se courseSlug não bater com nenhum curso, ou curso não tem edital ativo,
  * cai em fallback "edital em preparação".
  */
-export async function renderEditalEmail(courseSlug: string | null): Promise<{ subject: string; html: string; text: string }> {
-  if (!courseSlug) {
+export async function renderEditalEmail(slug: string | null): Promise<{ subject: string; html: string; text: string }> {
+  if (!slug) {
     return renderEditalGenericoEmail()
   }
 
-  const course = await prisma.course.findUnique({
-    where: { slug: courseSlug },
+  // 1) Tenta como courseSlug específico (ex: 'pcdf-delegado')
+  let course = await prisma.course.findUnique({
+    where: { slug },
     include: {
       editais: {
         where: { isActive: true },
@@ -241,7 +242,45 @@ export async function renderEditalEmail(courseSlug: string | null): Promise<{ su
     },
   })
 
+  // 2) Se não bateu, talvez seja um parentSlug (ex: 'pcdf', 'pf', 'pmdf').
+  //    Pega o PRIMEIRO curso ATIVO com edital ATIVO desse parent.
   if (!course) {
+    course = await prisma.course.findFirst({
+      where: {
+        parentSlug: slug,
+        active: true,
+        editais: { some: { isActive: true } },
+      },
+      include: {
+        editais: {
+          where: { isActive: true },
+          include: {
+            banca: { select: { name: true, slug: true } },
+            subjects: {
+              include: { subject: { select: { name: true, slug: true } } },
+              orderBy: { order: 'asc' },
+            },
+          },
+          take: 1,
+        },
+      },
+      orderBy: { name: 'asc' },
+    })
+  }
+
+  // 3) Ainda nada: pode ser parentSlug sem edital ativo. Manda fallback informando.
+  if (!course) {
+    // Tenta achar qualquer curso (mesmo sem edital) pra dar feedback específico
+    const anyCourse = await prisma.course.findFirst({
+      where: { OR: [{ slug }, { parentSlug: slug }], active: true },
+      select: { name: true, orgao: true, cargo: true },
+    })
+    if (anyCourse) {
+      return renderEditalEmPreparacao(
+        anyCourse.orgao ?? anyCourse.name,
+        anyCourse.cargo ?? anyCourse.name
+      )
+    }
     return renderEditalGenericoEmail()
   }
 
