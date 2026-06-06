@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   if (!courseSlug) {
     // Sumário: todos cursos com edital ativo
     const courses = await prisma.course.findMany({
-      where: { isActive: true },
+      where: { active: true },
       select: { id: true, slug: true, name: true, area: true },
       orderBy: { name: 'asc' },
     })
