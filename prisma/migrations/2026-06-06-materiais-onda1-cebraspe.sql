@@ -5,8 +5,9 @@
 -- Insere conteúdo completo + resumo dos tópicos universais mais pesados.
 -- Vale pra TODOS os cursos que usam o subject (PF Del, PRF, PCDF Del/Ag/Esc).
 --
--- Status: PUBLISHED direto (origin='ai' indica geração via IA, admin pode
--- revisar e editar). Re-rodar atualiza (UPSERT por cacheKey).
+-- Status: DRAFT (aguarda revisão do admin antes de aparecer pro aluno).
+-- origin='ai' marca geração via IA. Re-rodar atualiza, mas NÃO regride status
+-- de materiais já revisados/publicados (preserva trabalho do admin).
 --
 -- Estrutura por bloco:
 --   1. Pega topicId via SELECT
@@ -47,12 +48,16 @@ BEGIN
   INSERT INTO "materials" (id, "subjectId", "topicId", "cacheKey", title, type, content, active, status, origin, "createdAt", "updatedAt")
   VALUES (
     gen_random_uuid()::text, v_subject_id, v_topic_id, v_cache_key,
-    p_title, 'TEXTO', p_content, true, 'PUBLISHED', 'ai', NOW(), NOW()
+    p_title, 'TEXTO', p_content, true, 'DRAFT', 'ai', NOW(), NOW()
   )
   ON CONFLICT ("cacheKey") DO UPDATE SET
     title = EXCLUDED.title,
     content = EXCLUDED.content,
-    status = 'PUBLISHED',
+    -- NÃO sobrescreve status se já foi REVIEWED ou PUBLISHED (preserva revisão do admin)
+    status = CASE
+      WHEN "materials".status IN ('REVIEWED', 'PUBLISHED') THEN "materials".status
+      ELSE 'DRAFT'::"MaterialStatus"
+    END,
     "updatedAt" = NOW()
   RETURNING id INTO v_material_id;
 

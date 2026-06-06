@@ -90,6 +90,10 @@ export default function AdminMaterialsPage() {
     )
   }
 
+  // Soma drafts pendentes pra revisão em todos os cursos
+  const totalDrafts = cursos.reduce((sum, c) => sum + (c.comMaterialDraft ?? 0), 0)
+  const totalPublished = cursos.reduce((sum, c) => sum + (c.comMaterialPublished ?? 0), 0)
+
   return (
     <div className="max-w-7xl mx-auto space-y-5 animate-fade-in">
       <header className="flex items-baseline justify-between flex-wrap gap-3">
@@ -102,6 +106,31 @@ export default function AdminMaterialsPage() {
           </p>
         </div>
       </header>
+
+      {totalDrafts > 0 && (
+        <div className="card p-4 border-l-4 border-l-warning-500 bg-warning-50/40 dark:bg-warning-900/10">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-warning-700 dark:text-warning-300">
+                {totalDrafts} {totalDrafts === 1 ? 'material aguarda' : 'materiais aguardam'} sua revisão
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Materiais gerados pela IA ficam em <strong>DRAFT</strong> até você revisar e publicar — aluno só vê o que está PUBLISHED.
+                Estratégia recomendada: abrir o curso → revisar matéria por matéria → confirmar súmulas/leis no NotebookLM (PDF do edital + lei seca) → clicar Publicar em cada material.
+              </p>
+              <div className="mt-2 flex items-center gap-3 text-xs">
+                <span className="inline-flex items-center gap-1 text-warning-700 dark:text-warning-300">
+                  <span className="w-2 h-2 rounded-full bg-warning-500" /> {totalDrafts} drafts
+                </span>
+                <span className="inline-flex items-center gap-1 text-success-700 dark:text-success-300">
+                  <CheckCircle2 className="w-3 h-3" /> {totalPublished} publicados
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Lista de cursos */}

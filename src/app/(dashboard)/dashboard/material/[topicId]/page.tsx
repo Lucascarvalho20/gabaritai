@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 import {
   BookOpen, FileText, ChevronLeft, ChevronRight, CheckCircle2, Circle,
-  Loader2, AlertCircle, Sparkles, Clock,
+  Loader2, AlertCircle, Sparkles, Clock, ExternalLink,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -206,6 +206,37 @@ export default function MaterialTopicoPage() {
               </ul>
             </div>
           )}
+
+          {/* Aprofundar com NotebookLM */}
+          <div className="rounded-lg border border-border bg-muted/30 p-4 flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold mb-0.5">Quer ir mais fundo?</p>
+              <p className="text-xs text-muted-foreground mb-2">
+                Use o NotebookLM (gratuito do Google) com PDFs oficiais (edital, súmulas, lei seca) e converse com a IA citando fontes. Complemento do nosso material — não substitui.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="https://notebooklm.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Abrir NotebookLM
+                </a>
+                <a
+                  href={`https://www.google.com/search?q=${encodeURIComponent(`${topic.name} ${topic.subject.name} PDF site:planalto.gov.br OR site:stf.jus.br`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Buscar fontes oficiais
+                </a>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
