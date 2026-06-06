@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   BookOpen, Zap, Target, TrendingUp, ChevronLeft, Brain, FileText, Trophy, BarChart3, Loader2, AlertCircle,
+  ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 type Curso = {
   courseId: string
@@ -33,6 +35,37 @@ type Materia = {
   pct: number
 }
 
+type TopicoEdital = {
+  id: string
+  name: string
+  order: number
+  weight: number
+  hasMaterial: boolean
+  hasResumo: boolean
+  studied: boolean
+  masteryScore: number
+}
+
+type MateriaEdital = {
+  subjectId: string
+  slug: string
+  name: string
+  ordem: number
+  pesoEdital: number
+  totalTopicos: number
+  topicosEstudados: number
+  coverage: number
+  topicos: TopicoEdital[]
+}
+
+type EditalData = {
+  totalTopicos: number
+  topicosEstudados: number
+  coverage: number
+  coverageMaterial: number
+  materias: MateriaEdital[]
+}
+
 function pctColor(p: number) {
   if (p >= 75) return 'text-success-600'
   if (p >= 60) return 'text-warning-500'
@@ -53,19 +86,23 @@ export default function CursoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [curso, setCurso] = useState<Curso | null>(null)
   const [materias, setMaterias] = useState<Materia[]>([])
+  const [edital, setEdital] = useState<EditalData | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let alive = true
     async function load() {
       try {
-        const [cursosRes, progRes] = await Promise.all([
+        const [cursosRes, progRes, editalRes] = await Promise.all([
           api.get('/me/cursos').then((r) => r.data).catch(() => ({ cursos: [] })),
           api.get('/me/progresso').then((r) => r.data).catch(() => ({ byMateria: [] })),
+          api.get(`/me/cursos/${courseId}/topicos`).then((r) => r.data).catch(() => null),
         ])
         if (!alive) return
         const c: Curso | undefined = (cursosRes.cursos ?? []).find((x: Curso) => x.courseId === courseId)
         setCurso(c ?? null)
         setMaterias(progRes.byMateria ?? [])
+        setEdital(editalRes)
       } finally {
         if (alive) setLoading(false)
       }
@@ -73,6 +110,15 @@ export default function CursoDetailPage() {
     load()
     return () => { alive = false }
   }, [courseId])
+
+  function toggleMateria(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   if (loading) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
@@ -182,6 +228,98 @@ export default function CursoDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Caminho do edital — tópicos por matéria com material */}
+      {edital && edital.materias.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-bold text-foreground flex items-center gap-2">
+                <FileText className="w-5 h-5 text-brand-500" /> Caminho do edital
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {edital.topicosEstudados} de {edital.totalTopicos} tópicos estudados ({edital.coverage}%)
+                {edital.coverageMaterial < 100 && (
+                  <span className="ml-2 text-muted-foreground/70">
+                    · {edital.coverageMaterial}% com material disponível
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className={`text-2xl font-black ${pctColor(edital.coverage)}`}>
+              {edital.coverage}%
+            </div>
+          </div>
+
+          <div className="card p-1 divide-y divide-border">
+            {edital.materias.map((m) => {
+              const isOpen = expanded.has(m.subjectId)
+              return (
+                <div key={m.subjectId} className="p-3">
+                  <button
+                    onClick={() => toggleMateria(m.subjectId)}
+                    className="w-full flex items-center gap-3 hover:bg-muted/30 -mx-3 -my-1 px-3 py-2 rounded transition"
+                  >
+                    {isOpen ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1 text-left">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-sm truncate">{m.name}</span>
+                        <span className={`text-xs font-bold ${pctColor(m.coverage)} shrink-0`}>
+                          {m.topicosEstudados}/{m.totalTopicos}
+                        </span>
+                      </div>
+                      <div className="mt-1.5">
+                        <Bar pct={m.coverage} />
+                      </div>
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <ul className="mt-3 ml-7 space-y-1.5">
+                      {m.topicos.length === 0 && (
+                        <li className="text-xs text-muted-foreground/70 italic">
+                          Tópicos serão cadastrados em breve
+                        </li>
+                      )}
+                      {m.topicos.map((t) => (
+                        <li key={t.id}>
+                          <Link
+                            href={`/dashboard/material/${t.id}`}
+                            className={cn(
+                              'flex items-center gap-2 text-sm py-1.5 px-2 -mx-2 rounded hover:bg-muted/40 transition',
+                              !t.hasMaterial && 'text-muted-foreground/60'
+                            )}
+                          >
+                            {t.studied ? (
+                              <CheckCircle2 className="w-4 h-4 text-success-500 shrink-0" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                            )}
+                            <span className="flex-1 min-w-0 truncate">{t.name}</span>
+                            {t.hasMaterial ? (
+                              <span className="text-[10px] uppercase tracking-wide font-bold text-brand-600 dark:text-brand-400 shrink-0">
+                                Material
+                              </span>
+                            ) : (
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground/60 shrink-0">
+                                Em produção
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Ponto fraco */}
       {curso.topFraqueza && (
