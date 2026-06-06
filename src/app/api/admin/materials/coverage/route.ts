@@ -24,10 +24,9 @@ export async function GET(req: NextRequest) {
   const courseSlug = searchParams.get('courseSlug')
 
   if (!courseSlug) {
-    // Sumário: todos cursos com edital ativo
+    // Sumário: TODOS os cursos (ativos e inativos) — admin pode revisar qualquer
     const courses = await prisma.course.findMany({
-      where: { active: true },
-      select: { id: true, slug: true, name: true, area: true },
+      select: { id: true, slug: true, name: true, area: true, active: true },
       orderBy: { name: 'asc' },
     })
 
@@ -64,6 +63,7 @@ export async function GET(req: NextRequest) {
             courseSlug: c.slug,
             courseName: c.name,
             area: c.area,
+            active: c.active,
             hasEdital: false,
             totalTopicos: 0,
             comMaterialPublished: 0,
@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
           courseSlug: c.slug,
           courseName: c.name,
           area: c.area,
+          active: c.active,
           hasEdital: true,
           totalTopicos: total,
           comMaterialPublished: published,
@@ -103,7 +104,13 @@ export async function GET(req: NextRequest) {
       })
     )
 
-    return NextResponse.json({ cursos: result })
+    // Sort: cursos com mais conteúdo primeiro
+    result.sort((a, b) => {
+      if (a.hasEdital !== b.hasEdital) return a.hasEdital ? -1 : 1
+      return b.totalTopicos - a.totalTopicos
+    })
+
+    return NextResponse.json({ cursos: result, total: courses.length })
   }
 
   // Detalhe de um curso
