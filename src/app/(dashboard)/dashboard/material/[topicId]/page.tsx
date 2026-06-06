@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 import {
   BookOpen, FileText, ChevronLeft, ChevronRight, CheckCircle2, Circle,
-  Loader2, AlertCircle, Sparkles, Clock, ExternalLink,
+  Loader2, AlertCircle, Sparkles, Clock, ExternalLink, Download, Printer,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -127,14 +127,33 @@ export default function MaterialTopicoPage() {
         <ChevronLeft className="w-3 h-3" /> Voltar
       </button>
 
-      <header className="space-y-2">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-          {topic.subject.name}
-        </p>
-        <h1 className="text-2xl md:text-3xl font-black text-foreground">{topic.name}</h1>
-        {topic.description && (
-          <p className="text-sm text-muted-foreground">{topic.description}</p>
-        )}
+      <header className="rounded-xl bg-gradient-to-br from-brand-50 via-card to-brand-50/30 dark:from-brand-900/20 dark:via-card dark:to-brand-900/10 border border-brand-100 dark:border-brand-900/30 p-5 md:p-6 space-y-2">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-brand-600 dark:text-brand-400 font-bold">
+              {topic.subject.name}
+            </p>
+            <h1 className="text-2xl md:text-3xl font-black text-foreground leading-tight mt-1">
+              {topic.name}
+            </h1>
+            {topic.description && (
+              <p className="text-sm text-muted-foreground mt-2">{topic.description}</p>
+            )}
+          </div>
+          {(material || resumo) && (
+            <div className="flex flex-col gap-1.5 shrink-0">
+              <a
+                href={`/dashboard/material/${topicId}/imprimir`}
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-card border border-border hover:border-brand-300 dark:hover:border-brand-700 text-xs font-bold transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Baixar PDF
+              </a>
+            </div>
+          )}
+        </div>
       </header>
 
       {semConteudo ? (
@@ -151,15 +170,15 @@ export default function MaterialTopicoPage() {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 border-b border-border">
+          <div className="flex items-center gap-1 border-b border-border bg-muted/20 rounded-t-lg px-1 pt-1">
             {material && (
               <button
                 onClick={() => setTab('completo')}
                 className={cn(
-                  'px-4 py-2 text-sm font-semibold border-b-2 transition-colors',
+                  'px-4 py-2.5 text-sm font-bold rounded-t-md transition-all',
                   tab === 'completo'
-                    ? 'border-brand-500 text-brand-700 dark:text-brand-300'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-brand-700 dark:text-brand-300 shadow-sm border border-border border-b-card -mb-px'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
                 )}
               >
                 <BookOpen className="w-4 h-4 inline mr-1.5" />
@@ -170,19 +189,35 @@ export default function MaterialTopicoPage() {
               <button
                 onClick={() => setTab('resumo')}
                 className={cn(
-                  'px-4 py-2 text-sm font-semibold border-b-2 transition-colors',
+                  'px-4 py-2.5 text-sm font-bold rounded-t-md transition-all',
                   tab === 'resumo'
-                    ? 'border-brand-500 text-brand-700 dark:text-brand-300'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-success-700 dark:text-success-300 shadow-sm border border-border border-b-card -mb-px'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
                 )}
               >
                 <FileText className="w-4 h-4 inline mr-1.5" />
-                Resumo
+                Resumo rápido
               </button>
             )}
+            <div className="flex-1" />
+            <a
+              href={`/dashboard/material/${topicId}/imprimir?modo=${tab}`}
+              target="_blank"
+              rel="noopener"
+              title={`Baixar PDF do ${tab === 'completo' ? 'conteúdo completo' : 'resumo'}`}
+              className="px-3 py-1.5 mr-1 text-[11px] font-bold text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors inline-flex items-center gap-1"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              PDF
+            </a>
           </div>
 
-          <article className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
+          <article className={cn(
+            'rounded-b-lg border border-t-0 border-border bg-card p-5 md:p-8',
+            'material-prose prose prose-sm md:prose-base dark:prose-invert max-w-none',
+            tab === 'completo' && 'material-prose-completo',
+            tab === 'resumo' && 'material-prose-resumo',
+          )}>
             {tab === 'completo' && material && (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{material.content}</ReactMarkdown>
             )}
@@ -274,6 +309,145 @@ export default function MaterialTopicoPage() {
           </div>
         )}
       </div>
+
+      <style jsx global>{`
+        .material-prose h1 {
+          font-size: 1.65rem;
+          font-weight: 800;
+          color: rgb(15 23 42);
+          margin: 1.5rem 0 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 2px solid rgb(37 99 235);
+          letter-spacing: -0.01em;
+        }
+        :is(.dark) .material-prose h1 { color: rgb(241 245 249); border-bottom-color: rgb(96 165 250); }
+
+        .material-prose h2 {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: rgb(30 58 138);
+          margin: 1.75rem 0 0.6rem;
+          padding-left: 0.75rem;
+          border-left: 4px solid rgb(37 99 235);
+          line-height: 1.3;
+        }
+        :is(.dark) .material-prose h2 { color: rgb(147 197 253); border-left-color: rgb(96 165 250); }
+
+        .material-prose h3 {
+          font-size: 1.05rem;
+          font-weight: 700;
+          color: rgb(15 23 42);
+          margin: 1.2rem 0 0.4rem;
+        }
+        :is(.dark) .material-prose h3 { color: rgb(226 232 240); }
+
+        .material-prose h4 {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: rgb(51 65 85);
+          margin: 1rem 0 0.3rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        :is(.dark) .material-prose h4 { color: rgb(203 213 225); }
+
+        .material-prose p { line-height: 1.75; margin: 0.6rem 0; }
+
+        .material-prose ul, .material-prose ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+        .material-prose li { margin: 0.3rem 0; line-height: 1.65; }
+        .material-prose ul li::marker { color: rgb(37 99 235); }
+        :is(.dark) .material-prose ul li::marker { color: rgb(96 165 250); }
+
+        .material-prose strong {
+          color: rgb(15 23 42);
+          font-weight: 700;
+          background: linear-gradient(180deg, transparent 60%, rgb(254 240 138) 60%);
+          padding: 0 1px;
+        }
+        :is(.dark) .material-prose strong {
+          color: rgb(254 240 138);
+          background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.15) 60%);
+        }
+
+        .material-prose blockquote {
+          margin: 1rem 0;
+          padding: 0.75rem 1rem;
+          border-left: 4px solid rgb(245 158 11);
+          background: rgb(255 251 235);
+          color: rgb(120 53 15);
+          font-style: italic;
+          border-radius: 0 0.5rem 0.5rem 0;
+        }
+        :is(.dark) .material-prose blockquote {
+          background: rgba(245, 158, 11, 0.08);
+          color: rgb(252 211 77);
+        }
+
+        .material-prose code {
+          background: rgb(241 245 249);
+          color: rgb(220 38 38);
+          padding: 0.1rem 0.4rem;
+          border-radius: 0.25rem;
+          font-size: 0.875em;
+          font-family: 'SF Mono', Menlo, monospace;
+        }
+        :is(.dark) .material-prose code { background: rgb(30 41 59); color: rgb(252 165 165); }
+
+        .material-prose table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1rem 0;
+          font-size: 0.9rem;
+          border-radius: 0.5rem;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .material-prose th {
+          background: rgb(37 99 235);
+          color: white;
+          padding: 0.5rem 0.75rem;
+          text-align: left;
+          font-weight: 700;
+          font-size: 0.85rem;
+        }
+        .material-prose td {
+          border: 1px solid rgb(226 232 240);
+          padding: 0.5rem 0.75rem;
+          vertical-align: top;
+        }
+        :is(.dark) .material-prose td { border-color: rgb(51 65 85); }
+        .material-prose tr:nth-child(even) td { background: rgb(248 250 252); }
+        :is(.dark) .material-prose tr:nth-child(even) td { background: rgba(30, 41, 59, 0.4); }
+
+        .material-prose hr {
+          border: none;
+          border-top: 2px dashed rgb(203 213 225);
+          margin: 2rem 0;
+        }
+        :is(.dark) .material-prose hr { border-top-color: rgb(51 65 85); }
+
+        /* RESUMO: visual mais compacto e destacado */
+        .material-prose-resumo {
+          background: linear-gradient(135deg, rgb(240 253 244) 0%, rgb(255 255 255) 100%);
+          border-color: rgb(187 247 208) !important;
+        }
+        :is(.dark) .material-prose-resumo {
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%);
+          border-color: rgba(34, 197, 94, 0.2) !important;
+        }
+        .material-prose-resumo h2 {
+          color: rgb(22 101 52) !important;
+          border-left-color: rgb(34 197 94) !important;
+        }
+        :is(.dark) .material-prose-resumo h2 {
+          color: rgb(134 239 172) !important;
+          border-left-color: rgb(74 222 128) !important;
+        }
+        .material-prose-resumo h3 {
+          color: rgb(22 101 52);
+        }
+        :is(.dark) .material-prose-resumo h3 { color: rgb(167 243 208); }
+      `}</style>
     </div>
   )
 }

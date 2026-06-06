@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import toast from 'react-hot-toast'
 import {
-  ChevronLeft, Loader2, Save, Eye, Pencil, CheckCircle2, AlertCircle, Trash2,
+  ChevronLeft, Loader2, Save, Eye, Pencil, CheckCircle2, AlertCircle, Trash2, Download,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -138,6 +138,18 @@ export default function AdminMaterialEditPage() {
               <CheckCircle2 className="w-4 h-4" />
               Publicar
             </button>
+          )}
+          {material.topic?.id && (
+            <a
+              href={`/dashboard/material/${material.topic.id}/imprimir`}
+              target="_blank"
+              rel="noopener"
+              className="btn-outline btn-md inline-flex items-center gap-1.5"
+              title="Visualiza e exporta o PDF do material"
+            >
+              <Download className="w-4 h-4" />
+              PDF
+            </a>
           )}
           <button
             onClick={deletar}
