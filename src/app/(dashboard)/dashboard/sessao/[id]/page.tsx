@@ -35,12 +35,34 @@ type SessionData = {
   topicCompletedAt: string | null
 }
 
+type PendingTopic = {
+  id: string
+  name: string
+  description: string | null
+  order: number
+  weight: number
+  hasMaterial: boolean
+  hasResumo: boolean
+  completed: boolean
+}
+
+type PendingData = {
+  pending: PendingTopic[]
+  completed: PendingTopic[]
+  totalSubject: number
+  completedCount: number
+  pendingCount: number
+  coverage: number
+}
+
 type Tab = 'resumo' | 'questoes-oficiais' | 'questoes-ia' | 'flashcards' | 'pomodoro'
 
 export default function SessaoPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [data, setData] = useState<SessionData | null>(null)
+  const [pending, setPending] = useState<PendingData | null>(null)
+  const [showCompleted, setShowCompleted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('resumo')
   const [saving, setSaving] = useState(false)
@@ -55,6 +77,7 @@ export default function SessaoPage() {
 
   useEffect(() => {
     api.get(`/sessao/${params.id}`).then(({ data }) => setData(data)).catch(() => toast.error('Sessão não encontrada')).finally(() => setLoading(false))
+    api.get(`/me/schedule/sessions/${params.id}/pending-topics`).then(({ data }) => setPending(data)).catch(() => {})
   }, [params.id])
 
   useEffect(() => {
@@ -219,6 +242,103 @@ export default function SessaoPage() {
           </button>
         </div>
       </div>
+
+      {/* Tópicos pendentes desta matéria */}
+      {pending && pending.totalSubject > 0 && (
+        <div className="card p-4">
+          <div className="flex items-baseline justify-between mb-2 flex-wrap gap-2">
+            <div>
+              <h2 className="font-bold text-sm flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-brand-500" />
+                Tópicos desta matéria
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {pending.completedCount} de {pending.totalSubject} estudados ({pending.coverage}%) — os já marcados como dominados não voltam pra fila do cronograma
+              </p>
+            </div>
+            <div className="text-base font-black text-brand-600">{pending.coverage}%</div>
+          </div>
+
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-3">
+            <div
+              className="h-full bg-brand-500"
+              style={{ width: `${Math.min(100, Math.max(0, pending.coverage))}%` }}
+            />
+          </div>
+
+          {pending.pending.length === 0 ? (
+            <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-center">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mx-auto mb-1" />
+              <p className="text-xs font-bold text-green-700 dark:text-green-300">
+                Todos os tópicos desta matéria já estão marcados como dominados!
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground mb-1.5">
+                Pendentes ({pending.pendingCount})
+              </p>
+              <ul className="space-y-1 mb-3">
+                {pending.pending.slice(0, 8).map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      href={`/dashboard/material/${t.id}`}
+                      className={cn(
+                        'flex items-center gap-2 text-sm py-1.5 px-2 -mx-1 rounded hover:bg-muted/40 transition',
+                        !t.hasMaterial && 'text-muted-foreground/60'
+                      )}
+                    >
+                      <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                      <span className="flex-1 min-w-0 truncate">{t.name}</span>
+                      {t.hasMaterial ? (
+                        <span className="text-[10px] uppercase tracking-wide font-bold text-brand-600 dark:text-brand-400 shrink-0">
+                          Material
+                        </span>
+                      ) : (
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground/60 shrink-0">
+                          Em produção
+                        </span>
+                      )}
+                      <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                    </Link>
+                  </li>
+                ))}
+                {pending.pending.length > 8 && (
+                  <li className="text-[11px] text-muted-foreground/70 px-2 italic">
+                    +{pending.pending.length - 8} tópicos pendentes nesta matéria
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
+
+          {pending.completed.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowCompleted((v) => !v)}
+                className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1"
+              >
+                {showCompleted ? '▼' : '▶'} Já dominados ({pending.completed.length})
+              </button>
+              {showCompleted && (
+                <ul className="space-y-1 mt-1.5">
+                  {pending.completed.map((t) => (
+                    <li key={t.id}>
+                      <Link
+                        href={`/dashboard/material/${t.id}`}
+                        className="flex items-center gap-2 text-sm py-1.5 px-2 -mx-1 rounded hover:bg-muted/40 transition text-muted-foreground"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                        <span className="flex-1 min-w-0 truncate line-through decoration-from-font">{t.name}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Toggle MODO CICLO GUIADO */}
       <div className={cn(
