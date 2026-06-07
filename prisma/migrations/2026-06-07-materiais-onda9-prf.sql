@@ -15,30 +15,30 @@ DECLARE v_subject_id text;
 BEGIN
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'legislacao-transito';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'CTB I — SNT, Regras de Circulação e Sinalização', 1.5, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'CTB I — SNT, Regras de Circulação e Sinalização', 'ctb-1-snt-regras-sinalizacao', 1.5, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'CTB I — SNT, Regras de Circulação e Sinalização');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'CTB II — CNH, Infrações e Penalidades', 1.5, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'CTB II — CNH, Infrações e Penalidades', 'ctb-2-cnh-infracoes-penalidades', 1.5, 101, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'CTB II — CNH, Infrações e Penalidades');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'CTB III — Crimes de Trânsito', 1.4, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'CTB III — Crimes de Trânsito', 'ctb-3-crimes-transito', 1.4, 102, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'CTB III — Crimes de Trânsito');
   END IF;
 
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'etica-cidadania';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Ética no Serviço Público e Cidadania', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Ética no Serviço Público e Cidadania', 'etica-servico-publico-cidadania', 1.2, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Ética no Serviço Público e Cidadania');
   END IF;
 
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'geopolitica';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Geopolítica — Brasil e Conjuntura Internacional', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Geopolítica — Brasil e Conjuntura Internacional', 'geo-brasil-conjuntura', 1.2, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Geopolítica — Brasil e Conjuntura Internacional');
   END IF;
 END $topics$;
