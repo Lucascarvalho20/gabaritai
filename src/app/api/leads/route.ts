@@ -75,13 +75,16 @@ export async function POST(req: NextRequest) {
   const ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 32)
   const userAgent = req.headers.get('user-agent')?.slice(0, 200) ?? null
 
-  // Procura lead existente (mesmo email + source) pra idempotência
+  // Procura lead existente (mesmo email + source) pra idempotência DO BANCO
+  // (não duplicar registro). NÃO pode bloquear o envio do email — usuário
+  // pode legitimamente pedir o edital de novo (perdeu, foi pra spam, etc).
   const existing = await prisma.lead.findFirst({
     where: { email: emailRaw, source },
   })
 
   if (existing) {
-    // Atualiza context/courseSlug se vier informação nova
+    // Atualiza context/courseSlug se vieram informações novas (ex: agora
+    // o usuário selecionou um curso específico)
     if (body.context || body.courseSlug || body.parentSlug) {
       await prisma.lead.update({
         where: { id: existing.id },
@@ -92,20 +95,20 @@ export async function POST(req: NextRequest) {
         },
       })
     }
-    return NextResponse.json({ ok: true, alreadyExists: true })
+    // Segue pro pipeline de email — NÃO retorna aqui (bug corrigido 2026-06-07)
+  } else {
+    await prisma.lead.create({
+      data: {
+        email: emailRaw,
+        source,
+        context: body.context ?? null,
+        courseSlug: body.courseSlug ?? null,
+        parentSlug: body.parentSlug ?? null,
+        ipHash,
+        userAgent,
+      },
+    })
   }
-
-  await prisma.lead.create({
-    data: {
-      email: emailRaw,
-      source,
-      context: body.context ?? null,
-      courseSlug: body.courseSlug ?? null,
-      parentSlug: body.parentSlug ?? null,
-      ipHash,
-      userAgent,
-    },
-  })
 
   // Pipeline de email — agora SÍNCRONO (com await) porque a IA foi removida
   // e o render leva ~500ms. Antes era fire-and-forget, mas o Vercel serverless
