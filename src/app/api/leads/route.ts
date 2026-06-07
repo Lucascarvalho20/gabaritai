@@ -107,87 +107,97 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Gate opcional: cria User + Trial automaticamente quando LEAD_REQUIRE_SIGNUP=true.
-  // Resposta sai antes do email; criação de conta acontece em paralelo se necessário.
+  // Pipeline de email — agora SÍNCRONO (com await) porque a IA foi removida
+  // e o render leva ~500ms. Antes era fire-and-forget, mas o Vercel serverless
+  // matava o processo antes do Resend ser chamado, e o email NUNCA chegava.
+  // Agora await direto: render rápido + sendEmail rápido (~2s total max).
   const courseSlugForEmail = body.courseSlug ?? body.parentSlug ?? null
 
-  void (async () => {
-    let tempPassword: string | null = null
-    let createdAccount = false
-    let returningUser = false
-    let userName: string | null = null
+  let tempPassword: string | null = null
+  let createdAccount = false
+  let returningUser = false
+  let userName: string | null = null
 
-    // SEMPRE checa se já existe user com esse email — preserva perfil de
-    // quem retorna (cursos matriculados, progresso, flashcards, etc.).
-    const existingUser = REQUIRE_SIGNUP || true
-      ? await prisma.user.findUnique({
-          where: { email: emailRaw },
-          select: { id: true, name: true },
-        })
-      : null
+  // SEMPRE checa se já existe user com esse email — preserva perfil
+  const existingUser = await prisma.user.findUnique({
+    where: { email: emailRaw },
+    select: { id: true, name: true },
+  })
 
-    if (existingUser) {
-      // Usuário retornante: perfil já existe, NÃO recria conta, NÃO cria novo trial
-      returningUser = true
-      userName = existingUser.name
-      console.log('[leads] returning user — profile preserved', { email: emailRaw, userId: existingUser.id })
-    } else if (REQUIRE_SIGNUP) {
-      // Novo usuário + gate ativo → cria conta + trial 7d
-      try {
-        tempPassword = crypto.randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 10)
-        const hash = await bcrypt.hash(tempPassword, 12)
-        const nameFromEmail = emailRaw.split('@')[0].replace(/[^a-z0-9]/gi, ' ').trim() || 'Concurseiro'
-        await prisma.user.create({
-          data: {
-            name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
-            email: emailRaw,
-            password: hash,
-            emailVerified: false,
-            profile: { create: {} },
-            trials: {
-              create: {
-                endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-              },
-            },
-          },
-        })
-        createdAccount = true
-        console.log('[leads] auto-signup created', { email: emailRaw })
-      } catch (err) {
-        console.error('[leads] auto-signup failed:', err)
-        tempPassword = null
-      }
-    }
-
-    // Renderiza e envia o email do edital com bloco contextual no topo
+  if (existingUser) {
+    returningUser = true
+    userName = existingUser.name
+    console.log('[leads] returning user — profile preserved', { email: emailRaw, userId: existingUser.id })
+  } else if (REQUIRE_SIGNUP) {
+    // Novo usuário + gate ativo → cria conta + trial 7d
     try {
-      const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
-
-      let finalHtml = html
-      if (createdAccount && tempPassword) {
-        finalHtml = prependFirstAccessBlock(html, emailRaw, tempPassword)
-      } else if (returningUser) {
-        finalHtml = prependReturningUserBlock(html, userName ?? 'Concurseiro')
-      }
-
-      const result = await sendEmail({ to: emailRaw, subject, html: finalHtml, text })
-      if (!result.ok) {
-        console.warn('[leads] email send returned ok=false', { to: emailRaw, mode: result.mode })
-      } else {
-        console.log('[leads] email sent', {
-          to: emailRaw,
-          mode: result.mode,
-          messageId: result.messageId,
-          withSignup: createdAccount,
-          returning: returningUser,
-        })
-      }
+      tempPassword = crypto.randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 10)
+      const hash = await bcrypt.hash(tempPassword, 12)
+      const nameFromEmail = emailRaw.split('@')[0].replace(/[^a-z0-9]/gi, ' ').trim() || 'Concurseiro'
+      await prisma.user.create({
+        data: {
+          name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
+          email: emailRaw,
+          password: hash,
+          emailVerified: false,
+          profile: { create: {} },
+          trials: {
+            create: { endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          },
+        },
+      })
+      createdAccount = true
+      console.log('[leads] auto-signup created', { email: emailRaw })
     } catch (err) {
-      console.error('[leads] email pipeline failed:', err)
+      console.error('[leads] auto-signup failed:', err)
+      tempPassword = null
     }
-  })()
+  }
 
-  return NextResponse.json({ ok: true, emailSent: true, requireSignup: REQUIRE_SIGNUP })
+  // Render + envio síncrono. Em caso de erro, NÃO falha a resposta — usuário
+  // não precisa saber se o email pingou ou não (privacidade) e a tentativa fica
+  // logada no Vercel pra debug.
+  let emailDelivered = false
+  let emailError: string | null = null
+  try {
+    const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
+
+    let finalHtml = html
+    if (createdAccount && tempPassword) {
+      finalHtml = prependFirstAccessBlock(html, emailRaw, tempPassword)
+    } else if (returningUser) {
+      finalHtml = prependReturningUserBlock(html, userName ?? 'Concurseiro')
+    }
+
+    const result = await sendEmail({ to: emailRaw, subject, html: finalHtml, text })
+    emailDelivered = result.ok && result.mode === 'resend'
+    if (!result.ok) {
+      emailError = result.error?.message ?? 'envio retornou ok=false'
+      console.warn('[leads] email send returned ok=false', {
+        to: emailRaw,
+        mode: result.mode,
+        error: result.error,
+      })
+    } else {
+      console.log('[leads] email sent', {
+        to: emailRaw,
+        mode: result.mode,
+        messageId: result.messageId,
+        withSignup: createdAccount,
+        returning: returningUser,
+      })
+    }
+  } catch (err: any) {
+    emailError = err?.message ?? String(err)
+    console.error('[leads] email pipeline failed:', err)
+  }
+
+  return NextResponse.json({
+    ok: true,
+    emailSent: emailDelivered,
+    emailError, // null se OK, mensagem se falhou (útil só pra admin/debug, frontend ignora)
+    requireSignup: REQUIRE_SIGNUP,
+  })
 }
 
 /**
