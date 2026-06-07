@@ -114,53 +114,73 @@ export async function POST(req: NextRequest) {
   void (async () => {
     let tempPassword: string | null = null
     let createdAccount = false
+    let returningUser = false
+    let userName: string | null = null
 
-    // Cria conta automaticamente se gate ativo e usuário ainda não existe
-    if (REQUIRE_SIGNUP) {
-      const existingUser = await prisma.user.findUnique({ where: { email: emailRaw } })
-      if (!existingUser) {
-        try {
-          tempPassword = crypto.randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 10)
-          const hash = await bcrypt.hash(tempPassword, 12)
-          // Nome derivado do email (parte antes do @)
-          const nameFromEmail = emailRaw.split('@')[0].replace(/[^a-z0-9]/gi, ' ').trim() || 'Concurseiro'
-          await prisma.user.create({
-            data: {
-              name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
-              email: emailRaw,
-              password: hash,
-              emailVerified: false,
-              profile: { create: {} },
-              trials: {
-                create: {
-                  endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                },
+    // SEMPRE checa se já existe user com esse email — preserva perfil de
+    // quem retorna (cursos matriculados, progresso, flashcards, etc.).
+    const existingUser = REQUIRE_SIGNUP || true
+      ? await prisma.user.findUnique({
+          where: { email: emailRaw },
+          select: { id: true, name: true },
+        })
+      : null
+
+    if (existingUser) {
+      // Usuário retornante: perfil já existe, NÃO recria conta, NÃO cria novo trial
+      returningUser = true
+      userName = existingUser.name
+      console.log('[leads] returning user — profile preserved', { email: emailRaw, userId: existingUser.id })
+    } else if (REQUIRE_SIGNUP) {
+      // Novo usuário + gate ativo → cria conta + trial 7d
+      try {
+        tempPassword = crypto.randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 10)
+        const hash = await bcrypt.hash(tempPassword, 12)
+        const nameFromEmail = emailRaw.split('@')[0].replace(/[^a-z0-9]/gi, ' ').trim() || 'Concurseiro'
+        await prisma.user.create({
+          data: {
+            name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
+            email: emailRaw,
+            password: hash,
+            emailVerified: false,
+            profile: { create: {} },
+            trials: {
+              create: {
+                endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
               },
             },
-          })
-          createdAccount = true
-          console.log('[leads] auto-signup created', { email: emailRaw })
-        } catch (err) {
-          console.error('[leads] auto-signup failed:', err)
-          tempPassword = null
-        }
+          },
+        })
+        createdAccount = true
+        console.log('[leads] auto-signup created', { email: emailRaw })
+      } catch (err) {
+        console.error('[leads] auto-signup failed:', err)
+        tempPassword = null
       }
     }
 
-    // Renderiza e envia o email do edital
+    // Renderiza e envia o email do edital com bloco contextual no topo
     try {
       const { subject, html, text } = await renderEditalEmail(courseSlugForEmail)
 
-      // Se criou conta, prepend bloco com senha temporária no HTML
-      const finalHtml = createdAccount && tempPassword
-        ? prependFirstAccessBlock(html, emailRaw, tempPassword)
-        : html
+      let finalHtml = html
+      if (createdAccount && tempPassword) {
+        finalHtml = prependFirstAccessBlock(html, emailRaw, tempPassword)
+      } else if (returningUser) {
+        finalHtml = prependReturningUserBlock(html, userName ?? 'Concurseiro')
+      }
 
       const result = await sendEmail({ to: emailRaw, subject, html: finalHtml, text })
       if (!result.ok) {
         console.warn('[leads] email send returned ok=false', { to: emailRaw, mode: result.mode })
       } else {
-        console.log('[leads] email sent', { to: emailRaw, mode: result.mode, messageId: result.messageId, withSignup: createdAccount })
+        console.log('[leads] email sent', {
+          to: emailRaw,
+          mode: result.mode,
+          messageId: result.messageId,
+          withSignup: createdAccount,
+          returning: returningUser,
+        })
       }
     } catch (err) {
       console.error('[leads] email pipeline failed:', err)
@@ -197,6 +217,41 @@ function prependFirstAccessBlock(html: string, email: string, tempPassword: stri
       </a>
     </div>`
   // Insere depois do primeiro <div style="padding:28px 24px;"> que abre o conteúdo
+  return html.replace(
+    /(<div style="padding:28px 24px;">)/,
+    `$1\n${block}\n`,
+  )
+}
+
+/**
+ * Bloco para usuário RETORNANTE (perfil preservado).
+ * Aparece quando o email já tem conta — informa que o perfil dele continua
+ * salvo e oferece atalhos pra entrar ou recuperar senha.
+ */
+function prependReturningUserBlock(html: string, userName: string): string {
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
+  const firstName = userName.split(' ')[0]
+  const block = `
+    <div style="background:linear-gradient(135deg,#065f46 0%,#047857 100%);padding:20px;border-radius:12px;color:white;margin-bottom:24px;">
+      <p style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin:0 0 8px;color:#a7f3d0;">
+        👋 Bem-vindo de volta, ${firstName}
+      </p>
+      <h2 style="font-size:17px;font-weight:800;margin:0 0 8px;color:white;">
+        Seu perfil continua aqui esperando você
+      </h2>
+      <p style="font-size:13px;color:rgba(255,255,255,0.92);margin:0 0 14px;line-height:1.55;">
+        Seguimos com tudo salvo: seus cursos, progresso de estudo, flashcards e histórico
+        de simulados. Entra com seu email e senha pra continuar de onde parou.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="${BASE_URL}/login" style="display:inline-block;background:white;color:#047857;padding:11px 22px;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;">
+          Entrar →
+        </a>
+        <a href="${BASE_URL}/login?recuperar=1" style="display:inline-block;background:rgba(255,255,255,0.15);color:white;padding:11px 22px;border-radius:8px;font-weight:600;font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,0.3);">
+          Esqueci minha senha
+        </a>
+      </div>
+    </div>`
   return html.replace(
     /(<div style="padding:28px 24px;">)/,
     `$1\n${block}\n`,
