@@ -16,6 +16,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getVerticalizadoCacheKey } from '@/lib/verticalizado'
+import { getBancaInfo, getImportanciaMateria } from '@/lib/pegadinhas-banca'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
 
@@ -321,31 +322,106 @@ export async function renderEditalEmail(slug: string | null): Promise<{ subject:
   // timeout/instabilidade no envio sem agregar valor proporcional.
   const analiseHtml: string | null = null
 
-  const subjectsTableRows = subjectsWithTopics
-    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+  // Sorteia matérias por peso/questões pra ordem visual
+  const materiasSorted = [...subjectsWithTopics].sort(
+    (a, b) => (b.expectedQuestions ?? b.weight ?? 0) - (a.expectedQuestions ?? a.weight ?? 0)
+  )
+
+  // Tabela de matérias COM BARRA VISUAL DE PESO + SELO DE IMPORTÂNCIA
+  const subjectsTableRows = materiasSorted
     .map((s, i) => {
       const pct = totalWeight > 0 ? Math.round(((s.weight ?? 1) / totalWeight) * 100) : 0
+      const importancia = getImportanciaMateria({
+        weight: s.weight ?? null,
+        expectedQuestions: s.expectedQuestions ?? null,
+        totalQuestoes: edital.totalQuestoes ?? null,
+      })
+      const barraLargura = Math.min(100, Math.max(8, pct * 4)) // mín 8% pra ficar visível
       return `
-        <tr style="${i % 2 === 0 ? 'background:#f8fafc;' : ''}">
-          <td style="padding:8px 10px;font-weight:600;font-size:13px;">${escapeHtml(s.subjectName)}</td>
-          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#64748b;">${pct}%</td>
-          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#64748b;">${s.expectedQuestions ?? '—'}</td>
+        <tr style="${i % 2 === 0 ? 'background:#f8fafc;' : 'background:#ffffff;'}">
+          <td style="padding:10px 12px;font-weight:600;font-size:13px;color:#0f172a;border-bottom:1px solid #e2e8f0;">
+            ${escapeHtml(s.subjectName)}
+          </td>
+          <td style="padding:10px 12px;text-align:center;border-bottom:1px solid #e2e8f0;width:50px;">
+            <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:9px;font-weight:800;letter-spacing:0.05em;color:${importancia.cor};background:${importancia.bg};">
+              ${importancia.selo}
+            </span>
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;width:140px;">
+            <div style="background:#e2e8f0;height:10px;border-radius:5px;overflow:hidden;">
+              <div style="background:${importancia.cor};height:10px;width:${barraLargura}%;border-radius:5px;"></div>
+            </div>
+            <div style="font-size:11px;color:#475569;text-align:right;margin-top:3px;font-variant-numeric:tabular-nums;">
+              ${pct}%${s.expectedQuestions ? ` · ${s.expectedQuestions} q` : ''}
+            </div>
+          </td>
         </tr>`
     })
     .join('')
 
-  const subjectsDetailedHtml = subjectsWithTopics
+  // Detalhado: top 3 tópicos MAIS COBRADOS por matéria (não lista TODOS)
+  const subjectsDetailedHtml = materiasSorted
+    .slice(0, 8) // só as 8 mais pesadas pra não estourar
     .map((s) => {
-      const topicsList = s.topics.length === 0
-        ? '<li style="color:#94a3b8;font-style:italic;">Tópicos sendo cadastrados</li>'
-        : s.topics.map((t) => `<li style="margin-bottom:4px;">${escapeHtml(t.name)}</li>`).join('')
+      const importancia = getImportanciaMateria({
+        weight: s.weight ?? null,
+        expectedQuestions: s.expectedQuestions ?? null,
+        totalQuestoes: edital.totalQuestoes ?? null,
+      })
+      const topTopics = s.topics.slice(0, 3)
+      const topicsList = topTopics.length === 0
+        ? '<li style="color:#94a3b8;font-style:italic;">Tópicos sendo mapeados pela equipe</li>'
+        : topTopics.map((t) => `<li style="margin-bottom:5px;font-size:12px;color:#334155;">${escapeHtml(t.name)}</li>`).join('')
       return `
-        <div style="margin-top:18px;padding-top:14px;border-top:1px solid #e2e8f0;">
-          <h3 style="font-size:14px;font-weight:700;margin:0 0 8px;color:#0f172a;">${escapeHtml(s.subjectName)}</h3>
-          <ul style="margin:0;padding-left:20px;font-size:12px;color:#475569;">${topicsList}</ul>
+        <div style="margin-top:14px;padding:14px;background:#fafafa;border-left:3px solid ${importancia.cor};border-radius:0 8px 8px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
+            <h3 style="font-size:14px;font-weight:800;margin:0;color:#0f172a;">${escapeHtml(s.subjectName)}</h3>
+            <span style="font-size:9px;font-weight:800;letter-spacing:0.05em;color:${importancia.cor};background:${importancia.bg};padding:2px 8px;border-radius:10px;">
+              ${importancia.selo}
+            </span>
+          </div>
+          <p style="font-size:10px;color:#64748b;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">
+            Tópicos mais cobrados
+          </p>
+          <ul style="margin:0;padding-left:18px;">${topicsList}</ul>
         </div>`
     })
     .join('')
+
+  // SEÇÃO PEGADINHAS DA BANCA
+  const bancaInfo = getBancaInfo(edital.banca?.slug ?? null)
+  const pegadinhasHtml = bancaInfo
+    ? `
+    <div style="margin-top:28px;padding:20px;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:12px;color:white;">
+      <h2 style="font-size:16px;font-weight:800;margin:0 0 4px;color:white;">
+        🎯 Como a ${escapeHtml(bancaInfo.nome)} costuma cobrar
+      </h2>
+      <p style="font-size:11px;color:rgba(255,255,255,0.6);margin:0 0 16px;">
+        ${escapeHtml(bancaInfo.formato)}
+      </p>
+
+      <p style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:#7dd3fc;margin:14px 0 6px;">
+        Características da banca
+      </p>
+      <ul style="margin:0 0 14px;padding-left:18px;color:#e2e8f0;font-size:12px;line-height:1.55;">
+        ${bancaInfo.caracteristicas.map((c) => `<li style="margin-bottom:4px;">${escapeHtml(c)}</li>`).join('')}
+      </ul>
+
+      <p style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:#fca5a5;margin:14px 0 6px;">
+        ⚠️ Pegadinhas clássicas
+      </p>
+      <ul style="margin:0 0 14px;padding-left:18px;color:#e2e8f0;font-size:12px;line-height:1.55;">
+        ${bancaInfo.pegadinhas.map((p) => `<li style="margin-bottom:4px;">${escapeHtml(p)}</li>`).join('')}
+      </ul>
+
+      <p style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:#86efac;margin:14px 0 6px;">
+        💡 Estratégia para essa banca
+      </p>
+      <ul style="margin:0;padding-left:18px;color:#e2e8f0;font-size:12px;line-height:1.55;">
+        ${bancaInfo.estrategia.map((e) => `<li style="margin-bottom:4px;">${escapeHtml(e)}</li>`).join('')}
+      </ul>
+    </div>`
+    : ''
 
   const content = `
     <h1 style="font-size:22px;font-weight:800;margin:0 0 6px;color:#0f172a;letter-spacing:-0.3px;">
@@ -372,32 +448,30 @@ export async function renderEditalEmail(slug: string | null): Promise<{ subject:
       ${edital.dataProva ? `<tr><td style="padding:12px;font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid #e2e8f0;">Data da prova</td><td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-top:1px solid #e2e8f0;">${fmtDate(edital.dataProva)}</td></tr>` : ''}
     </table>
 
-    <!-- Tabela de matérias por peso -->
-    <h2 style="font-size:16px;font-weight:700;margin:24px 0 12px;color:#0f172a;">Matérias por peso</h2>
-    <table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+    <!-- Tabela de matérias por peso com barra visual + selo -->
+    <h2 style="font-size:16px;font-weight:800;margin:24px 0 4px;color:#0f172a;">Matérias por peso</h2>
+    <p style="font-size:12px;color:#64748b;margin:0 0 12px;">
+      Ordenadas da mais cobrada pra menos. Selo indica importância na sua prova.
+    </p>
+    <table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
       <thead>
         <tr style="background:#0f172a;color:#fff;">
-          <th style="padding:10px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Matéria</th>
-          <th style="padding:10px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;width:60px;">Peso</th>
-          <th style="padding:10px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;width:80px;">Questões</th>
+          <th style="padding:11px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Matéria</th>
+          <th style="padding:11px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;width:50px;">Selo</th>
+          <th style="padding:11px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;width:140px;">Peso visual</th>
         </tr>
       </thead>
       <tbody>${subjectsTableRows}</tbody>
     </table>
 
-    <!-- Análise estratégica gerada por IA (se disponível) -->
-    ${analiseHtml ? `
-    <div style="margin-top:28px;padding:20px;background:linear-gradient(135deg,#fef3c7 0%,#fce7f3 100%);border-radius:12px;border:1px solid #fde68a;">
-      <h2 style="font-size:16px;font-weight:700;margin:0 0 4px;color:#0f172a;display:flex;align-items:center;gap:6px;">
-        🧠 Análise estratégica da banca
-      </h2>
-      <p style="font-size:12px;color:#78716c;margin:0 0 12px;">Onde focar primeiro e o que ${escapeHtml(edital.banca?.name ?? 'a banca')} ama cobrar.</p>
-      ${analiseHtml}
-    </div>` : ''}
+    <!-- Pegadinhas da banca (estratégico) -->
+    ${pegadinhasHtml}
 
-    <!-- Conteúdo programático detalhado -->
-    <h2 style="font-size:16px;font-weight:700;margin:28px 0 4px;color:#0f172a;">Conteúdo programático</h2>
-    <p style="font-size:13px;color:#64748b;margin:0 0 16px;">Por matéria, os principais tópicos que caem.</p>
+    <!-- Tópicos mais cobrados por matéria (top 3 de cada uma) -->
+    <h2 style="font-size:16px;font-weight:800;margin:28px 0 4px;color:#0f172a;">O que mais cai em cada matéria</h2>
+    <p style="font-size:13px;color:#64748b;margin:0 0 16px;">
+      Os 3 tópicos com maior incidência histórica em cada matéria-chave. Foque aqui primeiro.
+    </p>
     ${subjectsDetailedHtml}
 
     <!-- CTA -->
