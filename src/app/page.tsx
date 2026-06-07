@@ -369,9 +369,9 @@ function Hero() {
               <EmailCapture
                 source="hero-edital-pdf"
                 placeholder="seu@email.com"
-                cta="Receber edital"
-                successMessage="Pronto! Em alguns minutos chega no seu email."
-                hint="Edital verticalizado com matérias, peso e o que mais cai · sem spam"
+                cta="Quero meu edital + 7 dias grátis"
+                successMessage="Conta criada! Em alguns minutos chega no seu email o edital verticalizado e sua senha de acesso pros 7 dias grátis."
+                hint="Você recebe: ✓ edital verticalizado do curso ✓ 7 dias grátis na plataforma ✓ acesso ao cronograma personalizado · sem cartão"
                 withCourseSelect
               />
             </motion.div>
