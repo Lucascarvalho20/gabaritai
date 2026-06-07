@@ -316,23 +316,10 @@ export async function renderEditalEmail(slug: string | null): Promise<{ subject:
   // Soma de pesos pra calcular percentual
   const totalWeight = subjectsWithTopics.reduce((sum, s) => sum + (s.weight ?? 1), 0)
 
-  // Tenta gerar análise estratégica via IA (cache de 30 dias por curso+banca)
-  let analiseHtml: string | null = null
-  if (edital.banca?.name) {
-    const analiseMarkdown = await generateAnaliseEstrategica({
-      cargo: cargoLabel,
-      orgao: orgaoLabel,
-      banca: edital.banca.name,
-      materias: subjectsWithTopics.map((s) => ({
-        name: s.subjectName,
-        weight: s.weight ?? null,
-        expectedQuestions: s.expectedQuestions ?? null,
-      })),
-    }).catch(() => null)
-    if (analiseMarkdown) {
-      analiseHtml = markdownToEmailHtml(analiseMarkdown)
-    }
-  }
+  // Análise estratégica desativada: o conteúdo do verticalizado é mecânico
+  // (banca + matérias + pesos + tópicos vêm do banco). A IA estava causando
+  // timeout/instabilidade no envio sem agregar valor proporcional.
+  const analiseHtml: string | null = null
 
   const subjectsTableRows = subjectsWithTopics
     .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))

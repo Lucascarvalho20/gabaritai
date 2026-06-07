@@ -142,14 +142,67 @@ export default function TestEmailPage() {
             <table className="w-full text-sm">
               <tbody>
                 <Row k="Modo" v={result.result?.mode === 'resend' ? 'Resend (produção)' : 'Dev (console)'} />
-                <Row k="Sucesso" v={result.result?.ok ? '✅ sim' : '❌ não'} />
-                {result.result?.messageId && <Row k="Message ID" v={result.result.messageId} />}
+                <Row k="Sucesso" v={result.result?.ok ? '✅ sim' : '❌ não'} highlight={!result.result?.ok} />
+                {result.result?.messageId && <Row k="Message ID (Resend)" v={result.result.messageId} />}
+                {result.result?.from && <Row k="Enviado por (From)" v={result.result.from} />}
                 <Row k="Destinatário" v={result.to} />
                 <Row k="Assunto" v={result.rendered.subject} />
                 <Row k="Tamanho HTML" v={`${result.rendered.htmlLength.toLocaleString('pt-BR')} caracteres`} />
+                {result.result?.error && (
+                  <>
+                    <Row k="Erro (name)" v={result.result.error.name ?? '—'} highlight />
+                    <Row k="Erro (statusCode)" v={String(result.result.error.statusCode ?? '—')} highlight />
+                    <Row k="Erro (mensagem)" v={result.result.error.message ?? '—'} highlight />
+                  </>
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Dicas baseadas no erro */}
+          {result.result?.error && (
+            <div className="card p-5 bg-warning-50/40 dark:bg-warning-900/10 border-l-4 border-l-warning-500">
+              <h2 className="text-sm font-bold mb-2 text-warning-700 dark:text-warning-300">
+                Possíveis causas
+              </h2>
+              <ul className="text-xs space-y-2 text-muted-foreground list-disc pl-5">
+                {result.result.error.statusCode === 403 && (
+                  <li>
+                    <strong>403 — Domínio não verificado no Resend.</strong> No plano gratuito do
+                    Resend, o sender padrão <code className="px-1 py-0.5 bg-card rounded">onboarding@resend.dev</code> só envia
+                    <strong> pro mesmo email cadastrado na conta Resend</strong>. Pra mandar pra qualquer destinatário,
+                    você precisa verificar um domínio (ex: gabaritai.com.br) no Resend e atualizar
+                    <code className="px-1 py-0.5 bg-card rounded ml-1">EMAIL_FROM</code> no Vercel.
+                  </li>
+                )}
+                {result.result.error.statusCode === 401 && (
+                  <li>
+                    <strong>401 — API key inválida.</strong> Confira o
+                    <code className="px-1 py-0.5 bg-card rounded mx-1">RESEND_API_KEY</code>
+                    no Vercel — pode ter sido revogada ou copiada errada.
+                  </li>
+                )}
+                {result.result.error.statusCode === 422 && (
+                  <li>
+                    <strong>422 — Payload inválido.</strong> Algum campo do email está mal formado.
+                    Olhe a mensagem detalhada acima.
+                  </li>
+                )}
+                {result.result.error.statusCode === 429 && (
+                  <li>
+                    <strong>429 — Limite de envio atingido.</strong> Você passou da quota de
+                    3.000 emails/mês do Resend free. Espere o reset ou upgrade.
+                  </li>
+                )}
+                {!result.result.error.statusCode && (
+                  <li>
+                    <strong>Erro de rede ou timeout</strong> — o Vercel pode ter caído antes
+                    de receber resposta do Resend. Tenta de novo.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </>
       )}
 
