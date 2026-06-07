@@ -7,11 +7,16 @@ import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 
 const CURSOS_TESTE = [
-  { slug: 'pcdf-delegado', label: 'PCDF Delegado (Cebraspe)' },
-  { slug: 'pf-delegado', label: 'PF Delegado (Cebraspe)' },
-  { slug: 'pmdf-soldado', label: 'PMDF Soldado (Instituto AOCP)' },
-  { slug: 'prf-policial', label: 'PRF Policial (Cebraspe)' },
-  { slug: 'pmgo-soldado', label: 'PMGO Soldado (Instituto AOCP)' },
+  { slug: 'pcdf-delegado', label: 'PCDF Delegado (Cebraspe)', isParent: false },
+  { slug: 'pf-delegado', label: 'PF Delegado (Cebraspe)', isParent: false },
+  { slug: 'pmdf-soldado', label: 'PMDF Soldado (AOCP)', isParent: false },
+  { slug: 'prf-policial', label: 'PRF Policial (Cebraspe)', isParent: false },
+  { slug: 'pmgo-soldado', label: 'PMGO Soldado (AOCP)', isParent: false },
+  // Mesmo formato que a home manda — parentSlug (grupo do concurso)
+  { slug: 'pcdf', label: '🏠 [HOME] PCDF (parent)', isParent: true },
+  { slug: 'pf', label: '🏠 [HOME] PF (parent)', isParent: true },
+  { slug: 'pmdf', label: '🏠 [HOME] PMDF (parent)', isParent: true },
+  { slug: 'prf', label: '🏠 [HOME] PRF (parent)', isParent: true },
 ]
 
 export default function TestEmailPage() {
@@ -28,7 +33,12 @@ export default function TestEmailPage() {
     setLoading(true)
     setResult(null)
     try {
-      const { data } = await api.post('/admin/test-email', { to: email, courseSlug })
+      // Detecta se é parentSlug (modo home) ou courseSlug (específico)
+      const cursoSelecionado = CURSOS_TESTE.find((c) => c.slug === courseSlug)
+      const payload = cursoSelecionado?.isParent
+        ? { to: email, parentSlug: courseSlug }
+        : { to: email, courseSlug }
+      const { data } = await api.post('/admin/test-email', payload)
       setResult(data)
       if (data.result?.ok && data.result?.mode === 'resend') {
         toast.success('Email enviado pelo Resend!')

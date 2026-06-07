@@ -25,7 +25,11 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const to = String(body.to ?? auth.user.email)
-  const courseSlug = body.courseSlug ?? 'pcdf-delegado' // default tem edital
+  // Aceita courseSlug (específico) OU parentSlug (igual à home).
+  // Se parentSlug vier, usa ele — assim testamos o caminho exato do form da home.
+  const courseSlug = body.parentSlug
+    ? String(body.parentSlug)
+    : (body.courseSlug ?? 'pcdf-delegado')
 
   // 1) Diagnóstico do ambiente
   const env = {
