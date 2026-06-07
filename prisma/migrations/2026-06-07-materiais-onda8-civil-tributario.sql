@@ -20,48 +20,48 @@ BEGIN
   -- DIREITO CIVIL
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'direito-civil';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'LINDB e Pessoas Naturais e Jurídicas', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'LINDB e Pessoas Naturais e Jurídicas', 'civ-lindb-pessoas', 1.2, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'LINDB e Pessoas Naturais e Jurídicas');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Negócios Jurídicos, Prescrição e Decadência', 1.3, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Negócios Jurídicos, Prescrição e Decadência', 'civ-negocios-prescricao', 1.3, 101, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Negócios Jurídicos, Prescrição e Decadência');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Obrigações e Contratos', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Obrigações e Contratos', 'civ-obrig-contratos', 1.2, 102, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Obrigações e Contratos');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Responsabilidade Civil', 1.3, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Responsabilidade Civil', 'civ-resp-civil', 1.3, 103, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Responsabilidade Civil');
   END IF;
 
   -- DIREITO FINANCEIRO E TRIBUTÁRIO
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'direito-financeiro-e-tributario';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Sistema Tributário Nacional e Obrigação Tributária', 1.3, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Sistema Tributário Nacional e Obrigação Tributária', 'trib-stn-obrigacao', 1.3, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Sistema Tributário Nacional e Obrigação Tributária');
 
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Crédito Tributário e Lançamento', 1.3, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Crédito Tributário e Lançamento', 'trib-credito-lancamento', 1.3, 101, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Crédito Tributário e Lançamento');
   END IF;
 
   -- DIREITO AMBIENTAL
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'direito-ambiental';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Princípios, PNMA e Crimes Ambientais (Lei 9.605/98)', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Princípios, PNMA e Crimes Ambientais (Lei 9.605/98)', 'amb-pnma-crimes', 1.2, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Princípios, PNMA e Crimes Ambientais (Lei 9.605/98)');
   END IF;
 
   -- DIREITO EMPRESARIAL
   SELECT id INTO v_subject_id FROM "subjects" WHERE slug = 'direito-empresarial';
   IF v_subject_id IS NOT NULL THEN
-    INSERT INTO "topics" (id, "subjectId", name, weight, "createdAt", "updatedAt")
-    SELECT gen_random_uuid()::text, v_subject_id, 'Empresário, Sociedades e Títulos de Crédito', 1.2, NOW(), NOW()
+    INSERT INTO "topics" (id, "subjectId", name, slug, weight, "order", "createdAt")
+    SELECT gen_random_uuid()::text, v_subject_id, 'Empresário, Sociedades e Títulos de Crédito', 'emp-empresario-sociedades-titulos', 1.2, 100, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM "topics" WHERE "subjectId" = v_subject_id AND name = 'Empresário, Sociedades e Títulos de Crédito');
   END IF;
 END $topics$;
