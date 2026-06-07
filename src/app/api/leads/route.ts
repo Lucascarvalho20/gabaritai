@@ -5,23 +5,26 @@ import bcrypt from 'bcryptjs'
 import { sendEmail } from '@/lib/email'
 import { renderEditalEmail } from '@/lib/edital-renderer'
 import { checkRateLimit, recordFailedAttempt, getClientIp } from '@/lib/rate-limit'
+import { validateEmail } from '@/lib/email-validation'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 15
 
 /**
  * Gate de cadastro automático.
- * Quando true (LEAD_REQUIRE_SIGNUP=true), cada lead vira:
- *   1. User com senha temporária aleatória
+ *
+ * Default ATIVO (2026-06-07): cada lead vira:
+ *   1. User com senha temporária aleatória (10 chars)
  *   2. TrialPeriod de 7 dias começando agora
- *   3. Email com edital + link de primeiro acesso + senha temporária
+ *   3. Email com edital verticalizado do curso escolhido + login + senha
  *
- * Quando false (default — modo TESTE): só captura email e dispara edital,
- * sem criar conta. Útil pra testar o fluxo sem poluir base de usuários.
+ * Se já existe User com mesmo email → preserva perfil, NÃO recria conta,
+ * NÃO cria novo trial. Email avisa "bem-vindo de volta".
  *
- * Pra ativar em produção, defina LEAD_REQUIRE_SIGNUP=true no Vercel.
+ * Pra desativar (modo só captura, sem criar conta) defina
+ * LEAD_REQUIRE_SIGNUP=false no Vercel.
  */
-const REQUIRE_SIGNUP = process.env.LEAD_REQUIRE_SIGNUP === 'true'
+const REQUIRE_SIGNUP = process.env.LEAD_REQUIRE_SIGNUP !== 'false'
 
 /**
  * POST /api/leads
@@ -54,18 +57,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Body inválido' }, { status: 400 })
   }
 
-  const emailRaw = String(body.email ?? '').trim().toLowerCase()
   const source = String(body.source ?? '').trim()
+  if (!source) {
+    recordFailedAttempt(`leads:${clientIp}`, clientIp)
+    return NextResponse.json({ message: 'source obrigatório' }, { status: 400 })
+  }
 
-  if (!emailRaw || !source) {
+  // Validação robusta de email — formato + descartáveis + padrões de teste
+  const validation = validateEmail(String(body.email ?? ''))
+  if (!validation.ok) {
     recordFailedAttempt(`leads:${clientIp}`, clientIp)
-    return NextResponse.json({ message: 'email e source obrigatórios' }, { status: 400 })
+    return NextResponse.json({ message: validation.reason }, { status: 400 })
   }
-  // Regex simples — não bate todas as edge cases mas elimina 99% do lixo
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
-    recordFailedAttempt(`leads:${clientIp}`, clientIp)
-    return NextResponse.json({ message: 'Email inválido' }, { status: 400 })
-  }
+  const emailRaw = validation.normalized
 
   // Hash do IP (não guarda o IP cru — privacidade)
   const ip =
