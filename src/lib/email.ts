@@ -17,12 +17,21 @@ type SendEmailInput = {
   text?: string
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<{ ok: boolean; mode: 'resend' | 'dev'; messageId?: string }> {
+type SendEmailResult = {
+  ok: boolean
+  mode: 'resend' | 'dev'
+  messageId?: string
+  /** Quando ok=false, contém o motivo exato pra debug */
+  error?: { name?: string; message: string; statusCode?: number }
+  /** Sender efetivamente usado (visível no test-email) */
+  from?: string
+}
+
+export async function sendEmail({ to, subject, html, text }: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.EMAIL_FROM ?? 'Gabaritai <onboarding@resend.dev>'
 
   if (!apiKey) {
-    // Modo dev: loga no console
     console.log('━'.repeat(60))
     console.log('📧 [EMAIL DEV MODE — RESEND_API_KEY não configurado]')
     console.log(`De: ${from}`)
@@ -31,7 +40,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput): Pr
     console.log('─'.repeat(60))
     console.log(text ?? html.replace(/<[^>]+>/g, ''))
     console.log('━'.repeat(60))
-    return { ok: true, mode: 'dev' }
+    return { ok: true, mode: 'dev', from }
   }
 
   try {
@@ -43,15 +52,25 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput): Pr
       },
       body: JSON.stringify({ from, to, subject, html, text }),
     })
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      console.error('[email] resend error:', data)
-      return { ok: false, mode: 'resend' }
+      // Resend retorna { name, message, statusCode } em erros
+      const errInfo = {
+        name: data.name ?? data.error ?? 'ResendError',
+        message: data.message ?? JSON.stringify(data).slice(0, 300),
+        statusCode: res.status,
+      }
+      console.error('[email] resend error:', errInfo)
+      return { ok: false, mode: 'resend', error: errInfo, from }
     }
-    return { ok: true, mode: 'resend', messageId: data.id }
-  } catch (err) {
-    console.error('[email] send failed:', err)
-    return { ok: false, mode: 'resend' }
+    return { ok: true, mode: 'resend', messageId: data.id, from }
+  } catch (err: any) {
+    const errInfo = {
+      name: err?.name ?? 'NetworkError',
+      message: err?.message ?? String(err),
+    }
+    console.error('[email] send failed:', errInfo)
+    return { ok: false, mode: 'resend', error: errInfo, from }
   }
 }
 

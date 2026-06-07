@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
       result.mode === 'dev'
         ? '⚠️ MODO DEV: RESEND_API_KEY não está configurado no Vercel. Email só foi logado no console — NÃO foi enviado. Configure a env var em Vercel → Settings → Environment Variables.'
         : result.ok
-          ? '✅ Email enviado com sucesso pelo Resend. Confira a caixa de entrada (e spam) do destinatário.'
-          : '❌ Resend retornou erro. Veja os logs do Vercel pra mais detalhes (provavelmente API key inválida ou domínio não verificado).',
+          ? `✅ Email enviado com sucesso pelo Resend (messageId: ${result.messageId}). Confira a caixa de entrada e ESPECIALMENTE a pasta SPAM/PROMOÇÕES do destinatário.`
+          : result.error?.statusCode === 403
+            ? '❌ 403 — Resend rejeitou: provavelmente o domínio do EMAIL_FROM não está verificado. No plano free, "onboarding@resend.dev" só envia pro mesmo email cadastrado na conta Resend. Verifique seu domínio em https://resend.com/domains'
+            : result.error?.statusCode === 401
+              ? '❌ 401 — API key inválida. Confira RESEND_API_KEY no Vercel.'
+              : `❌ Resend retornou erro: ${result.error?.message ?? 'desconhecido'}`,
   })
 }
