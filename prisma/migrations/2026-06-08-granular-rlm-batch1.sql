@@ -43,7 +43,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Lógica proposicional: conectivos, tabela-verdade, equivalências',
   'Lógica Proposicional: Conectivos, Tabela-Verdade e Equivalências',
-  E'# Lógica Proposicional: Conectivos, Tabela-Verdade e Equivalências
+  $material$# Lógica Proposicional: Conectivos, Tabela-Verdade e Equivalências
 
 ## 1. Introdução
 
@@ -230,7 +230,7 @@ e) João não estuda E Maria trabalha
 
 ## 9. Conclusão
 
-A Lógica Proposicional é a base de toda a disciplina de Raciocínio Lógico. O candidato que memoriza as tabelas-verdade dos cinco conectivos, domina as equivalências (especialmente a contrapositiva e De Morgan) e reconhece o que é ou não uma proposição está preparado para resolver a maioria das questões de lógica dos concursos policiais.',
+A Lógica Proposicional é a base de toda a disciplina de Raciocínio Lógico. O candidato que memoriza as tabelas-verdade dos cinco conectivos, domina as equivalências (especialmente a contrapositiva e De Morgan) e reconhece o que é ou não uma proposição está preparado para resolver a maioria das questões de lógica dos concursos policiais.$material$,
   'Estudo de Lógica Proposicional para concursos policiais. Aborda definição de proposição, conectivos lógicos (negação, conjunção, disjunção, condicional, bicondicional), tabelas-verdade completas de cada conectivo, equivalências lógicas fundamentais (contrapositiva, Leis de De Morgan), cálculo de linhas da tabela-verdade e aplicações em prova. Inclui questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -241,7 +241,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Negação, condicional, contrapositiva e leis de De Morgan',
   'Negação de Proposições: Condicional, Contrapositiva e Leis de De Morgan',
-  E'# Negação de Proposições: Condicional, Contrapositiva e De Morgan
+  $material$# Negação de Proposições: Condicional, Contrapositiva e De Morgan
 
 ## 1. Introdução
 
@@ -392,7 +392,7 @@ e) Se Maria não passou no concurso, então João não foi aprovado.
 
 ## 10. Conclusão
 
-A negação de proposições compostas é o tema mais rentável do Raciocínio Lógico. Com três regras simples (De Morgan para E/OU, Mantém-Nega-Troca para Condicional, e Exclusiva para Bicondicional), o candidato resolve praticamente todas as questões de negação. A chave é praticar até que as regras se tornem automáticas.',
+A negação de proposições compostas é o tema mais rentável do Raciocínio Lógico. Com três regras simples (De Morgan para E/OU, Mantém-Nega-Troca para Condicional, e Exclusiva para Bicondicional), o candidato resolve praticamente todas as questões de negação. A chave é praticar até que as regras se tornem automáticas.$material$,
   'Estudo aprofundado da negação de proposições compostas para concursos policiais. Detalha as Leis de De Morgan (negação do E e do OU), a negação da condicional (regra Mantém-Nega-Troca), a diferença entre contrapositiva e negação, e a negação da bicondicional. Apresenta fluxograma de resolução, macetes e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -403,7 +403,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Argumentação: validade, premissas, conclusão',
   'Argumentação Lógica: Validade, Premissas e Conclusão',
-  E'# Argumentação Lógica: Validade, Premissas e Conclusão
+  $material$# Argumentação Lógica: Validade, Premissas e Conclusão
 
 ## 1. Introdução
 
@@ -552,7 +552,7 @@ e) Houve invasão, mas a polícia não foi acionada.
 
 ## 8. Conclusão
 
-A argumentação lógica exige que o candidato domine as regras de inferência (Modus Ponens, Modus Tollens, Silogismo Hipotético) e saiba identificar as falácias formais mais comuns. O método da conclusão falsa é a ferramenta mais rápida para resolver questões de validade em provas objetivas. Com prática, essas questões se tornam pontos garantidos.',
+A argumentação lógica exige que o candidato domine as regras de inferência (Modus Ponens, Modus Tollens, Silogismo Hipotético) e saiba identificar as falácias formais mais comuns. O método da conclusão falsa é a ferramenta mais rápida para resolver questões de validade em provas objetivas. Com prática, essas questões se tornam pontos garantidos.$material$,
   'Estudo de Argumentação Lógica para concursos policiais. Aborda estrutura de argumentos (premissas e conclusão), validade vs. veracidade, métodos de verificação (tabela-verdade e conclusão falsa), regras de inferência (Modus Ponens, Modus Tollens, Silogismo Hipotético, Silogismo Disjuntivo), falácias formais (afirmação do consequente, negação do antecedente). Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -563,7 +563,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Quantificadores (todo, algum, nenhum) e silogismos',
   'Quantificadores Lógicos e Silogismos Categóricos',
-  E'# Quantificadores Lógicos e Silogismos Categóricos
+  $material$# Quantificadores Lógicos e Silogismos Categóricos
 
 ## 1. Introdução
 
@@ -708,7 +708,7 @@ e) Alguns advogados não são professores.
 
 ## 9. Conclusão
 
-Os quantificadores e silogismos exigem que o candidato memorize quatro regras de negação e saiba aplicar diagramas de Venn para verificar silogismos. A pegadinha mais frequente é confundir negação ("Algum S não é P") com contrário ("Nenhum S é P"). Com prática e atenção a essas distinções, o candidato garante pontos neste tema.',
+Os quantificadores e silogismos exigem que o candidato memorize quatro regras de negação e saiba aplicar diagramas de Venn para verificar silogismos. A pegadinha mais frequente é confundir negação ("Algum S não é P") com contrário ("Nenhum S é P"). Com prática e atenção a essas distinções, o candidato garante pontos neste tema.$material$,
   'Estudo de Quantificadores Lógicos e Silogismos para concursos policiais. Aborda os quatro tipos de proposições categóricas (universal afirmativa/negativa, particular afirmativa/negativa), regras de negação (Todo↔Algum...não, Nenhum↔Algum), equivalências, conversão de proposições, silogismos categóricos e verificação por diagramas de Venn. Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -719,7 +719,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Análise combinatória e probabilidade básica',
   'Análise Combinatória e Probabilidade para Concursos Policiais',
-  E'# Análise Combinatória e Probabilidade
+  $material$# Análise Combinatória e Probabilidade
 
 ## 1. Introdução
 
@@ -874,7 +874,7 @@ e) 64
 
 ## 9. Conclusão
 
-Análise Combinatória e Probabilidade são temas que exigem prática com exercícios, mas as fórmulas são poucas e diretas. O candidato que diferencia arranjo de combinação (pela importância da ordem) e memoriza as relações de probabilidade (complemento, eventos independentes) consegue resolver a maioria das questões de nível médio cobradas nos concursos policiais.',
+Análise Combinatória e Probabilidade são temas que exigem prática com exercícios, mas as fórmulas são poucas e diretas. O candidato que diferencia arranjo de combinação (pela importância da ordem) e memoriza as relações de probabilidade (complemento, eventos independentes) consegue resolver a maioria das questões de nível médio cobradas nos concursos policiais.$material$,
   'Estudo de Análise Combinatória e Probabilidade para concursos policiais. Aborda princípios multiplicativo e aditivo, fatorial, permutação, arranjo e combinação (com critérios para distinguir cada um), e probabilidade básica (definição, complemento, eventos independentes e mutuamente exclusivos). Inclui tabela de fatoriais, dicas de palavras-chave e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -885,7 +885,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Sequências numéricas, lógicas e padrões',
   'Sequências Numéricas e Padrões Lógicos para Concursos',
-  E'# Sequências Numéricas e Padrões Lógicos
+  $material$# Sequências Numéricas e Padrões Lógicos
 
 ## 1. Introdução
 
@@ -1038,7 +1038,7 @@ e) 34
 
 ## 10. Conclusão
 
-Sequências numéricas são questões de reconhecimento de padrão. O candidato que segue a estratégia de resolução em 7 passos (PA → PG → Diferenças → Fibonacci → Intercaladas → Potências → Alternância) consegue identificar o padrão na maioria dos casos. A prática com questões de provas anteriores é a melhor forma de treinar o olho para padrões.',
+Sequências numéricas são questões de reconhecimento de padrão. O candidato que segue a estratégia de resolução em 7 passos (PA → PG → Diferenças → Fibonacci → Intercaladas → Potências → Alternância) consegue identificar o padrão na maioria dos casos. A prática com questões de provas anteriores é a melhor forma de treinar o olho para padrões.$material$,
   'Estudo de Sequências Numéricas e Padrões Lógicos para concursos policiais. Aborda Progressão Aritmética (PA), Progressão Geométrica (PG), Sequência de Fibonacci, método das diferenças, sequências de potências e quadrados perfeitos, sequências intercaladas e alternadas. Apresenta estratégia de resolução em 7 passos e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1049,7 +1049,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Problemas de raciocínio (idades, distâncias, mistura)',
   'Problemas de Raciocínio: Idades, Distâncias e Proporções',
-  E'# Problemas de Raciocínio: Idades, Distâncias e Proporções
+  $material$# Problemas de Raciocínio: Idades, Distâncias e Proporções
 
 ## 1. Introdução
 
@@ -1204,7 +1204,7 @@ e) 60
 
 ## 9. Conclusão
 
-Os problemas de raciocínio quantitativo exigem tradução de texto para equações. O candidato que domina a montagem de sistemas lineares simples, regra de três e porcentagens com fator multiplicador resolve rapidamente a maioria das questões. A chave é prática: quanto mais problemas resolver, mais rápido identificará o tipo e a estratégia adequada.',
+Os problemas de raciocínio quantitativo exigem tradução de texto para equações. O candidato que domina a montagem de sistemas lineares simples, regra de três e porcentagens com fator multiplicador resolve rapidamente a maioria das questões. A chave é prática: quanto mais problemas resolver, mais rápido identificará o tipo e a estratégia adequada.$material$,
   'Estudo de Problemas de Raciocínio Quantitativo para concursos policiais. Aborda problemas de idades (montagem de equações), problemas de distância (encontro e perseguição), regra de três simples e composta, porcentagens e proporções. Apresenta fórmulas-chave, exemplos resolvidos passo a passo e questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1215,7 +1215,7 @@ SELECT upsert_material(
   'raciocinio-logico',
   'Conjuntos, diagramas e Venn',
   'Teoria dos Conjuntos e Diagramas de Venn para Concursos',
-  E'# Teoria dos Conjuntos e Diagramas de Venn
+  $material$# Teoria dos Conjuntos e Diagramas de Venn
 
 ## 1. Introdução
 
@@ -1367,7 +1367,7 @@ e) 80
 
 ## 9. Conclusão
 
-Conjuntos e Diagramas de Venn são temas de alta recorrência e nota garantida para quem domina as fórmulas de inclusão-exclusão. A estratégia é clara: comece pelo centro do diagrama (interseção de todos), preencha as interseções parciais e depois as partes exclusivas. Com prática, essas questões se tornam rápidas e seguras.',
+Conjuntos e Diagramas de Venn são temas de alta recorrência e nota garantida para quem domina as fórmulas de inclusão-exclusão. A estratégia é clara: comece pelo centro do diagrama (interseção de todos), preencha as interseções parciais e depois as partes exclusivas. Com prática, essas questões se tornam rápidas e seguras.$material$,
   'Estudo de Teoria dos Conjuntos e Diagramas de Venn para concursos policiais. Aborda definições (conjunto, elemento, subconjunto, universo), operações (união, interseção, diferença, complemento), fórmulas de inclusão-exclusão para 2 e 3 conjuntos, e resolução passo a passo de diagramas de Venn. Inclui questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 

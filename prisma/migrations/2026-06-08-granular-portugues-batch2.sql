@@ -42,7 +42,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Acentuação gráfica',
   'Acentuação Gráfica: Regras Gerais, Especiais e Acordo Ortográfico',
-  E'# Acentuação Gráfica: Regras Gerais, Especiais e Acordo Ortográfico
+  $material$# Acentuação Gráfica: Regras Gerais, Especiais e Acordo Ortográfico
 
 ## 1. Introdução
 
@@ -209,7 +209,7 @@ e) O réu demonstrou paranoia ao ver as viaturas policiais na avenida.
 
 ## 8. Conclusão
 
-A acentuação gráfica vai muito além de decorar uma lista de terminações. Ela exige atenção plena do candidato quanto à divisão silábica, à tonicidade e às alterações normativas consagradas pelo Acordo Ortográfico. Nas carreiras policiais, o domínio impecável dessas regras constitui um divisor de águas, prevenindo desvios gramaticais que podem comprometer a nota da redação e eliminando as pegadinhas clássicas das bancas examinadoras.',
+A acentuação gráfica vai muito além de decorar uma lista de terminações. Ela exige atenção plena do candidato quanto à divisão silábica, à tonicidade e às alterações normativas consagradas pelo Acordo Ortográfico. Nas carreiras policiais, o domínio impecável dessas regras constitui um divisor de águas, prevenindo desvios gramaticais que podem comprometer a nota da redação e eliminando as pegadinhas clássicas das bancas examinadoras.$material$,
   'Estudo detalhado das regras de acentuação gráfica da Língua Portuguesa com foco em concursos públicos da área policial. Aborda a classificação tônica (oxítonas, paroxítonas, proparoxítonas e monossílabos), as regras de acentuação gerais e especiais (regra do hiato, ditongos abertos e acentos diferenciais) e as mudanças estabelecidas pelo Acordo Ortográfico (perda de acento em ditongos de paroxítonas, vogais dobradas e hiatos seguidos de ditongos). Contém quadro-resumo, pegadinhas de prova e resolução comentada de questões das bancas CEBRASPE, FGV e VUNESP.'
 );
 
@@ -220,7 +220,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Relações de sinonímia e antonímia, polissemia, ambiguidade',
   'Semântica: Significados das Palavras e Relações de Sentido',
-  E'# Semântica: Significados das Palavras e Relações de Sentido
+  $material$# Semântica: Significados das Palavras e Relações de Sentido
 
 ## 1. Introdução
 
@@ -388,7 +388,7 @@ e) retificar - elidir - deferir
 
 ## 8. Conclusão
 
-A precisão semântica é uma exigência imperativa para os profissionais de segurança pública. Um termo mal posicionado ou mal escolhido pode dar margem a nulidades processuais e distorções na interpretação dos fatos. Conhecer a diferença entre homônimos, parônimos e entender como as palavras se comportam no contexto é crucial para evitar as armadilhas bem arquitetadas pelas bancas examinadoras.',
+A precisão semântica é uma exigência imperativa para os profissionais de segurança pública. Um termo mal posicionado ou mal escolhido pode dar margem a nulidades processuais e distorções na interpretação dos fatos. Conhecer a diferença entre homônimos, parônimos e entender como as palavras se comportam no contexto é crucial para evitar as armadilhas bem arquitetadas pelas bancas examinadoras.$material$,
   'Estudo das relações semânticas e do significado das palavras voltado para concursos das carreiras policiais. Aborda as definições e aplicações práticas de sinonímia, antonímia, polissemia e ambiguidade, além de focar extensivamente nos homônimos (homófonos e homógrafos) e parônimos comuns em inquéritos e leis penais (mandado/mandato, infringir/infligir, descriminar/discriminar, retificar/ratificar). Inclui o uso dos porquês, mal/mau, quadros explicativos, pegadinhas de prova e análise comentada de questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -399,7 +399,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Sintaxe da oração e do período',
   'Sintaxe: Termos da Oração, Coordenação e Subordinação',
-  E'# Sintaxe: Termos da Oração, Coordenação e Subordinação
+  $material$# Sintaxe: Termos da Oração, Coordenação e Subordinação
 
 ## 1. Introdução
 
@@ -558,7 +558,7 @@ Esta é a distinção mais exigida pelas bancas. Lembre-se destas regras prátic
 
 ## 7. Conclusão
 
-A compreensão da sintaxe da oração e do período confere ao candidato a autonomia necessária para desatar os nós gramaticais mais complexos impostos pelas provas de concursos da área policial. Ao invés de decorar fórmulas isoladas, o candidato que domina a análise lógica e as relações de dependência sintática consegue discernir a função exata de cada conector e termo oracional, destacando-se tanto nas questões de gramática quanto na produção textual discursiva.',
+A compreensão da sintaxe da oração e do período confere ao candidato a autonomia necessária para desatar os nós gramaticais mais complexos impostos pelas provas de concursos da área policial. Ao invés de decorar fórmulas isoladas, o candidato que domina a análise lógica e as relações de dependência sintática consegue discernir a função exata de cada conector e termo oracional, destacando-se tanto nas questões de gramática quanto na produção textual discursiva.$material$,
   'Estudo analítico da sintaxe do período simples e composto aplicados a provas de carreiras policiais. Detalha os termos da oração (essenciais, integrantes e acessórios) com ênfase na distinção clássica entre complemento nominal e adjunto adnominal. Explica a estruturação do período composto por coordenação (sindéticas e assindéticas) e subordinação (substantivas, adjetivas explicativas/restritivas e adverbiais), focando nas principais conjunções e na transposição de orações de valor adversativo para concessivo. Apresenta resoluções de questões reais do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -569,7 +569,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Tipologia textual e gêneros',
   'Tipologia Textual e Gêneros: Estruturas e Predominâncias',
-  E'# Tipologia Textual e Gêneros: Estruturas e Predominâncias
+  $material$# Tipologia Textual e Gêneros: Estruturas e Predominâncias
 
 ## 1. Introdução
 
@@ -714,7 +714,7 @@ e) Descritivo
 
 ## 7. Conclusão
 
-Compreender a tipologia textual e os gêneros associados é vital para ler os textos de prova com intencionalidade. O candidato que identifica imediatamente os marcadores linguísticos de cada estrutura não perde tempo lendo o texto de forma passiva. Ele sabe se deve procurar uma tese (se o texto for argumentativo), uma linha de tempo de ações (se for narrativo) ou a catalogação de fatos (se for expositivo), otimizando a resolução das questões de interpretação.',
+Compreender a tipologia textual e os gêneros associados é vital para ler os textos de prova com intencionalidade. O candidato que identifica imediatamente os marcadores linguísticos de cada estrutura não perde tempo lendo o texto de forma passiva. Ele sabe se deve procurar uma tese (se o texto for argumentativo), uma linha de tempo de ações (se for narrativo) ou a catalogação de fatos (se for expositivo), otimizando a resolução das questões de interpretação.$material$,
   'Estudo das estruturas tipológicas textuais (narração, descrição, dissertação expositiva e argumentativa, injunção) e sua relação com os gêneros textuais (ofício, notícia, contrato, edital, crônica). Analisa os marcadores linguísticos típicos de cada tipo, como tempos verbais (perfeito vs. imperfeito), classes de palavras (adjetivação vs. conectores lógicos) e formas verbais (imperativo). Foca no reconhecimento do tipo predominante nas provas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -725,7 +725,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Coesão, Coerência e Tipologia Textual',
   'Coesão e Coerência Textual: Mecanismos de Conexão e Lógica',
-  E'# Coesão e Coerência Textual: Mecanismos de Conexão e Lógica
+  $material$# Coesão e Coerência Textual: Mecanismos de Conexão e Lógica
 
 ## 1. Introdução
 
@@ -856,7 +856,7 @@ e) Os policiais agiram com rapidez, contudo o suspeito conseguiu escapar pelo te
 
 ## 8. Conclusão
 
-Coesão e coerência são a essência da inteligibilidade de qualquer texto. Enquanto a coesão constrói a infraestrutura gramatical por onde as ideias transitam, a coerência garante que essas ideias cheguem a um destino comum, sem desvios ou contradições. Para o candidato a concursos policiais, dominar esses conceitos é o passo definitivo para compreender textos longos de forma rápida e produzir redações claras, organizadas e juridicamente consistentes.',
+Coesão e coerência são a essência da inteligibilidade de qualquer texto. Enquanto a coesão constrói a infraestrutura gramatical por onde as ideias transitam, a coerência garante que essas ideias cheguem a um destino comum, sem desvios ou contradições. Para o candidato a concursos policiais, dominar esses conceitos é o passo definitivo para compreender textos longos de forma rápida e produzir redações claras, organizadas e juridicamente consistentes.$material$,
   'Estudo aprofundado dos mecanismos de coesão textual (referencial, sequencial e lexical) e coerência textual (princípios da não-contradição, relevância e continuidade temática) para concursos da área policial. Detalha o emprego de anáforas, catáforas, elipses e conectivos lógicos (adição, oposição, concessão, causa e conclusão). Aborda a distinção de uso entre pronomes demonstrativos e a relação com as tipologias textuais de forma introdutória. Inclui questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -867,7 +867,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Equivalência e transformação de estruturas',
   'Reescrita de Frases: Equivalência e Transformação de Estruturas',
-  E'# Reescrita de Frases: Equivalência e Transformação de Estruturas
+  $material$# Reescrita de Frases: Equivalência e Transformação de Estruturas
 
 ## 1. Introdução
 
@@ -990,7 +990,7 @@ e) Os agentes da delegacia especializada recolheram-nas.
 
 ## 7. Conclusão
 
-Dominar a reescrita de frases é um exercício completo de ginástica gramatical. O candidato deve ler a proposta com desconfiança, analisando linha por linha as mudanças sintáticas. Identificar as vozes verbais, dominar as conjunções e suas equivalências e verificar de imediato a manutenção das regras de concordância e regência são as chaves fundamentais para vencer essa exigente tipologia de questão de concurso.',
+Dominar a reescrita de frases é um exercício completo de ginástica gramatical. O candidato deve ler a proposta com desconfiança, analisando linha por linha as mudanças sintáticas. Identificar as vozes verbais, dominar as conjunções e suas equivalências e verificar de imediato a manutenção das regras de concordância e regência são as chaves fundamentais para vencer essa exigente tipologia de questão de concurso.$material$,
   'Estudo teórico-prático da reescrita de frases e transformação de estruturas para concursos públicos policiais. Detalha a transposição entre vozes verbais (ativa, passiva analítica e sintética), a substituição de conjunções equivalentes (adversativas, concessivas e causais) com atenção aos tempos e modos verbais (indicativo vs. subjuntivo), processos de nominalização e deslocamentos sintáticos com ajustes de pontuação. Contém quadro-resumo, pegadinhas de prova e resolução de questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1001,7 +1001,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Paralelismo sintático e semântico',
   'Paralelismo Sintático e Semântico em Prova',
-  E'# Paralelismo Sintático e Semântico em Prova
+  $material$# Paralelismo Sintático e Semântico em Prova
 
 ## 1. Introdução
 
@@ -1124,7 +1124,7 @@ e) Não se deve misturar o cumprimento da lei com atitudes passionais.
 
 ## 7. Conclusão
 
-O paralelismo sintático e semântico reflete a maturidade de escrita do candidato. Longe de ser um preciosismo gramatical, o paralelismo garante a clareza e a progressão lógica do texto, virtudes essenciais em provas discursivas e na vida profissional da carreira policial. Ao responder às questões de prova, o candidato deve sempre buscar a simetria de preposições, artigos e tempos verbais nas coordenadas, evitando cair nas armadilhas de omissão propostas pelas bancas.',
+O paralelismo sintático e semântico reflete a maturidade de escrita do candidato. Longe de ser um preciosismo gramatical, o paralelismo garante a clareza e a progressão lógica do texto, virtudes essenciais em provas discursivas e na vida profissional da carreira policial. Ao responder às questões de prova, o candidato deve sempre buscar a simetria de preposições, artigos e tempos verbais nas coordenadas, evitando cair nas armadilhas de omissão propostas pelas bancas.$material$,
   'Estudo analítico do paralelismo sintático (simetria de preposições, artigos, classes gramaticais e estruturas oracionais coordenadas) e semântico (compatibilidade lógica de significados coordenados). Foca no emprego de conectivos correlativos (tanto... quanto, não só... mas também), no uso correto da crase sob a ótica do paralelismo e em pegadinhas comuns de omissão e zeugma. Inclui questões comentadas das bancas CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1135,7 +1135,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Redação Oficial (Manual de Redação da Presidência)',
   'Redação Oficial: Manual de Redação da Presidência da República',
-  E'# Redação Oficial: Manual de Redação da Presidência da República
+  $material$# Redação Oficial: Manual de Redação da Presidência da República
 
 ## 1. Introdução
 
@@ -1265,7 +1265,7 @@ e) Governador de Estado — Excelentíssimo Senhor Governador
 
 ## 8. Conclusão
 
-A Redação Oficial preza pela máxima eficiência e dignidade da comunicação estatal. Ao eliminar artifícios retóricos, floreios barrocos e adjetivos desprovidos de utilidade prática, o Manual da Presidência da República desenha uma comunicação técnica, enxuta e impessoal. O candidato que compreende a lógica dessas simplificações ortográficas e estilísticas adquire facilidade para responder a qualquer questão e assegura a conformidade legal de sua escrita discursiva.',
+A Redação Oficial preza pela máxima eficiência e dignidade da comunicação estatal. Ao eliminar artifícios retóricos, floreios barrocos e adjetivos desprovidos de utilidade prática, o Manual da Presidência da República desenha uma comunicação técnica, enxuta e impessoal. O candidato que compreende a lógica dessas simplificações ortográficas e estilísticas adquire facilidade para responder a qualquer questão e assegura a conformidade legal de sua escrita discursiva.$material$,
   'Estudo das diretrizes do Manual de Redação da Presidência da República (3ª Edição). Aborda os princípios norteadores da redação oficial (impessoalidade, clareza, concisão e objetividade) e o Padrão Ofício (estrutura, cabeçalho, endereçamento, fechos "Respeitosamente" e "Atenciosamente"). Detalha as regras sintáticas dos pronomes de tratamento (concordância verbal e pronominal de 3ª pessoa, concordância de gênero adjetiva) e vocativos formais vigentes. Inclui questões comentadas das bancas CEBRASPE, FGV e VUNESP.'
 );
 
