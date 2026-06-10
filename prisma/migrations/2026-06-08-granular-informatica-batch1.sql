@@ -42,7 +42,7 @@ SELECT upsert_material(
   'informatica',
   'Sistemas Operacionais (Windows 10/11 e Linux)',
   'Sistemas Operacionais: Windows e Linux para Concursos Policiais',
-  E'# Sistemas Operacionais: Windows e Linux para Concursos Policiais
+  $material$# Sistemas Operacionais: Windows e Linux para Concursos Policiais
 
 ## 1. Introdução
 
@@ -222,7 +222,7 @@ e) Win + Delete
 
 ## 8. Conclusão
 
-O domínio dos Sistemas Operacionais Windows e Linux vai muito além de saber clicar em ícones. As bancas de concursos policiais exigem conhecimento técnico sobre gerenciamento de arquivos, permissões, atalhos e diferenças estruturais entre os dois sistemas. O candidato que domina a teoria e pratica os atalhos no dia a dia garante pontos rápidos nesta disciplina.',
+O domínio dos Sistemas Operacionais Windows e Linux vai muito além de saber clicar em ícones. As bancas de concursos policiais exigem conhecimento técnico sobre gerenciamento de arquivos, permissões, atalhos e diferenças estruturais entre os dois sistemas. O candidato que domina a teoria e pratica os atalhos no dia a dia garante pontos rápidos nesta disciplina.$material$,
   'Estudo comparativo dos sistemas operacionais Windows 10/11 e Linux para concursos policiais. Aborda conceitos fundamentais de SO (gerenciamento de processos, memória, arquivos e dispositivos), a interface do Windows (Explorador, Menu Iniciar, Barra de Tarefas), atalhos de teclado essenciais, ferramentas nativas (Gerenciador de Tarefas, BitLocker, Windows Defender), sistema NTFS. No Linux, cobre distribuições, estrutura FHS de diretórios, comandos de terminal e o sistema de permissões rwx. Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -233,7 +233,7 @@ SELECT upsert_material(
   'informatica',
   'Edição de Textos, Planilhas e Apresentações (Microsoft Office e LibreOffice)',
   'Microsoft Office e LibreOffice: Word, Excel, Calc e Impress para Concursos',
-  E'# Microsoft Office e LibreOffice: Editores de Texto, Planilhas e Apresentações
+  $material$# Microsoft Office e LibreOffice: Editores de Texto, Planilhas e Apresentações
 
 ## 1. Introdução
 
@@ -393,7 +393,7 @@ e) DESLOC
 
 ## 8. Conclusão
 
-O domínio dos aplicativos de escritório é garantia de pontos nas provas de Informática. As questões são objetivas e diretas, exigindo conhecimento prático de atalhos, funções de planilha e funcionalidades específicas. O candidato que pratica no dia a dia e memoriza as funções mais cobradas (SOMA, SE, PROCV, CONT.SE) sai na frente.',
+O domínio dos aplicativos de escritório é garantia de pontos nas provas de Informática. As questões são objetivas e diretas, exigindo conhecimento prático de atalhos, funções de planilha e funcionalidades específicas. O candidato que pratica no dia a dia e memoriza as funções mais cobradas (SOMA, SE, PROCV, CONT.SE) sai na frente.$material$,
   'Estudo das suítes de produtividade Microsoft Office e LibreOffice para concursos policiais. Aborda Word/Writer (atalhos de formatação, Mala Direta, Sumário Automático, Controle de Alterações), Excel/Calc (referências relativas e absolutas, funções SOMA, MÉDIA, SE, PROCV, CONT.SE, SOMASE, formatação condicional e gráficos) e PowerPoint/Impress (slides, transições, animações, Slide Mestre). Inclui tabelas de atalhos, extensões de arquivo e questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -404,7 +404,7 @@ SELECT upsert_material(
   'informatica',
   'Conceitos de Internet, Intranet e Extranet',
   'Internet, Intranet e Extranet: Conceitos e Protocolos para Concursos',
-  E'# Internet, Intranet e Extranet: Conceitos e Protocolos
+  $material$# Internet, Intranet e Extranet: Conceitos e Protocolos
 
 ## 1. Introdução
 
@@ -536,7 +536,7 @@ e) A Intranet não pode ter firewall, ao contrário da Extranet.
 
 ## 8. Conclusão
 
-A compreensão das diferenças entre Internet, Intranet e Extranet, aliada ao conhecimento dos protocolos de comunicação, é essencial para as provas de Informática. O ponto-chave é lembrar que as três utilizam os mesmos protocolos TCP/IP; o que muda é o escopo de acesso e as políticas de segurança aplicadas.',
+A compreensão das diferenças entre Internet, Intranet e Extranet, aliada ao conhecimento dos protocolos de comunicação, é essencial para as provas de Informática. O ponto-chave é lembrar que as três utilizam os mesmos protocolos TCP/IP; o que muda é o escopo de acesso e as políticas de segurança aplicadas.$material$,
   'Estudo dos conceitos de Internet, Intranet e Extranet para concursos policiais. Aborda a definição e diferenças entre as três redes, os protocolos fundamentais do modelo TCP/IP (HTTP, HTTPS, FTP, SMTP, POP3, IMAP, DNS, DHCP, TCP, UDP, SSH), a estrutura de URLs e as aplicações práticas no contexto policial. Inclui tabelas comparativas, pegadinhas de prova e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -547,7 +547,7 @@ SELECT upsert_material(
   'informatica',
   'Navegadores e Mecanismos de Busca',
   'Navegadores Web e Mecanismos de Busca: Recursos e Atalhos para Concursos',
-  E'# Navegadores Web e Mecanismos de Busca
+  $material$# Navegadores Web e Mecanismos de Busca
 
 ## 1. Introdução
 
@@ -683,7 +683,7 @@ e) Ctrl + H
 
 ## 7. Conclusão
 
-Navegadores e mecanismos de busca são ferramentas de trabalho para o policial e fontes constantes de questões em prova. O candidato que memoriza os atalhos de teclado universais, conhece as diferenças entre os modos de navegação e domina os operadores avançados do Google garante pontos rápidos e consistentes na disciplina de Informática.',
+Navegadores e mecanismos de busca são ferramentas de trabalho para o policial e fontes constantes de questões em prova. O candidato que memoriza os atalhos de teclado universais, conhece as diferenças entre os modos de navegação e domina os operadores avançados do Google garante pontos rápidos e consistentes na disciplina de Informática.$material$,
   'Estudo dos navegadores web (Chrome, Firefox, Edge, Safari) e mecanismos de busca para concursos policiais. Aborda motores de renderização, atalhos de teclado universais, navegação privativa (modo anônimo), cookies, cache, extensões. Detalha os operadores de busca avançada do Google (site:, filetype:, intitle:, aspas, menos) e sua aplicação em OSINT policial. Inclui questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -694,7 +694,7 @@ SELECT upsert_material(
   'informatica',
   'Correio eletrônico (Outlook, Thunderbird, webmail)',
   'Correio Eletrônico: Protocolos, Clientes e Segurança para Concursos',
-  E'# Correio Eletrônico: Protocolos, Clientes e Segurança
+  $material$# Correio Eletrônico: Protocolos, Clientes e Segurança
 
 ## 1. Introdução
 
@@ -841,7 +841,7 @@ e) HTTP
 
 ## 9. Conclusão
 
-O correio eletrônico é uma das áreas mais previsíveis da prova de Informática. As questões seguem padrões claros: diferenciação entre protocolos (SMTP vs. POP3 vs. IMAP), campos de destinatário (Para, CC, CCO) e riscos de segurança (phishing, anexos maliciosos). O candidato que memoriza a tabela de protocolos e suas portas garante acertos rápidos.',
+O correio eletrônico é uma das áreas mais previsíveis da prova de Informática. As questões seguem padrões claros: diferenciação entre protocolos (SMTP vs. POP3 vs. IMAP), campos de destinatário (Para, CC, CCO) e riscos de segurança (phishing, anexos maliciosos). O candidato que memoriza a tabela de protocolos e suas portas garante acertos rápidos.$material$,
   'Estudo do correio eletrônico para concursos policiais. Aborda os protocolos SMTP (envio), POP3 e IMAP (recebimento), com portas e diferenças de comportamento. Detalha campos de e-mail (Para, CC, CCO), clientes (Outlook, Thunderbird), webmail e segurança (phishing, spam, spoofing, assinatura digital, criptografia). Inclui tabelas comparativas POP3 vs. IMAP e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -852,7 +852,7 @@ SELECT upsert_material(
   'informatica',
   'Segurança da Informação: ataques, malware, criptografia, certificação digital',
   'Segurança da Informação: Ataques, Malware e Criptografia para Concursos',
-  E'# Segurança da Informação: Ataques, Malware e Criptografia
+  $material$# Segurança da Informação: Ataques, Malware e Criptografia
 
 ## 1. Introdução
 
@@ -1005,7 +1005,7 @@ e) Trojan
 
 ## 10. Conclusão
 
-A Segurança da Informação é a área mais densa de Informática para concursos, mas também a mais previsível. As bancas repetem os mesmos conceitos: diferenças entre tipos de malware, princípios DICA, criptografia simétrica vs. assimétrica e o funcionamento da assinatura/certificação digital. Estudar as tabelas comparativas e resolver questões anteriores é a estratégia mais eficaz.',
+A Segurança da Informação é a área mais densa de Informática para concursos, mas também a mais previsível. As bancas repetem os mesmos conceitos: diferenças entre tipos de malware, princípios DICA, criptografia simétrica vs. assimétrica e o funcionamento da assinatura/certificação digital. Estudar as tabelas comparativas e resolver questões anteriores é a estratégia mais eficaz.$material$,
   'Estudo completo de Segurança da Informação para concursos policiais. Aborda os princípios DICA (Disponibilidade, Integridade, Confidencialidade, Autenticidade), tipos de malware (vírus, worm, trojan, ransomware, spyware, keylogger, rootkit, botnet), ataques cibernéticos (phishing, pharming, DoS/DDoS, engenharia social, SQL injection), criptografia simétrica e assimétrica, assinatura digital e certificação digital (ICP-Brasil). Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1016,7 +1016,7 @@ SELECT upsert_material(
   'informatica',
   'Backup, computação em nuvem, redes',
   'Backup, Computação em Nuvem e Redes de Computadores para Concursos',
-  E'# Backup, Computação em Nuvem e Redes de Computadores
+  $material$# Backup, Computação em Nuvem e Redes de Computadores
 
 ## 1. Introdução
 
@@ -1164,7 +1164,7 @@ e) Repetidor
 
 ## 8. Conclusão
 
-Backup, nuvem e redes formam um trio inseparável na prova de Informática. As questões são técnicas mas previsíveis, repetindo as mesmas comparações (incremental vs. diferencial, IaaS vs. SaaS, hub vs. switch). O candidato que domina as tabelas comparativas e entende a lógica por trás de cada conceito resolve essas questões com rapidez e segurança.',
+Backup, nuvem e redes formam um trio inseparável na prova de Informática. As questões são técnicas mas previsíveis, repetindo as mesmas comparações (incremental vs. diferencial, IaaS vs. SaaS, hub vs. switch). O candidato que domina as tabelas comparativas e entende a lógica por trás de cada conceito resolve essas questões com rapidez e segurança.$material$,
   'Estudo de Backup, Computação em Nuvem e Redes de Computadores para concursos policiais. Aborda tipos de backup (completo, incremental, diferencial) e estratégias de restauração, modelos de nuvem (IaaS, PaaS, SaaS) e implantação (pública, privada, híbrida), classificação de redes (PAN, LAN, MAN, WAN), topologias (estrela, barramento, anel, malha) e equipamentos (hub, switch, roteador, firewall). Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1175,7 +1175,7 @@ SELECT upsert_material(
   'informatica',
   'Banco de dados (conceitos básicos) e Big Data',
   'Banco de Dados e Big Data: Conceitos Fundamentais para Concursos',
-  E'# Banco de Dados e Big Data: Conceitos Fundamentais
+  $material$# Banco de Dados e Big Data: Conceitos Fundamentais
 
 ## 1. Introdução
 
@@ -1312,7 +1312,7 @@ e) CREATE
 
 ## 8. Conclusão
 
-Banco de Dados e Big Data são temas conceituais que exigem mais memorização do que raciocínio matemático. O candidato que compreende o modelo relacional (tabelas, chaves, SQL) e memoriza os 5 Vs do Big Data está preparado para resolver a maioria das questões. Na carreira policial, esses conhecimentos são cada vez mais relevantes, com a crescente digitalização das investigações e o uso de inteligência artificial em segurança pública.',
+Banco de Dados e Big Data são temas conceituais que exigem mais memorização do que raciocínio matemático. O candidato que compreende o modelo relacional (tabelas, chaves, SQL) e memoriza os 5 Vs do Big Data está preparado para resolver a maioria das questões. Na carreira policial, esses conhecimentos são cada vez mais relevantes, com a crescente digitalização das investigações e o uso de inteligência artificial em segurança pública.$material$,
   'Estudo de Banco de Dados e Big Data para concursos policiais. Aborda conceitos do modelo relacional (tabelas, chaves primária e estrangeira, normalização), comandos SQL básicos (SELECT, INSERT, UPDATE, DELETE), bancos NoSQL (documento, chave-valor, colunar, grafos) e Big Data (5 Vs: Volume, Velocidade, Variedade, Veracidade, Valor). Inclui tecnologias de Big Data (Hadoop, Spark, Data Mining) e aplicações em segurança pública. Questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 

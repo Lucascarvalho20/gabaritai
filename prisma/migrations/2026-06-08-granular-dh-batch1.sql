@@ -43,7 +43,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Conceito, fundamentos e características dos Direitos Humanos',
   'Direitos Humanos: Conceito, Fundamentos e Características',
-  E'# Direitos Humanos: Conceito, Fundamentos e Características
+  $material$# Direitos Humanos: Conceito, Fundamentos e Características
 
 ## 1. Introdução
 
@@ -163,7 +163,7 @@ e) Paz
 
 ## 8. Conclusão
 
-O domínio dos conceitos, fundamentos e características dos Direitos Humanos é o alicerce para todo o restante da matéria. O candidato deve memorizar as características (especialmente a relatividade/limitabilidade), as gerações/dimensões e a evolução histórica. Essas definições são cobradas de forma direta e representam pontos garantidos para quem estudou.',
+O domínio dos conceitos, fundamentos e características dos Direitos Humanos é o alicerce para todo o restante da matéria. O candidato deve memorizar as características (especialmente a relatividade/limitabilidade), as gerações/dimensões e a evolução histórica. Essas definições são cobradas de forma direta e representam pontos garantidos para quem estudou.$material$,
   'Estudo dos conceitos, fundamentos e características dos Direitos Humanos para concursos policiais. Aborda definição, fundamentos filosóficos (jusnaturalismo, positivismo, teoria crítica, dignidade humana), características essenciais (universalidade, indivisibilidade, inalienabilidade, relatividade), gerações/dimensões dos DH (1ª a 5ª), evolução histórica (Magna Carta à DUDH) e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -174,7 +174,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Direitos Humanos na Constituição de 1988',
   'Direitos Humanos na Constituição Federal de 1988',
-  E'# Direitos Humanos na Constituição Federal de 1988
+  $material$# Direitos Humanos na Constituição Federal de 1988
 
 ## 1. Introdução
 
@@ -300,7 +300,7 @@ e) Ação Popular
 
 ## 8. Conclusão
 
-A Constituição de 1988 é a norma central dos Direitos Humanos no Brasil. Para os concursos policiais, o art. 5° é o dispositivo mais importante, com destaque para os incisos sobre prisão, domicílio, sigilo, tortura, devido processo legal e direito ao silêncio. O candidato que memoriza os incisos-chave e compreende a hierarquia dos tratados internacionais está preparado para a maioria das questões.',
+A Constituição de 1988 é a norma central dos Direitos Humanos no Brasil. Para os concursos policiais, o art. 5° é o dispositivo mais importante, com destaque para os incisos sobre prisão, domicílio, sigilo, tortura, devido processo legal e direito ao silêncio. O candidato que memoriza os incisos-chave e compreende a hierarquia dos tratados internacionais está preparado para a maioria das questões.$material$,
   'Estudo dos Direitos Humanos na Constituição Federal de 1988 para concursos policiais. Aborda a estrutura do Título II (arts. 5° a 17), os incisos mais cobrados do art. 5° (tortura, domicílio, sigilo, prisão, silêncio, provas ilícitas, racismo, crimes hediondos), o status dos tratados internacionais de DH (emenda constitucional vs. supralegal) e os remédios constitucionais (habeas corpus, habeas data, mandado de segurança). Questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -311,7 +311,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Declaração Universal dos Direitos Humanos (DUDH 1948)',
   'Declaração Universal dos Direitos Humanos: Artigos e Princípios',
-  E'# Declaração Universal dos Direitos Humanos (1948)
+  $material$# Declaração Universal dos Direitos Humanos (1948)
 
 ## 1. Introdução
 
@@ -420,7 +420,7 @@ e) 1969
 
 ## 7. Conclusão
 
-A DUDH é a "certidão de nascimento" do sistema internacional de proteção dos Direitos Humanos. Para o concursando, é essencial memorizar os artigos-chave (1°, 3°, 5°, 9°, 11°), saber que ela é uma resolução (não tratado) e conhecer o contexto pós-Segunda Guerra de sua criação.',
+A DUDH é a "certidão de nascimento" do sistema internacional de proteção dos Direitos Humanos. Para o concursando, é essencial memorizar os artigos-chave (1°, 3°, 5°, 9°, 11°), saber que ela é uma resolução (não tratado) e conhecer o contexto pós-Segunda Guerra de sua criação.$material$,
   'Estudo da Declaração Universal dos Direitos Humanos (1948) para concursos policiais. Aborda o contexto histórico (pós-Segunda Guerra), a natureza jurídica (resolução vs. tratado), a estrutura dos 30 artigos, os artigos mais cobrados (vida, tortura, prisão arbitrária, presunção de inocência, liberdade de locomoção) e questões resolvidas do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -431,7 +431,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Sistema Interamericano (Pacto de San José da Costa Rica)',
   'Sistema Interamericano de Direitos Humanos e Pacto de San José',
-  E'# Sistema Interamericano de Direitos Humanos e Pacto de San José
+  $material$# Sistema Interamericano de Direitos Humanos e Pacto de San José
 
 ## 1. Introdução
 
@@ -545,7 +545,7 @@ e) Inadimplente de multa criminal
 
 ## 6. Conclusão
 
-O Sistema Interamericano é o principal mecanismo regional de proteção dos Direitos Humanos aplicável ao Brasil. O candidato deve memorizar a diferença entre CIDH e Corte IDH (especialmente quem pode peticionar a cada uma), o status supralegal do Pacto de San José e suas regras sobre pena de morte e prisão por dívida.',
+O Sistema Interamericano é o principal mecanismo regional de proteção dos Direitos Humanos aplicável ao Brasil. O candidato deve memorizar a diferença entre CIDH e Corte IDH (especialmente quem pode peticionar a cada uma), o status supralegal do Pacto de San José e suas regras sobre pena de morte e prisão por dívida.$material$,
   'Estudo do Sistema Interamericano de Direitos Humanos para concursos policiais. Aborda a Convenção Americana (Pacto de San José), seus direitos protegidos, regras sobre pena de morte e prisão por dívida, a CIDH (Comissão) e a Corte IDH (composição, competência, acesso). Detalha o status supralegal no Brasil, a Súmula Vinculante 25 e questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -556,7 +556,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Convenção contra a Tortura e Lei 9.455/97',
   'Tortura: Convenção da ONU, Convenção Interamericana e Lei 9.455/97',
-  E'# Tortura: Convenção da ONU, Convenção Interamericana e Lei 9.455/97
+  $material$# Tortura: Convenção da ONU, Convenção Interamericana e Lei 9.455/97
 
 ## 1. Introdução
 
@@ -681,7 +681,7 @@ e) Aplica-se apenas a prisioneiros de guerra.
 
 ## 7. Conclusão
 
-A tortura é um dos temas mais relevantes para concursos policiais, pois envolve diretamente a atuação profissional. O candidato deve dominar a definição legal (Lei 9.455/97), as modalidades (ação, castigo, omissão), as penas e qualificadoras, e as disposições dos tratados internacionais.',
+A tortura é um dos temas mais relevantes para concursos policiais, pois envolve diretamente a atuação profissional. O candidato deve dominar a definição legal (Lei 9.455/97), as modalidades (ação, castigo, omissão), as penas e qualificadoras, e as disposições dos tratados internacionais.$material$,
   'Estudo sobre Tortura para concursos policiais. Aborda a Convenção da ONU (1984), a Convenção Interamericana (1985) e a Lei 9.455/97 (crime de tortura no Brasil). Detalha as modalidades (tortura-prova, tortura-crime, tortura-discriminação, tortura-castigo, tortura-omissão), penas, qualificadoras (resultado morte), aumento de pena para agente público, e características processuais (inafiançável, insuscetível de graça). Questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -692,7 +692,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Direitos das mulheres, crianças, idosos, PCD, LGBTQIA+',
   'Proteção de Grupos Vulneráveis: Mulheres, Crianças, Idosos e PCD',
-  E'# Proteção de Grupos Vulneráveis: Mulheres, Crianças, Idosos e PCD
+  $material$# Proteção de Grupos Vulneráveis: Mulheres, Crianças, Idosos e PCD
 
 ## 1. Introdução
 
@@ -834,7 +834,7 @@ e) Decreto autônomo
 
 ## 9. Conclusão
 
-A proteção de grupos vulneráveis é um tema transversal que conecta Direitos Humanos, Direito Constitucional e legislação penal especial. Para o concursando, é essencial conhecer as cinco formas de violência da Lei Maria da Penha, os princípios do ECA, os direitos dos idosos e o status constitucional da Convenção sobre PCD.',
+A proteção de grupos vulneráveis é um tema transversal que conecta Direitos Humanos, Direito Constitucional e legislação penal especial. Para o concursando, é essencial conhecer as cinco formas de violência da Lei Maria da Penha, os princípios do ECA, os direitos dos idosos e o status constitucional da Convenção sobre PCD.$material$,
   'Estudo da proteção de grupos vulneráveis para concursos policiais. Aborda a Lei Maria da Penha (formas de violência, medidas protetivas), o ECA (proteção integral, medidas socioeducativas, internação), o Estatuto do Idoso (definição, direitos, crimes) e os direitos das pessoas com deficiência (Convenção da ONU com status de EC, Estatuto da PCD). Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -845,7 +845,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Direitos dos presos, Lei de Execução Penal e Regras de Mandela',
   'Direitos dos Presos: LEP, Regras de Mandela e Proteção Internacional',
-  E'# Direitos dos Presos: LEP, Regras de Mandela e Proteção Internacional
+  $material$# Direitos dos Presos: LEP, Regras de Mandela e Proteção Internacional
 
 ## 1. Introdução
 
@@ -982,7 +982,7 @@ e) 1 dia de pena para cada 10 dias de trabalho
 
 ## 7. Conclusão
 
-Os direitos dos presos são garantias fundamentais que o policial deve conhecer e respeitar. A LEP, as Regras de Mandela e a Constituição Federal convergem no princípio de que a privação de liberdade não retira a dignidade da pessoa humana. Para o concurso, os pontos-chave são: direitos do art. 41 da LEP, remição pelo trabalho (3 por 1), confinamento solitário (limite de 15 dias) e as assistências obrigatórias.',
+Os direitos dos presos são garantias fundamentais que o policial deve conhecer e respeitar. A LEP, as Regras de Mandela e a Constituição Federal convergem no princípio de que a privação de liberdade não retira a dignidade da pessoa humana. Para o concurso, os pontos-chave são: direitos do art. 41 da LEP, remição pelo trabalho (3 por 1), confinamento solitário (limite de 15 dias) e as assistências obrigatórias.$material$,
   'Estudo dos Direitos dos Presos para concursos policiais. Aborda a proteção constitucional (art. 5°), a Lei de Execução Penal (direitos e deveres do preso, assistências, remição pelo trabalho e estudo) e as Regras de Mandela (tratamento mínimo, proibição de confinamento solitário prolongado acima de 15 dias). Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -993,7 +993,7 @@ SELECT upsert_material(
   'direitos-humanos',
   'Atuação policial e Direitos Humanos: uso da força, abordagem',
   'Atuação Policial e Direitos Humanos: Uso da Força e Abordagem',
-  E'# Atuação Policial e Direitos Humanos: Uso da Força e Abordagem
+  $material$# Atuação Policial e Direitos Humanos: Uso da Força e Abordagem
 
 ## 1. Introdução
 
@@ -1126,7 +1126,7 @@ e) Só é permitido para presos por crimes hediondos.
 
 ## 9. Conclusão
 
-A atuação policial em conformidade com os Direitos Humanos não é uma limitação, mas uma garantia de legitimidade e legalidade da ação do Estado. O policial que conhece os princípios de uso da força (legalidade, necessidade, proporcionalidade, moderação), as regras sobre armas de fogo e algemas, e os documentos internacionais da ONU está preparado tanto para a prova quanto para a carreira.',
+A atuação policial em conformidade com os Direitos Humanos não é uma limitação, mas uma garantia de legitimidade e legalidade da ação do Estado. O policial que conhece os princípios de uso da força (legalidade, necessidade, proporcionalidade, moderação), as regras sobre armas de fogo e algemas, e os documentos internacionais da ONU está preparado tanto para a prova quanto para a carreira.$material$,
   'Estudo da Atuação Policial e Direitos Humanos para concursos policiais. Aborda o Código de Conduta da ONU (1979), os Princípios Básicos sobre Uso da Força e Armas de Fogo (1990), o modelo de uso progressivo da força, a Súmula Vinculante 11 (algemas) e os princípios de legalidade, necessidade e proporcionalidade. Inclui questões do CEBRASPE, FGV e VUNESP.'
 );
 

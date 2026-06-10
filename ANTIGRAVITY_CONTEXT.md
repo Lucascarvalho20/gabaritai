@@ -77,6 +77,50 @@ Alterações no schema exigem migração + risco de perda de dados em produção
 ### 🚫 NUNCA faça `git push --force` em main
 Reescrever história em produção pode apagar trabalho. Sempre confirme antes de operações destrutivas em git.
 
+### ⚡ REGRA OBRIGATÓRIA — USE DOLLAR-QUOTING (`$material$...$material$`)
+**A partir de agora, NÃO use mais `E'...'` para o conteúdo grande.** Use `$material$...$material$` (dollar-quoted strings do PostgreSQL).
+
+#### Por quê?
+O Supabase SQL Editor às vezes interpreta mal strings `E'...'` quando o conteúdo tem `;`, `'` ou caracteres especiais, gerando erros mesmo com escape correto (`''`). Dollar-quoting é 100% imune.
+
+#### ❌ ANTIGO — não use mais:
+```sql
+SELECT upsert_material(
+  'informatica',
+  'Tópico',
+  'Título',
+  E'# Conteúdo aqui com aspas '' escapadas e tudo mais...',
+  'Resumo aqui'
+);
+```
+
+#### ✅ NOVO — use sempre assim:
+```sql
+SELECT upsert_material(
+  'informatica',
+  'Tópico',
+  'Título',
+  $material$# Conteúdo aqui pode ter ' aspas livres, ; semicolons, "tudo"!$material$,
+  'Resumo aqui'
+);
+```
+
+**Vantagens do `$material$...$material$`:**
+- Não precisa escapar aspas simples internas (escreva apenas `'`, não `''`)
+- Não confunde o parser do Supabase
+- Não quebra com `;` no conteúdo
+- Aceita qualquer caractere até encontrar literalmente `$material$` de novo
+- Você pode escrever Excel/HTML/JS livremente sem se preocupar com escape
+
+**Para os outros parâmetros menores** (slug, topic_name, title, resumo) — pode continuar usando `'...'` normal (eles são curtos e não têm aspas internas).
+
+**Se o resumo (p_resumo) tiver aspas internas**, também use dollar-quoting:
+```sql
+  $resumo$Aqui posso usar ' aspas e ; semicolons livremente$resumo$
+```
+
+---
+
 ### 🚫 NUNCA inclua comandos SQL como exemplo dentro do conteúdo markdown
 **ERRO CRÍTICO COMETIDO ANTES — não repita.**
 

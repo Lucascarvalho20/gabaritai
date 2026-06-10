@@ -42,7 +42,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Concordância nominal e verbal',
   'Concordância Nominal e Verbal para Concursos Policiais',
-  E'# Concordância Nominal e Verbal
+  $material$# Concordância Nominal e Verbal
 
 ## 1. Introdução
 
@@ -210,7 +210,7 @@ e) Ela mesma declarou que estava meia desconfiada do álibi do acusado.
 
 Dominar a concordância nominal e verbal exige mais do que memorizar regras: exige a capacidade de analisar a sintaxe da oração e identificar o sujeito e os núcleos aos quais o verbo e os nomes se referem. Para concursos de carreiras policiais, o foco absoluto deve ser na identificação do papel da palavra "se", na impessoalidade dos verbos "haver" e "fazer", e no comportamento de termos invariáveis como "alerta" e "menos". Praticar a análise sintática resolverá 90% das questões de concordância nas provas de concurso.
 
----',
+---$material$,
   'Concordância verbal (relação sujeito-verbo) e nominal (relação substantivo-determinantes). Foco em verbos impessoais (haver como existir, fazer com tempo decorrido), partícula apassivadora (VTD+se) vs índice de indeterminação do sujeito (VTI+se), concordância nominal de palavras especiais (anexo, bastante, meio, alerta, menos) e análise de questões reais de concurso das bancas CEBRASPE, FGV e VUNESP.'
 );
 
@@ -221,7 +221,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Regência nominal e verbal',
   'Regência Nominal e Verbal: Guia Completo com Foco em Bancas',
-  E'# Regência Nominal e Verbal
+  $material$# Regência Nominal e Verbal
 
 ## 1. Introdução
 
@@ -388,7 +388,7 @@ e) A testemunha demonstrou total alheamento com os fatos narrados.
 
 A regência é um tema altamente lógico que exige a memorização de algumas regências específicas de verbos e nomes chave, além de um forte domínio da sintaxe de orações subordinadas adjetivas (o posicionamento das preposições antes do "que" ou "quem"). Para garantir o sucesso nas provas de carreiras policiais, revise com frequência o comportamento dos verbos *assistir*, *aspirar*, *visar*, *preferir* e *implicar*, e sempre verifique se a preposição exigida pelos verbos foi adequadamente transportada nas orações adjetivas.
 
----',
+---$material$,
   'Regência verbal e nominal na norma-padrão. Análise da transitividade de verbos recorrentes (assistir, aspirar, visar, preferir, esquecer/lembrar, implicar) e das preposições exigidas por nomes comuns. Foco em pegadinhas de concurso, transposição de preposições antes de pronomes relativos em orações adjetivas, e resolução de questões reais do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -399,7 +399,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Emprego do sinal indicativo de crase',
   'Emprego do Sinal Indicativo de Crase: Regras e Prática de Prova',
-  E'# Emprego do Sinal Indicativo de Crase
+  $material$# Emprego do Sinal Indicativo de Crase
 
 ## 1. Introdução
 
@@ -567,7 +567,7 @@ e) O suspeito do latrocínio foi conduzido diretamente à delegacia.
 
 A crase não deve ser encarada como uma marcação aleatória de escrita, mas sim como a união exata da preposição "a" exigida pelo termo regente com o artigo feminino "a" do termo regido. Para gabaritar crase em concursos policiais, o candidato deve focar na identificação de substantivos masculinos e verbos no infinitivo (que proíbem a crase) e na verificação atenta dos casos facultativos, que são os preferidos das bancas para testar a flexibilidade e a reescrita gramatical.
 
----',
+---$material$,
   'Estudo aprofundado do emprego do sinal indicativo de crase. Definição do fenômeno gráfico-sintático da contração (preposição + artigo/pronome), análise dos casos obrigatórios (relação regente/regido, locuções femininas e horas exatas), casos proibidos (masculinos, verbos, pronomes) e casos facultativos (possessivos e nomes próprios). Inclui resolução comentada de questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -578,7 +578,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Colocação pronominal',
   'Colocação Pronominal: Próclise, Mesóclise e Ênclise em Prova',
-  E'# Colocação Pronominal
+  $material$# Colocação Pronominal
 
 ## 1. Introdução
 
@@ -757,7 +757,7 @@ e) Quero-lhe ver no gabinete do delegado geral ainda hoje.
 
 A colocação pronominal exige a memorização de dois conjuntos de regras: os fatores de atração da próclise (como palavras negativas e pronomes relativos) e as restrições da ênclise (não iniciar orações e não usar após particípios). Para as provas de carreiras policiais, dedique atenção especial à colocação pronominal em locuções verbais, pois as bancas exploram constantemente a proibição do particípio e a colocação do pronome junto ao verbo principal no infinitivo.
 
----',
+---$material$,
   'Estudo das regras de colocação pronominal (próclise, mesóclise e ênclise). Foco nas palavras atrativas da próclise (negativas, pronomes, advérbios, conjunções), na proibição de pronomes no início de frases e na ênclise a verbos no particípio. Inclui detalhamento do posicionamento pronominal em locuções verbais e a resolução comentada de questões de concurso do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -768,7 +768,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Pontuação',
   'Pontuação: Emprego da Vírgula e Demais Sinais de Pontuação',
-  E'# Pontuação
+  $material$# Pontuação
 
 ## 1. Introdução
 
@@ -926,7 +926,7 @@ e) Apresente o distintivo policial, quando chegar à guarita da corregedoria.
 
 Gabaritar pontuação em concursos policiais requer o abandono definitivo da ideia de que a vírgula representa uma pausa na respiração. A pontuação é sintática. Lembre-se sempre de que os termos essenciais (sujeito, verbo e complementos) não podem ser fragmentados e que o deslocamento de adjuntos adverbiais longos ou a caracterização de orações explicativas exigem o uso correto das vírgulas para manter o texto polido e inequívoco.
 
----',
+---$material$,
   'Estudo das regras de emprego dos sinais de pontuação com foco na vírgula. Análise da ordem direta da oração e das proibições de uso da vírgula (sujeito/verbo e verbo/complemento), casos obrigatórios (vocativo, aposto explicativo, adjuntos deslocados longos) e facultativos. Análise semântico-sintática de orações adjetivas explicativas e restritivas. Inclui questões comentadas de bancas.'
 );
 
@@ -937,7 +937,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Compreensão e intelecção de textos',
   'Compreensão e Intelecção de Textos: Técnicas de Leitura para Concursos',
-  E'# Compreensão e Intelecção de Textos
+  $material$# Compreensão e Intelecção de Textos
 
 ## 1. Introdução
 
@@ -1063,7 +1063,7 @@ e) Conquanto identifique os autores de infrações penais, os linchamentos públ
 
 Compreender e interpretar textos não é uma tarefa subjetiva que depende do gosto pessoal do candidato. Trata-se de uma análise rigorosa e objetiva de marcas linguísticas deixadas pelo autor. Nas provas de concursos policiais, leia sempre o texto com atenção especial à coesão textual, às conjunções lógicas e aos termos generalizadores. Identificar o tipo de comando (se de compreensão ou de interpretação) garantirá que você localize a resposta exata exigida pelo examinador.
 
----',
+---$material$,
   'Técnicas de leitura voltadas para a compreensão (intelecção explícita) e interpretação (inferência lógica) de textos em concursos públicos. Análise de coesão anafórica/catafórica, tipologia textual, identificação de termos limitadores e técnicas de paráfrase/reescritura de períodos. Inclui resolução comentada de questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1074,7 +1074,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Ortografia oficial',
   'Ortografia Oficial e o Novo Acordo Ortográfico',
-  E'# Ortografia Oficial
+  $material$# Ortografia Oficial
 
 ## 1. Introdução
 
@@ -1246,7 +1246,7 @@ e) Anti-social, microondas, super-resistente.
 
 Gabaritar ortografia oficial em concursos policiais exige foco em duas frentes: a memorização de morfemas geradores de dúvida (como os sufixos -ês/-esa e -ez/-eza) e a consolidação prática das regras do Acordo Ortográfico sobre hifenização. Dominar a regra do "opostos se atraem e iguais se repelem" resolverá a maioria das questões de hífen, enquanto a análise sintática resolverá o emprego dos "porquês". Dedicar-se a esses detalhes garante a pontuação máxima nas questões objetivas de grafia.
 
----',
+---$material$,
   'Normas de ortografia oficial e Acordo Ortográfico aplicadas a concursos públicos. Emprego de grafia de letras específicas (S/Z, G/J, X/CH), regras consolidadas para o uso do hífen com prefixos, o emprego dos quatro porquês e distinção de homônimos/parônimos comuns (mal/mau, mas/mais). Resolução de questões do CEBRASPE, FGV e VUNESP.'
 );
 
@@ -1257,7 +1257,7 @@ SELECT upsert_material(
   'lingua-portuguesa',
   'Formação, classe e emprego de palavras',
   'Morfologia: Classes de Palavras e Processos de Formação',
-  E'# Morfologia: Formação, Classe e Emprego de Palavras
+  $material$# Morfologia: Formação, Classe e Emprego de Palavras
 
 ## 1. Introdução
 
@@ -1411,7 +1411,7 @@ e) Composição por aglutinação.
 
 A morfologia constitui a base de toda a Língua Portuguesa para concursos. Para obter a pontuação máxima nas provas policiais, o candidato deve priorizar o estudo da semântica das conjunções coordenativas e subordinativas (especialmente adversativas e concessivas), consolidar a flexão de verbos irregulares de alta recorrência e identificar os pronomes adequados para a substituição de complementos verbais diretos e indiretos. Esses pontos somados cobrem a grande maioria das questões de morfologia cobradas nos exames.
 
----',
+---$material$,
   'Estudo da estrutura e dos processos de formação de palavras (derivação prefixal, sufixal, parassintética, regressiva e imprópria; composição por justaposição e aglutinação). Análise sintático-semântica das classes gramaticais mais cobradas em concursos públicos (conjunções, pronomes demonstrativos/pessoais, verbos irregulares derivados de ter, vir, ver e pôr). Resolução de questões do CEBRASPE, FGV e VUNESP.'
 );
 
