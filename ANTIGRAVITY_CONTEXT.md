@@ -116,9 +116,18 @@ SELECT upsert_material(
 
 ---
 
-### 📚 NOVA FEATURE — LINK OFICIAL DA LEI (obrigatório para materiais de Direito)
+### 📚 OBRIGATÓRIO — LINK OFICIAL DA LEI (regra absoluta para qualquer material que cite lei)
 
-A tabela `materials` agora tem coluna `legislacao` JSONB. **Para materiais de Direito** (qualquer direito-*), você DEVE incluir os links oficiais do Planalto.
+**REGRA ABSOLUTA:** todo material que mencione QUALQUER lei (Código, Lei, Decreto, Constituição, Súmula) DEVE incluir o link oficial do Planalto. Vale para:
+- ✅ Todas as matérias de Direito (`direito-*`)
+- ✅ Direitos Humanos (cite DUDH, pactos internacionais — usar link oficial ONU/Planalto)
+- ✅ Atualidades quando citar legislação
+- ✅ Informática quando citar LGPD, Marco Civil, Lei Carolina Dieckmann
+- ✅ Qualquer outra matéria que cite norma jurídica
+
+**O aluno DEVE conseguir clicar e ler a letra de lei direto da fonte oficial.** Isso é diferencial competitivo da plataforma.
+
+A tabela `materials` tem coluna `legislacao` JSONB. Sempre que o material citar uma lei, **adicione TODAS as leis citadas** no array.
 
 **Estrutura do JSONB:**
 ```json
