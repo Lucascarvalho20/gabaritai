@@ -114,6 +114,53 @@ SELECT upsert_material(
 
 **Para os outros parâmetros menores** (slug, topic_name, title, resumo) — pode continuar usando `'...'` normal (eles são curtos e não têm aspas internas).
 
+---
+
+### 📚 NOVA FEATURE — LINK OFICIAL DA LEI (obrigatório para materiais de Direito)
+
+A tabela `materials` agora tem coluna `legislacao` JSONB. **Para materiais de Direito** (qualquer direito-*), você DEVE incluir os links oficiais do Planalto.
+
+**Estrutura do JSONB:**
+```json
+[
+  {
+    "nome": "Código Penal — art. 121 (Homicídio)",
+    "lei": "Decreto-Lei 2.848/40",
+    "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm#art121"
+  },
+  {
+    "nome": "Lei 13.104/15 — Feminicídio",
+    "lei": "Lei 13.104/15",
+    "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13104.htm"
+  }
+]
+```
+
+**Padrões de URL do Planalto:**
+- **Códigos antigos (CP, CC, CDC, CPP):** `https://www.planalto.gov.br/ccivil_03/decreto-lei/del<numero>.htm` ou `https://www.planalto.gov.br/ccivil_03/leis/l<numero>compilado.htm`
+- **Constituição Federal:** `https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm#art<numero>`
+- **Leis 1990-2009:** `https://www.planalto.gov.br/ccivil_03/leis/l<numero>.htm`
+- **Leis 2010-2014:** `https://www.planalto.gov.br/ccivil_03/_ato2011-2014/<ano>/lei/l<numero>.htm`
+- **Leis 2015-2018:** `https://www.planalto.gov.br/ccivil_03/_ato2015-2018/<ano>/lei/L<numero>.htm`
+- **Leis 2019-2022:** `https://www.planalto.gov.br/ccivil_03/_ato2019-2022/<ano>/lei/L<numero>.htm`
+- **Leis 2023-2026:** `https://www.planalto.gov.br/ccivil_03/_ato2023-2026/<ano>/lei/L<numero>.htm`
+- **Âncoras de artigos:** `#art<numero>` no final da URL (ex: `#art121`)
+
+**Como incluir no SQL:**
+Após criar o material com `upsert_material(...)`, faça um UPDATE para preencher a legislação:
+
+```sql
+UPDATE "materials" SET "legislacao" = $leis$[
+  {"nome": "CP art. X", "lei": "Decreto-Lei 2.848/40", "url": "..."},
+  {"nome": "Lei Y", "lei": "Lei XXX/YY", "url": "..."}
+]$leis$
+WHERE title = 'Título Exato do Material';
+```
+
+OU faça tudo num arquivo separado de seed (exemplo em `2026-06-09-legislacao-penal-batch14.sql`).
+
+**Para matérias NÃO jurídicas** (Português, RLM, Atualidades, Informática) — pode deixar `legislacao` vazio (default `[]`).
+
 **Se o resumo (p_resumo) tiver aspas internas**, também use dollar-quoting:
 ```sql
   $resumo$Aqui posso usar ' aspas e ; semicolons livremente$resumo$
