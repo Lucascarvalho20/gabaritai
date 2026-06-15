@@ -21,7 +21,7 @@ INSERT INTO "pricing_plans" (
   'Teste R$ 1',
   'Plano interno de teste de pagamento. Não divulgar.',
   'SINGLE_COURSE', 'MONTH', 100, 0, 15,
-  'ALL', NULL, 1,
+  'SPECIFIC', '["pf-agente"]'::jsonb, 1,
   '["Plano de teste de pagamento"]'::jsonb, NULL, 0,
   true, false, 999,
   NOW(), NOW()
@@ -30,6 +30,9 @@ ON CONFLICT (slug) DO UPDATE SET
   "priceCents" = 100,
   "pixDiscount" = 0,
   "moneyBackDays" = 15,
+  "coverageType" = 'SPECIFIC',
+  "coverageData" = '["pf-agente"]'::jsonb,
+  "maxCourses" = 1,
   active = true,
   "isVisible" = false,
   "updatedAt" = NOW();
