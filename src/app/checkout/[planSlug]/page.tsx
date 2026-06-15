@@ -54,29 +54,42 @@ export default function CheckoutPage() {
   const [validatingCoupon, setValidatingCoupon] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/plans/public').then((r) => r.json()),
-      fetch('/api/courses?all=true').then((r) => r.json()),
-    ]).then(([plansData, coursesData]) => {
-      const plans: Plan[] = plansData.plans ?? []
-      let p = plans.find((x) => x.slug === params.planSlug)
-      // Fallback: se admin pediu trial-7-dias mas o banco tem trial-3d ou trial-7d,
-      // pega qualquer trial ativo (compat com seeds antigos)
-      if (!p && params.planSlug.startsWith('trial-')) {
-        const fallback = plans.find((x) => x.slug.startsWith('trial-'))
-        if (fallback) {
-          router.replace(`/checkout/${fallback.slug}`)
+    (async () => {
+      try {
+        const [plansData, coursesData] = await Promise.all([
+          fetch('/api/plans/public').then((r) => r.json()),
+          fetch('/api/courses?all=true').then((r) => r.json()),
+        ])
+        const plans: Plan[] = plansData.plans ?? []
+        let p = plans.find((x) => x.slug === params.planSlug) ?? null
+
+        // Fallback 1: plano oculto (isVisible=false) — busca direto por slug
+        // (planos de teste/promo de link-direto não vêm na lista pública).
+        if (!p) {
+          const single = await fetch(`/api/plans/${params.planSlug}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+          if (single?.plan) p = single.plan
+        }
+
+        // Fallback 2: trial-7-dias x trial-3d/trial-7d (compat seeds antigos)
+        if (!p && params.planSlug.startsWith('trial-')) {
+          const fallback = plans.find((x) => x.slug.startsWith('trial-'))
+          if (fallback) {
+            router.replace(`/checkout/${fallback.slug}`)
+            return
+          }
+        }
+
+        if (!p) {
+          toast.error('Plano não encontrado')
+          router.push('/planos')
           return
         }
+        setPlan(p)
+        setGroups(coursesData.groups ?? [])
+      } finally {
+        setLoading(false)
       }
-      if (!p) {
-        toast.error('Plano não encontrado')
-        router.push('/planos')
-        return
-      }
-      setPlan(p)
-      setGroups(coursesData.groups ?? [])
-    }).finally(() => setLoading(false))
+    })()
   }, [params.planSlug, router])
 
   // Quando muda o concurso pai, reseta o cargo
