@@ -121,7 +121,7 @@ const PILARES = [
   {
     icon: 'transparency',
     titulo: 'Transparência total',
-    desc: '7 dias de garantia incondicional. Sem fidelidade. Pague no Pix com 5% de desconto. Cancela em 2 cliques, sem ligação pra reter.',
+    desc: '7 dias grátis pra testar + 15 dias de garantia: não se adaptou, devolvemos 100%. Sem fidelidade. Pix com 5% de desconto. Cancela em 2 cliques, sem ligação pra reter.',
   },
   {
     icon: 'guarantee',
@@ -149,7 +149,7 @@ const FAQS = [
   },
   {
     q: 'E se eu não conseguir passar?',
-    a: 'Garantia incondicional de 7 dias: se não gostar nos primeiros 7 dias, devolvemos 100% sem perguntar. Depois disso, continue estudando — temos casos de aprovados depois de 18 meses de uso.',
+    a: 'Você tem 7 dias grátis pra experimentar tudo antes de pagar — e, depois de assinar, ainda tem 15 dias de garantia: se testar e sentir que não é pra você, devolvemos 100% do valor. É a garantia de quem confia no produto. (A garantia vale pra quem realmente testou pouco e não se adaptou — quem já consumiu boa parte do conteúdo não se enquadra, pra ser justo com todos.)',
   },
   {
     q: 'Posso usar no celular?',
@@ -695,7 +695,7 @@ function Planos() {
         <Reveal className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Planos pra cada momento</h2>
           <p className="mt-3 text-muted-foreground">
-            Garantia incondicional de 7 dias. <strong className="text-foreground">Pix com 5% de desconto</strong>.
+            7 dias grátis + 15 dias de garantia. <strong className="text-foreground">Pix com 5% de desconto</strong>.
             Sem fidelidade — cancela quando quiser.
           </p>
         </Reveal>

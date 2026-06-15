@@ -19,8 +19,8 @@ export default function TermosPage() {
       content: 'Oferecemos plano gratuito com funcionalidades limitadas e planos pagos com acesso completo. Os valores são cobrados de acordo com o plano escolhido. Pagamentos são processados por plataformas seguras terceirizadas (Mercado Pago). Cancelamentos devem ser realizados antes do próximo ciclo de cobrança para evitar renovação automática.',
     },
     {
-      title: '5. Política de Reembolso',
-      content: 'Reembolsos são concedidos em até 7 dias após a compra, mediante solicitação pelo e-mail contato@gabaritai.com.br. Após esse período, não são realizados reembolsos. Para cancelamentos de assinatura mensal, o acesso permanece ativo até o fim do período já pago.',
+      title: '5. Política de Reembolso (Garantia de Satisfação)',
+      content: 'Oferecemos garantia de satisfação de 15 (quinze) dias contados a partir da confirmação do pagamento. Se você usufruiu do período de teste gratuito de 7 dias antes de assinar, esse prazo é descontado da garantia (janela efetiva de 8 dias após o pagamento). Para fazer jus ao reembolso integral, o uso da plataforma deve estar dentro de limites razoáveis de avaliação — a garantia destina-se a quem testou e não se adaptou, não a quem já consumiu parte substancial do conteúdo (a título de exemplo: até 80 questões respondidas, 8 sessões de estudo, 2 simulados finalizados e 120 revisões de flashcard). Acima desses limites, ou fora da janela, o reembolso não se aplica. O pedido pode ser feito diretamente pela área de Configurações da sua conta ou pelo e-mail contato@gabaritai.com.br; quando aprovado, o estorno é processado pelo mesmo meio de pagamento (Pix em até alguns dias úteis; cartão conforme prazo da operadora). Este direito é adicional e não substitui o direito de arrependimento de 7 dias previsto no art. 49 do Código de Defesa do Consumidor. Para assinaturas mensais, o acesso permanece ativo até o fim do período já pago em caso de cancelamento.',
     },
     {
       title: '6. Uso Adequado',
