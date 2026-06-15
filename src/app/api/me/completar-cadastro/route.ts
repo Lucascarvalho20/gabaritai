@@ -7,6 +7,7 @@ import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
 import { telegramTrialFraudAttempt } from '@/lib/telegram'
 import { createDefaultStudyPlan } from '@/lib/create-default-study-plan'
+import { bothAllowedToShareContact } from '@/lib/cpf-allowlist'
 
 /**
  * POST /api/me/completar-cadastro
@@ -60,9 +61,10 @@ export async function POST(req: NextRequest) {
     }
     const dupCpf = await prisma.user.findFirst({
       where: { cpfHash: cpfHashed, NOT: { id: user.id } },
-      select: { id: true },
+      select: { id: true, email: true },
     })
-    if (dupCpf) {
+    // Exceção: contas internas do dono (allowlist) podem compartilhar CPF.
+    if (dupCpf && !bothAllowedToShareContact(me.email, dupCpf.email)) {
       await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'cpf_duplicate_oauth' } })
       telegramTrialFraudAttempt({
         reason: 'CPF já cadastrado em outra conta (via completar-cadastro)',
@@ -80,9 +82,9 @@ export async function POST(req: NextRequest) {
     const phoneHashed = hashPhone(phone)
     const dupPhone = await prisma.user.findFirst({
       where: { phoneHash: phoneHashed, NOT: { id: user.id } },
-      select: { id: true },
+      select: { id: true, email: true },
     })
-    if (dupPhone) {
+    if (dupPhone && !bothAllowedToShareContact(me.email, dupPhone.email)) {
       await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'phone_duplicate_oauth' } })
       telegramTrialFraudAttempt({
         reason: 'Telefone já cadastrado em outra conta',
