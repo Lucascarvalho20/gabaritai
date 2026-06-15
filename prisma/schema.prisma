@@ -109,6 +109,7 @@ model User {
   payments         Payment[]
   loginAttempts    LoginAttempt[]
   auditLogs        AuditLog[]
+  timeEntries      StudyTimeEntry[]
 
   @@index([username])
   @@index([email])
@@ -1167,4 +1168,50 @@ model ChatMessage {
 
   @@index([threadId, createdAt])
   @@map("chat_messages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Cronômetro / diário de tempo de estudo
+//
+// Registro LIVRE de tempo — NÃO é ligado ao cronograma nem a estatísticas do
+// edital. Serve pro aluno cronometrar (ao vivo) ou lançar manualmente o que
+// estudou (inclusive fora do site) e ver o quanto rendeu. courseId/topicId
+// são referências leves (opcionais), só pra exibição/filtro.
+// ─────────────────────────────────────────────────────────────────────────
+
+enum StudyTimeType {
+  MATERIA
+  QUESTOES
+  FLASHCARDS
+  SIMULADO
+  REVISAO
+  LEITURA
+  AULA
+  OUTRO
+}
+
+enum StudyTimeSource {
+  TIMER   // cronômetro ao vivo
+  MANUAL  // lançado depois
+}
+
+model StudyTimeEntry {
+  id          String          @id @default(cuid())
+  userId      String
+  type        StudyTimeType   @default(OUTRO)
+  label       String?         // título curto (ex: "Questões em geral", "CESPE")
+  note        String?         @db.Text // descrição livre do que fez
+  courseId    String?         // ref leve (opcional), sem integração de stats
+  topicId     String?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  durationSec Int             // duração em segundos
+  source      StudyTimeSource @default(TIMER)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("study_time_entries")
 }

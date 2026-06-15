@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import ReactMarkdown from 'react-markdown'
 import toast from 'react-hot-toast'
+import InlineStudyTimer from '@/components/InlineStudyTimer'
 
 type Alt = { letra: string; texto: string }
 
@@ -216,6 +217,14 @@ Matéria: ${questao.subject?.name ?? '?'}
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 animate-fade-in">
+      {/* Cronômetro de questões (registra no "Meu tempo") */}
+      <InlineStudyTimer
+        storageKey="timer:questoes"
+        defaultType="QUESTOES"
+        title="🎯 Cronômetro de questões"
+        labelPresets={['Questões em geral', 'Questões específicas']}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

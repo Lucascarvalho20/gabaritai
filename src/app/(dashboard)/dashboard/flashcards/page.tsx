@@ -6,6 +6,7 @@ import { RotateCcw, Plus, CheckCircle2, Loader2, Sparkles, X, Zap } from 'lucide
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+import InlineStudyTimer from '@/components/InlineStudyTimer'
 
 type Flashcard = {
   id: string
@@ -149,6 +150,13 @@ Frente: pergunta direta (max 200 chars). Verso: resposta + 1-2 frases de context
           </button>
         </div>
       </div>
+
+      {/* Cronômetro de flashcards (registra no "Meu tempo") */}
+      <InlineStudyTimer
+        storageKey="timer:flashcards"
+        defaultType="FLASHCARDS"
+        title="⚡ Cronômetro de flashcards"
+      />
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap items-center">
