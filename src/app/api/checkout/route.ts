@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
-import { createPreference, isSandboxMode } from '@/lib/mercadopago'
+import { createPreference, createPixPayment, isSandboxMode, PixNotEnabledError } from '@/lib/mercadopago'
 import { Plan } from '@prisma/client'
 import { apiError } from '@/lib/api-errors'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
+import { decryptCpf } from '@/lib/cpf'
 
 const PRICING_TO_PLAN: Record<string, Plan> = {
   TRIAL: Plan.FREE,
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { planSlug, courseSlug, useDiscount, couponCode } = body
+    const { planSlug, courseSlug, useDiscount, couponCode, method } = body
     if (!planSlug) return NextResponse.json({ message: 'planSlug obrigatório' }, { status: 400 })
 
     const plan = await prisma.pricingPlan.findUnique({ where: { slug: planSlug } })
@@ -129,8 +130,77 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 2. Cria preference no MP
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
+
+    // 2a. PIX direto (Checkout Transparente): gera QR Code + copia-e-cola na
+    // nossa própria página, sem mandar pro login do Mercado Pago.
+    if (method === 'pix') {
+      // PIX exige CPF do pagador — pega o do cadastro (criptografado no banco).
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { cpfEncrypted: true, name: true, email: true },
+      })
+      const cpf = dbUser?.cpfEncrypted ? decryptCpf(dbUser.cpfEncrypted) : null
+      if (!cpf) {
+        // Sem CPF não dá pra gerar PIX — marca o Payment como cancelado e avisa.
+        await prisma.payment.update({ where: { id: payment.id }, data: { status: 'CANCELLED' } })
+        return NextResponse.json({
+          message: 'Pra pagar no Pix você precisa completar o cadastro com seu CPF.',
+          needsCpf: true,
+        }, { status: 400 })
+      }
+
+      const fullName = (dbUser?.name ?? user.name ?? '').trim()
+      const [firstName, ...rest] = fullName.split(/\s+/)
+      const lastName = rest.join(' ') || firstName
+
+      try {
+        const pix = await createPixPayment({
+          amount: finalAmount,
+          description: `${plan.name} — Gabaritai`,
+          externalReference: payment.id,
+          notificationUrl: `${baseUrl}/api/payments/webhook`,
+          payer: {
+            email: dbUser?.email ?? user.email ?? '',
+            firstName,
+            lastName,
+            cpf,
+          },
+          expiresMinutes: 30,
+        })
+
+        const td = pix.point_of_interaction?.transaction_data
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            providerPaymentId: String(pix.id),
+            paymentMethod: 'pix',
+            rawPreference: pix as any,
+          },
+        })
+
+        return NextResponse.json({
+          ok: true,
+          method: 'pix',
+          paymentId: payment.id,
+          pix: {
+            qrCode: td?.qr_code ?? null,
+            qrCodeBase64: td?.qr_code_base64 ?? null,
+            ticketUrl: td?.ticket_url ?? null,
+            expiresAt: pix.date_of_expiration ?? null,
+            amount: finalAmount,
+          },
+        })
+      } catch (err: any) {
+        await prisma.payment.update({ where: { id: payment.id }, data: { status: 'CANCELLED' } })
+        if (err instanceof PixNotEnabledError) {
+          return NextResponse.json({ message: err.message, pixNotEnabled: true }, { status: 503 })
+        }
+        return apiError(err, 'Erro ao gerar PIX', 'checkout-pix')
+      }
+    }
+
+    // 2b. Checkout Pro (cartão/boleto): redireciona pro MP
     const pref = await createPreference({
       items: [{
         title: plan.name,

@@ -68,6 +68,87 @@ export async function createPreference(input: CreatePreferenceInput): Promise<Mp
   return data as MpPreference
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// PIX direto (Checkout Transparente) — gera QR Code + copia-e-cola na NOSSA
+// página, sem redirecionar pro login do Mercado Pago.
+//
+// PRÉ-REQUISITO: a conta MP precisa ter uma CHAVE PIX ativada. Sem ela, a API
+// retorna "Collector user without key enabled for QR render". Ative em
+// Mercado Pago → Seu negócio → Configurações → Pix (ou no app do MP).
+// ─────────────────────────────────────────────────────────────────────────
+
+export type MpPixPayment = {
+  id: number
+  status: MpPayment['status']
+  status_detail: string
+  transaction_amount: number
+  date_of_expiration?: string
+  point_of_interaction?: {
+    transaction_data?: {
+      qr_code?: string         // copia-e-cola (texto pra colar no app do banco)
+      qr_code_base64?: string  // imagem PNG do QR em base64
+      ticket_url?: string      // página do MP com o QR (fallback)
+    }
+  }
+}
+
+export class PixNotEnabledError extends Error {
+  constructor() {
+    super('Sua conta Mercado Pago ainda não tem chave Pix ativada. Ative o Pix no app/painel do Mercado Pago e tente de novo.')
+    this.name = 'PixNotEnabledError'
+  }
+}
+
+export async function createPixPayment(input: {
+  amount: number              // em REAIS
+  description: string
+  externalReference: string   // nosso Payment.id
+  notificationUrl: string
+  payer: { email: string; firstName?: string; lastName?: string; cpf: string }
+  expiresMinutes?: number     // default 30
+}): Promise<MpPixPayment> {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN
+  if (!token) throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado')
+
+  const expiresMinutes = input.expiresMinutes ?? 30
+  const expiration = new Date(Date.now() + expiresMinutes * 60_000)
+
+  const res = await fetch(`${MP_BASE}/v1/payments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      // Idempotência: mesma chave = MP não cria PIX duplicado se reenviar
+      'X-Idempotency-Key': `pix-${input.externalReference}`,
+    },
+    body: JSON.stringify({
+      transaction_amount: Number(input.amount.toFixed(2)),
+      description: input.description,
+      payment_method_id: 'pix',
+      external_reference: input.externalReference,
+      notification_url: input.notificationUrl,
+      date_of_expiration: expiration.toISOString(),
+      payer: {
+        email: input.payer.email,
+        first_name: input.payer.firstName,
+        last_name: input.payer.lastName,
+        identification: { type: 'CPF', number: input.payer.cpf },
+      },
+    }),
+  })
+
+  const data = await res.json()
+  if (!res.ok) {
+    console.error('[mp] createPixPayment error:', data)
+    const msg = String(data?.message ?? '').toLowerCase()
+    if (msg.includes('key enabled') || msg.includes('without key')) {
+      throw new PixNotEnabledError()
+    }
+    throw new Error(data?.message ?? 'Erro ao gerar PIX no Mercado Pago')
+  }
+  return data as MpPixPayment
+}
+
 export type MpPayment = {
   id: number
   status: 'pending' | 'approved' | 'authorized' | 'in_process' | 'in_mediation' | 'rejected' | 'cancelled' | 'refunded' | 'charged_back'

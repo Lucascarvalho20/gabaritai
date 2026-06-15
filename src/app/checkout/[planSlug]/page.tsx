@@ -3,11 +3,21 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Loader2, Check, ShieldCheck, AlertTriangle, ArrowLeft, CreditCard } from 'lucide-react'
+import { Loader2, Check, ShieldCheck, AlertTriangle, ArrowLeft, CreditCard, QrCode } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import PixCheckoutPanel from '@/components/PixCheckoutPanel'
+
+type PixData = {
+  paymentId: string
+  qrCode: string | null
+  qrCodeBase64: string | null
+  ticketUrl: string | null
+  expiresAt: string | null
+  amount: number
+}
 
 type Plan = {
   id: string
@@ -46,7 +56,8 @@ export default function CheckoutPage() {
   const [parentSlug, setParentSlug] = useState('')
   const [courseSlug, setCourseSlug] = useState('')
   const [useDiscount, setUseDiscount] = useState(true)
-  const [processing, setProcessing] = useState(false)
+  const [processing, setProcessing] = useState<false | 'pix' | 'card'>(false)
+  const [pixData, setPixData] = useState<PixData | null>(null)
 
   // Cupom
   const [couponCode, setCouponCode] = useState('')
@@ -119,7 +130,7 @@ export default function CheckoutPage() {
     } finally { setValidatingCoupon(false) }
   }
 
-  async function pay() {
+  async function pay(method: 'pix' | 'card') {
     if (!user) {
       // Salva o plano no localStorage e redireciona pra login
       localStorage.setItem('gabaritai_pending_plan', JSON.stringify({ slug: params.planSlug, courseSlug }))
@@ -132,22 +143,35 @@ export default function CheckoutPage() {
     if (needsCourseChoice && !courseSlug) {
       return toast.error('Selecione o curso')
     }
-    setProcessing(true)
+    setProcessing(method)
     try {
       const { data } = await api.post('/checkout', {
         planSlug: plan.slug,
         courseSlug: needsCourseChoice ? courseSlug : undefined,
-        useDiscount,
+        useDiscount: method === 'pix' ? true : useDiscount,
         couponCode: appliedCoupon?.code,
+        method,
       })
       if (data.free) {
         router.push(data.redirect)
         return
       }
-      // Redireciona pro checkout do MP
+      if (data.method === 'pix' && data.pix) {
+        // Abre o painel com QR Code + copia-e-cola (não redireciona pro MP)
+        setPixData({ paymentId: data.paymentId, ...data.pix })
+        setProcessing(false)
+        return
+      }
+      // Cartão/boleto: redireciona pro Checkout Pro do MP
       window.location.href = data.checkoutUrl
     } catch (e: any) {
-      toast.error(e.response?.data?.message ?? 'Erro ao criar checkout')
+      const d = e.response?.data
+      if (d?.needsCpf) {
+        toast.error('Pra pagar no Pix, complete seu cadastro com o CPF primeiro.')
+        router.push('/completar-cadastro')
+      } else {
+        toast.error(d?.message ?? 'Erro ao criar checkout')
+      }
       setProcessing(false)
     }
   }
@@ -350,20 +374,54 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <button
-            onClick={pay}
-            disabled={processing || (plan.coverageType === 'SPECIFIC' && !courseSlug)}
-            className="w-full rounded-xl bg-brand-500 text-white py-3 font-bold hover:bg-brand-600 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-          >
-            {processing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando…</> :
-             plan.priceCents === 0 ? 'Ativar trial grátis' :
-             <><CreditCard className="w-4 h-4" /> Ir para pagamento</>}
-          </button>
+          {(() => {
+            const isCombo = plan.type === 'COMBO' || plan.type === 'FULL_ACCESS'
+            const missingCourse = plan.coverageType === 'SPECIFIC' && !isCombo && !courseSlug
+            const busy = processing !== false
+
+            if (plan.priceCents === 0) {
+              return (
+                <button
+                  onClick={() => pay('card')}
+                  disabled={busy || missingCourse}
+                  className="w-full rounded-xl bg-brand-500 text-white py-3 font-bold hover:bg-brand-600 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando…</> : 'Ativar trial grátis'}
+                </button>
+              )
+            }
+
+            return (
+              <div className="space-y-2">
+                {/* PIX — gera QR Code na própria página */}
+                <button
+                  onClick={() => pay('pix')}
+                  disabled={busy || missingCourse}
+                  className="w-full rounded-xl bg-success-500 text-white py-3 font-bold hover:bg-success-600 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {processing === 'pix'
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando Pix…</>
+                    : <><QrCode className="w-4 h-4" /> Pagar com Pix{plan.pixDiscount > 0 ? ` (${plan.pixDiscount}% off)` : ''}</>}
+                </button>
+
+                {/* Cartão / boleto — Checkout Pro do MP */}
+                <button
+                  onClick={() => pay('card')}
+                  disabled={busy || missingCourse}
+                  className="w-full rounded-xl border-2 border-brand-500 text-brand-500 py-3 font-bold hover:bg-brand-50 dark:hover:bg-brand-900/20 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {processing === 'card'
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando…</>
+                    : <><CreditCard className="w-4 h-4" /> Cartão ou boleto</>}
+                </button>
+              </div>
+            )
+          })()}
 
           {plan.priceCents > 0 && (
             <div className="text-[10px] text-muted-foreground text-center space-y-0.5">
               <p>🔒 Pagamento processado pelo Mercado Pago</p>
-              <p>💳 Pix · Cartão (até 12x) · Boleto</p>
+              <p>⚡ No Pix o acesso libera na hora · cartão em até 12x</p>
             </div>
           )}
 
@@ -377,6 +435,19 @@ export default function CheckoutPage() {
           )}
         </div>
       </main>
+
+      {pixData && (
+        <PixCheckoutPanel
+          paymentId={pixData.paymentId}
+          qrCode={pixData.qrCode}
+          qrCodeBase64={pixData.qrCodeBase64}
+          ticketUrl={pixData.ticketUrl}
+          expiresAt={pixData.expiresAt}
+          amount={pixData.amount}
+          onPaid={() => router.push(`/checkout/sucesso?payment=${pixData.paymentId}`)}
+          onClose={() => setPixData(null)}
+        />
+      )}
     </div>
   )
 }
