@@ -86,7 +86,7 @@ export default function PlanosPublicoPage() {
             Escolha o plano que cabe na sua aprovação.
           </h1>
           <p className="text-muted-foreground">
-            Sem fidelidade. Garantia de {plans[0]?.moneyBackDays ?? 7} dias. Cancela quando quiser.
+            Sem fidelidade. Garantia de 15 dias (devolvemos se não se adaptar). Cancela quando quiser.
             Pague no Pix e ganhe desconto.
           </p>
         </section>
@@ -194,7 +194,7 @@ export default function PlanosPublicoPage() {
                 )}
 
                 <p className="text-[10px] text-muted-foreground text-center">
-                  Garantia {p.moneyBackDays} dias · Cancela quando quiser
+                  Garantia 15 dias · Cancela quando quiser
                 </p>
               </div>
             )
