@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim()
-    const cpfHash = hashCpf(cpf)
+    let cpfHash = hashCpf(cpf)
     const cpfEncrypted = encryptCpf(cpf)
 
     // Banlist: CPF foi banido pelo admin
@@ -63,7 +63,9 @@ export async function POST(req: NextRequest) {
     // Exceção: se o conflito é só de CPF e ambas as contas estão na allowlist
     // do dono, permite (não bloqueia). E-mail duplicado nunca passa.
     if (exists && exists.email !== normalizedEmail && bothAllowedToShareContact(normalizedEmail, exists.email)) {
-      // segue o fluxo de criação normalmente (não retorna 409)
+      // Allowlist do dono: permite o mesmo CPF. Como cpfHash é @unique, grava
+      // um hash derivado exclusivo (mantém a dedup normal pros demais).
+      cpfHash = `${cpfHash}#${normalizedEmail}`
     } else if (exists) {
       const reason = exists.email === normalizedEmail ? 'email' : 'cpf'
       await audit({
