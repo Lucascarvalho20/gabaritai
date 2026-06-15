@@ -6,6 +6,7 @@ import { audit } from '@/lib/audit-log'
 import { getClientIp, checkRateLimit, recordFailedAttempt } from '@/lib/rate-limit'
 import { telegramNewSignup, telegramTrialFraudAttempt } from '@/lib/telegram'
 import { findReferrerByCode } from '@/lib/referral'
+import { bothAllowedToShareContact } from '@/lib/cpf-allowlist'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
@@ -59,7 +60,11 @@ export async function POST(req: NextRequest) {
       where: { OR: [{ email: normalizedEmail }, { cpfHash }] },
       select: { id: true, email: true, cpfHash: true },
     })
-    if (exists) {
+    // Exceção: se o conflito é só de CPF e ambas as contas estão na allowlist
+    // do dono, permite (não bloqueia). E-mail duplicado nunca passa.
+    if (exists && exists.email !== normalizedEmail && bothAllowedToShareContact(normalizedEmail, exists.email)) {
+      // segue o fluxo de criação normalmente (não retorna 409)
+    } else if (exists) {
       const reason = exists.email === normalizedEmail ? 'email' : 'cpf'
       await audit({
         action: 'TRIAL_BLOCKED_DUPLICATE',
