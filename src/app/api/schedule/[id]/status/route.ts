@@ -91,8 +91,29 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const horasRestantes = Math.round((minutosRestantes._sum.durationMin ?? 0) / 60)
 
   const diasAtePrava = Math.max(0, Math.ceil((new Date(plan.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
-  const horasDisponiveisRestantes = diasAtePrava * plan.hoursPerDay
+
+  // Dias ÚTEIS restantes (respeita os dias da semana que o aluno escolheu)
+  const diasSemana = new Set<number>(Array.isArray(plan.daysPerWeek) ? (plan.daysPerWeek as number[]) : [1, 2, 3, 4, 5])
+  let diasUteisRestantes = 0
+  {
+    const c = new Date(today)
+    const fim = new Date(plan.endDate)
+    while (c <= fim) {
+      if (diasSemana.has(c.getDay())) diasUteisRestantes++
+      c.setDate(c.getDate() + 1)
+    }
+  }
+
+  const horasDisponiveisRestantes = diasUteisRestantes * plan.hoursPerDay
   const insuficiente = horasDisponiveisRestantes < horasRestantes
+  // Horas/dia mínimas pra zerar o edital até a prova (nos dias úteis restantes)
+  const horasMinimasPorDia = diasUteisRestantes > 0
+    ? Math.ceil((horasRestantes / diasUteisRestantes) * 10) / 10
+    : null
+  // "Ideal" = mínimo + 20% de folga pra revisão/imprevisto
+  const horasIdeaisPorDia = horasMinimasPorDia != null
+    ? Math.ceil(horasMinimasPorDia * 1.2 * 10) / 10
+    : null
 
   // Aviso final
   const warnings: Array<{ kind: 'atraso' | 'tempo' | 'inativo' | 'meta'; message: string }> = []
@@ -107,11 +128,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       message: `${pendingPast.length} sessão(ões) em atraso. Continue de onde parou ou recalcule se rotina mudou.`,
     })
   }
-  if (insuficiente) {
-    const deficit = Math.round(horasRestantes - horasDisponiveisRestantes)
+  if (insuficiente && horasMinimasPorDia != null) {
     warnings.push({
       kind: 'tempo',
-      message: `⚠️ Faltam ~${deficit}h pra completar o cronograma até a prova. Aumente horas/dia ou ajuste data prova.`,
+      message: `⚠️ Com ${plan.hoursPerDay}h/dia você NÃO termina o edital até a prova. Pra zerar a tempo, estude no mínimo ${horasMinimasPorDia}h/dia (ideal: ${horasIdeaisPorDia}h/dia pra dar folga de revisão).`,
     })
   }
   if (percentEdital >= 70 && completedThisWeek === 0) {
@@ -136,6 +156,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     percentEdital,
     horasRestantes,
     horasDisponiveisRestantes: Math.round(horasDisponiveisRestantes),
+    diasUteisRestantes,
+    horasMinimasPorDia,
+    horasIdeaisPorDia,
     insuficiente,
     masteryByMateria,
     lastStudyAt: lastStudyAt?.completedAt ?? null,

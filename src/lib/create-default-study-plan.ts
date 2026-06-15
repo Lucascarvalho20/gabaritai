@@ -91,6 +91,21 @@ export async function createDefaultStudyPlan(opts: {
     topicsBySubject.set(s.subjectId, topics)
   }
 
+  // Quais tópicos JÁ têm questão no banco — só agendamos QUESTÕES pra esses
+  // (evita mandar o aluno pra uma página de questões vazia).
+  const allTopicIds = Array.from(topicsBySubject.values()).flat().map((t) => t.id)
+  const topicsWithQuestions = new Set<string>()
+  if (allTopicIds.length > 0) {
+    const counts = await prisma.question.groupBy({
+      by: ['topicId'],
+      where: { topicId: { in: allTopicIds }, active: true },
+      _count: { _all: true },
+    })
+    for (const c of counts) {
+      if (c.topicId && c._count._all > 0) topicsWithQuestions.add(c.topicId)
+    }
+  }
+
   // Fila ESTUDO+QUESTÕES por tópico, intercalando matérias por peso
   const baseQueue: QueueItem[] = []
   const revisaoQueue: QueueItem[] = []
@@ -112,7 +127,10 @@ export async function createDefaultStudyPlan(opts: {
     const topics = topicsBySubject.get(best)!
     const t = topics[cursor[best]++]
     baseQueue.push({ subjectId: best, topicId: t.id, type: 'ESTUDO' })
-    baseQueue.push({ subjectId: best, topicId: t.id, type: 'QUESTOES' })
+    // Só agenda questões se houver questão cadastrada pro tópico
+    if (topicsWithQuestions.has(t.id)) {
+      baseQueue.push({ subjectId: best, topicId: t.id, type: 'QUESTOES' })
+    }
     revisaoQueue.push({ subjectId: best, topicId: t.id, type: 'REVISAO' })
     usage[best] += 1
     remaining--
