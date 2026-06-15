@@ -13,12 +13,14 @@ import {
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
+type LeiLink = { nome: string; lei?: string; url: string }
 type Material = {
   id: string
   title: string
   content: string
   updatedAt: string
   sourcesUsed: any
+  legislacao?: LeiLink[]
 }
 type Resumo = {
   id: string
@@ -225,6 +227,34 @@ export default function MaterialTopicoPage() {
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{resumo.resumo}</ReactMarkdown>
             )}
           </article>
+
+          {/* Letra de lei — links oficiais (Planalto) de onde o conteúdo foi baseado */}
+          {material?.legislacao && Array.isArray(material.legislacao) && material.legislacao.length > 0 && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50/60 dark:bg-amber-900/15 p-4">
+              <p className="text-xs uppercase tracking-wide font-bold text-amber-700 dark:text-amber-300 mb-1">
+                📖 Letra de lei
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Leia direto da fonte oficial (Planalto) a legislação em que este conteúdo se baseia.
+              </p>
+              <ul className="space-y-1.5">
+                {material.legislacao.map((lei, i) => (
+                  <li key={i}>
+                    <a
+                      href={lei.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      {lei.nome}
+                      <span aria-hidden className="text-xs">↗</span>
+                    </a>
+                    {lei.lei && <span className="text-xs text-muted-foreground"> · {lei.lei}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {tab === 'resumo' && resumo?.pontosChave && Array.isArray(resumo.pontosChave) && (
             <div className="rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 p-4">

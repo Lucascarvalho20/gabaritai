@@ -75,6 +75,7 @@ export async function GET(
           content: material.content,
           updatedAt: material.updatedAt,
           sourcesUsed: material.sourcesUsed,
+          legislacao: (material as any).legislacao ?? [],
         }
       : null,
     resumo: material?.resumo
