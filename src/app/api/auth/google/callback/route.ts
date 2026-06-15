@@ -102,6 +102,16 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.redirect(finalizeUrl.toString())
     res.cookies.delete('oauth_state')
+    // Seta cookie httpOnly igual ao login por senha — assim a sessão OAuth
+    // também fica protegida por cookie (não só localStorage). O token segue
+    // na URL apenas pra hidratar o store/localStorage no oauth-finalize.
+    res.cookies.set('gabaritai_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/',
+    })
     return res
   } catch (err: any) {
     console.error('[oauth] google callback error:', err.message)

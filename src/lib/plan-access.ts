@@ -95,6 +95,30 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
   })
 
   if (!payment) {
+    // Sem pagamento ativo → verifica se há um TrialPeriod ainda válido.
+    // O cadastro (registro/Google/leads) cria um TrialPeriod, não um Payment.
+    // Sem este fallback, o aluno recém-cadastrado aparecia como "sem plano"
+    // (NO_ACCESS), não conseguia ativar curso nem via o banner correto.
+    const activeTrial = await prisma.trialPeriod.findFirst({
+      where: { userId, endsAt: { gt: new Date() } },
+      orderBy: { endsAt: 'desc' },
+      select: { endsAt: true },
+    })
+
+    if (activeTrial) {
+      return {
+        hasPlan: true,
+        planSlug: 'trial-ativo',
+        planName: 'Trial 7 dias',
+        coverageType: 'ALL',     // pode explorar resumos de qualquer curso
+        maxCourses: 1,           // mas só 1 curso ativo no cronograma
+        expiresAt: activeTrial.endsAt,
+        isBypassed: false,
+        isTrial: true,
+        reason: 'Trial gratuito ativo',
+      }
+    }
+
     return {
       hasPlan: false,
       planSlug: null,
