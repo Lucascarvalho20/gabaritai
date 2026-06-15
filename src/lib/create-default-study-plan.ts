@@ -37,9 +37,14 @@ export async function createDefaultStudyPlan(opts: {
   forceReplace?: boolean
   hoursPerDay?: number
   daysPerWeek?: number[]
+  // 'LOGICAL' (padrão): ordem lógica do edital, intercalando matérias — o aluno
+  //   entende o conteúdo sem pular etapas.
+  // 'HIGH_WEIGHT': prioriza as matérias de maior peso primeiro — opção pra quem
+  //   tem pouco tempo e prefere garantir o que mais cai, mesmo sem zerar tudo.
+  priorityMode?: 'LOGICAL' | 'HIGH_WEIGHT'
 }): Promise<{ studyPlanId: string; sessionsCreated: number; isFeasible: boolean; deficitDays: number } | null> {
   const {
-    userId, courseId, priorityFraquezas = [], forceReplace = false,
+    userId, courseId, priorityFraquezas = [], forceReplace = false, priorityMode = 'LOGICAL',
     hoursPerDay = DEFAULT_HOURS_PER_DAY, daysPerWeek = DEFAULT_DAYS_PER_WEEK,
   } = opts
 
@@ -113,27 +118,42 @@ export async function createDefaultStudyPlan(opts: {
   const usage: Record<string, number> = Object.fromEntries(subjects.map((s) => [s.subjectId, 0]))
   const totalWeight = subjects.reduce((a, s) => a + s.weight, 0) || 1
 
-  let remaining = subjects.reduce((a, s) => a + (topicsBySubject.get(s.subjectId)?.length ?? 0), 0)
-  while (remaining > 0) {
-    let best: string | null = null
-    let bestRatio = Infinity
-    for (const s of subjects) {
-      const topics = topicsBySubject.get(s.subjectId) ?? []
-      if (cursor[s.subjectId] >= topics.length) continue
-      const ratio = usage[s.subjectId] / s.weight
-      if (ratio < bestRatio) { bestRatio = ratio; best = s.subjectId }
+  // Emite o par ESTUDO(+QUESTÕES) + agenda REVISÃO de um tópico
+  const emitTopic = (subjectId: string, topicId: string) => {
+    baseQueue.push({ subjectId, topicId, type: 'ESTUDO' })
+    if (topicsWithQuestions.has(topicId)) {
+      baseQueue.push({ subjectId, topicId, type: 'QUESTOES' })
     }
-    if (!best) break
-    const topics = topicsBySubject.get(best)!
-    const t = topics[cursor[best]++]
-    baseQueue.push({ subjectId: best, topicId: t.id, type: 'ESTUDO' })
-    // Só agenda questões se houver questão cadastrada pro tópico
-    if (topicsWithQuestions.has(t.id)) {
-      baseQueue.push({ subjectId: best, topicId: t.id, type: 'QUESTOES' })
+    revisaoQueue.push({ subjectId, topicId, type: 'REVISAO' })
+  }
+
+  if (priorityMode === 'HIGH_WEIGHT') {
+    // Alto peso primeiro: matérias mais pesadas inteiras antes das leves.
+    // Garante o que mais cai mesmo se faltar tempo pra zerar tudo.
+    const ordered = [...subjects].sort((a, b) => b.weight - a.weight)
+    for (const s of ordered) {
+      for (const t of topicsBySubject.get(s.subjectId) ?? []) emitTopic(s.subjectId, t.id)
     }
-    revisaoQueue.push({ subjectId: best, topicId: t.id, type: 'REVISAO' })
-    usage[best] += 1
-    remaining--
+  } else {
+    // LOGICAL (padrão): intercala matérias por peso, seguindo a ordem dos
+    // tópicos dentro de cada matéria — aluno entende sem pular etapas.
+    let remaining = subjects.reduce((a, s) => a + (topicsBySubject.get(s.subjectId)?.length ?? 0), 0)
+    while (remaining > 0) {
+      let best: string | null = null
+      let bestRatio = Infinity
+      for (const s of subjects) {
+        const topics = topicsBySubject.get(s.subjectId) ?? []
+        if (cursor[s.subjectId] >= topics.length) continue
+        const ratio = usage[s.subjectId] / s.weight
+        if (ratio < bestRatio) { bestRatio = ratio; best = s.subjectId }
+      }
+      if (!best) break
+      const topics = topicsBySubject.get(best)!
+      const t = topics[cursor[best]++]
+      emitTopic(best, t.id)
+      usage[best] += 1
+      remaining--
+    }
   }
 
   // Sem tópicos cadastrados → cai pro nível de matéria
