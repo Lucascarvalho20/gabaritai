@@ -63,17 +63,24 @@ export async function POST(req: NextRequest) {
       where: { cpfHash: cpfHashed, NOT: { id: user.id } },
       select: { id: true, email: true },
     })
-    // Exceção: contas internas do dono (allowlist) podem compartilhar CPF.
-    if (dupCpf && !bothAllowedToShareContact(me.email, dupCpf.email)) {
-      await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'cpf_duplicate_oauth' } })
-      telegramTrialFraudAttempt({
-        reason: 'CPF já cadastrado em outra conta (via completar-cadastro)',
-        ip,
-        attemptedEmail: me.email ?? '(sem email)',
-      }).catch(() => {})
-      return NextResponse.json({ message: 'Este CPF já está cadastrado em outra conta' }, { status: 409 })
+    let cpfHashToStore = cpfHashed
+    if (dupCpf) {
+      // Exceção: contas internas do dono (allowlist) podem compartilhar CPF.
+      if (bothAllowedToShareContact(me.email, dupCpf.email)) {
+        // cpfHash é @unique no banco — pra não colidir, grava um hash derivado
+        // exclusivo desta conta (mantém a dedup normal pros demais usuários).
+        cpfHashToStore = `${cpfHashed}#${user.id}`
+      } else {
+        await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'cpf_duplicate_oauth' } })
+        telegramTrialFraudAttempt({
+          reason: 'CPF já cadastrado em outra conta (via completar-cadastro)',
+          ip,
+          attemptedEmail: me.email ?? '(sem email)',
+        }).catch(() => {})
+        return NextResponse.json({ message: 'Este CPF já está cadastrado em outra conta' }, { status: 409 })
+      }
     }
-    updateData.cpfHash = cpfHashed
+    updateData.cpfHash = cpfHashToStore
     updateData.cpfEncrypted = encryptCpf(cpf)
   }
 
@@ -84,17 +91,22 @@ export async function POST(req: NextRequest) {
       where: { phoneHash: phoneHashed, NOT: { id: user.id } },
       select: { id: true, email: true },
     })
-    if (dupPhone && !bothAllowedToShareContact(me.email, dupPhone.email)) {
-      await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'phone_duplicate_oauth' } })
-      telegramTrialFraudAttempt({
-        reason: 'Telefone já cadastrado em outra conta',
-        ip,
-        attemptedEmail: me.email ?? '(sem email)',
-      }).catch(() => {})
-      return NextResponse.json({ message: 'Este telefone já está cadastrado em outra conta' }, { status: 409 })
+    let phoneHashToStore = phoneHashed
+    if (dupPhone) {
+      if (bothAllowedToShareContact(me.email, dupPhone.email)) {
+        phoneHashToStore = `${phoneHashed}#${user.id}`
+      } else {
+        await audit({ actorId: user.id, action: 'TRIAL_BLOCKED_DUPLICATE', ip, metadata: { reason: 'phone_duplicate_oauth' } })
+        telegramTrialFraudAttempt({
+          reason: 'Telefone já cadastrado em outra conta',
+          ip,
+          attemptedEmail: me.email ?? '(sem email)',
+        }).catch(() => {})
+        return NextResponse.json({ message: 'Este telefone já está cadastrado em outra conta' }, { status: 409 })
+      }
     }
     updateData.phone = cleanPhone(phone)
-    updateData.phoneHash = phoneHashed
+    updateData.phoneHash = phoneHashToStore
     updateData.phoneEncrypted = encryptPhone(phone)
   }
 
