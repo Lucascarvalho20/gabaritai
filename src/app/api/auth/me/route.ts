@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     role: user.role,
     plan: user.plan,
     avatar: user.avatar,
+    emailVerified: user.emailVerified,
     concursoAlvo: user.profile?.concursoLabel,
     profile: user.profile,
     hasCpf: !!user.cpfHash,
