@@ -79,6 +79,27 @@ export default function AdminPagamentosPage() {
 
   useEffect(() => { load() }, [load])
 
+  const [refunding, setRefunding] = useState<string | null>(null)
+  async function handleRefund(p: Payment) {
+    const dias = Math.floor((Date.now() - new Date(p.paidAt ?? p.createdAt).getTime()) / 86400000)
+    const ok = window.confirm(
+      `Estornar ${fmtBRL(p.amount)} de ${p.user.name}?\n\n` +
+      `Pago há ${dias} dia(s). O valor volta pro comprador e o acesso será revogado.\n` +
+      `Esta ação não pode ser desfeita.`,
+    )
+    if (!ok) return
+    setRefunding(p.id)
+    try {
+      const { data } = await api.post(`/admin/payments/${p.id}/refund`, { reason: 'admin_manual' })
+      toast.success(`Estornado ${fmtBRL(data.refund.amount)}.${data.accessRevoked ? ' Acesso revogado.' : ''}`)
+      load()
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? 'Falha ao estornar')
+    } finally {
+      setRefunding(null)
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-5 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -172,6 +193,7 @@ export default function AdminPagamentosPage() {
                   <th className="px-4 py-3">Método</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Vence</th>
+                  <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -202,6 +224,20 @@ export default function AdminPagamentosPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {p.expiresAt ? fmtDate(p.expiresAt).split(' ')[0] : (p.status === 'APPROVED' ? '∞' : '—')}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === 'APPROVED' ? (
+                        <button
+                          onClick={() => handleRefund(p)}
+                          disabled={refunding === p.id}
+                          className="text-[11px] font-bold text-danger-600 hover:text-danger-700 disabled:opacity-50 inline-flex items-center gap-1"
+                        >
+                          {refunding === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                          Estornar
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

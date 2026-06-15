@@ -95,6 +95,47 @@ export async function fetchPayment(paymentId: string | number): Promise<MpPaymen
   return data as MpPayment
 }
 
+export type MpRefund = {
+  id: number
+  payment_id: number
+  amount: number
+  status: string // 'approved' quando estornado com sucesso
+  date_created: string
+}
+
+/**
+ * Estorna um pagamento no Mercado Pago.
+ * - Sem `amount` → reembolso TOTAL.
+ * - Com `amount` → reembolso PARCIAL.
+ *
+ * O valor volta pro mesmo meio de pagamento do comprador (cartão estorna na
+ * fatura; Pix cai na conta de origem). Usa chave de idempotência pra evitar
+ * estorno duplicado se a chamada for repetida.
+ */
+export async function refundPayment(
+  mpPaymentId: string | number,
+  amount?: number,
+): Promise<MpRefund> {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN
+  if (!token) throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado')
+
+  const res = await fetch(`${MP_BASE}/v1/payments/${mpPaymentId}/refunds`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-Idempotency-Key': `refund-${mpPaymentId}-${amount ?? 'full'}`,
+    },
+    body: amount != null ? JSON.stringify({ amount: Number(amount.toFixed(2)) }) : undefined,
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    console.error('[mp] refund error:', data)
+    throw new Error(data.message ?? 'Erro ao estornar pagamento no Mercado Pago')
+  }
+  return data as MpRefund
+}
+
 /** Modo sandbox = token TEST- OU env MERCADOPAGO_SANDBOX=true (override pra forçar com APP_USR-) */
 export function isSandboxMode(): boolean {
   if ((process.env.MERCADOPAGO_SANDBOX ?? '').toLowerCase() === 'true') return true
