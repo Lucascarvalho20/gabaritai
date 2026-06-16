@@ -112,6 +112,12 @@ export async function createPixPayment(input: {
 
   const expiresMinutes = input.expiresMinutes ?? 30
   const expiration = new Date(Date.now() + expiresMinutes * 60_000)
+  // MP exige date_of_expiration COM offset (ex: 2026-06-16T14:03:00.000-03:00).
+  // toISOString() devolve "...Z" (UTC) e o MP rejeita. Convertemos pra -03:00.
+  const expirationStr = (() => {
+    const shifted = new Date(expiration.getTime() - 3 * 60 * 60 * 1000)
+    return shifted.toISOString().replace('Z', '-03:00')
+  })()
 
   const res = await fetch(`${MP_BASE}/v1/payments`, {
     method: 'POST',
@@ -127,7 +133,7 @@ export async function createPixPayment(input: {
       payment_method_id: 'pix',
       external_reference: input.externalReference,
       notification_url: input.notificationUrl,
-      date_of_expiration: expiration.toISOString(),
+      date_of_expiration: expirationStr,
       payer: {
         email: input.payer.email,
         first_name: input.payer.firstName,
@@ -139,12 +145,16 @@ export async function createPixPayment(input: {
 
   const data = await res.json()
   if (!res.ok) {
-    console.error('[mp] createPixPayment error:', data)
-    const msg = String(data?.message ?? '').toLowerCase()
-    if (msg.includes('key enabled') || msg.includes('without key')) {
+    console.error('[mp] createPixPayment error:', JSON.stringify(data))
+    // MP costuma detalhar o motivo real em cause[].description
+    const causeDesc = Array.isArray(data?.cause) && data.cause.length
+      ? data.cause.map((c: any) => c?.description ?? c?.code).filter(Boolean).join('; ')
+      : ''
+    const full = `${data?.message ?? ''} ${causeDesc}`.toLowerCase()
+    if (full.includes('key enabled') || full.includes('without key')) {
       throw new PixNotEnabledError()
     }
-    throw new Error(data?.message ?? 'Erro ao gerar PIX no Mercado Pago')
+    throw new Error(causeDesc || data?.message || 'Erro ao gerar PIX no Mercado Pago')
   }
   return data as MpPixPayment
 }
