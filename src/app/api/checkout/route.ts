@@ -196,7 +196,12 @@ export async function POST(req: NextRequest) {
         if (err instanceof PixNotEnabledError) {
           return NextResponse.json({ message: err.message, pixNotEnabled: true }, { status: 503 })
         }
-        return apiError(err, 'Erro ao gerar PIX', 'checkout-pix')
+        // Surfacing da mensagem REAL do MP (ajuda a diagnosticar — não vaza dado sensível)
+        console.error('[checkout-pix]', err)
+        return NextResponse.json(
+          { message: `Erro ao gerar PIX: ${err?.message ?? 'motivo desconhecido'}` },
+          { status: 502 },
+        )
       }
     }
 
