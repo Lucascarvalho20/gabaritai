@@ -9,6 +9,7 @@ import toast from 'react-hot-toast'
 import {
   BookOpen, FileText, ChevronLeft, ChevronRight, CheckCircle2, Circle,
   Loader2, AlertCircle, Sparkles, Clock, ExternalLink, Download, Printer,
+  Lock, ArrowRight,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,7 @@ type Data = {
     totalAttempts: number
   }
   proximoTopico: { id: string; name: string; order: number } | null
+  locked?: boolean
 }
 
 type Tab = 'completo' | 'resumo'
@@ -118,6 +120,7 @@ export default function MaterialTopicoPage() {
 
   const { topic, material, resumo, progresso, proximoTopico } = data
   const estudado = !!progresso.completedAt
+  const locked = !!data.locked
   const semConteudo = !material && !resumo
 
   return (
@@ -158,7 +161,21 @@ export default function MaterialTopicoPage() {
         </div>
       </header>
 
-      {semConteudo ? (
+      {locked ? (
+        <div className="rounded-xl border border-brand-200 dark:border-brand-800/50 bg-gradient-to-br from-brand-50 to-emerald-50 dark:from-brand-900/20 dark:to-emerald-900/10 p-8 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="font-black text-lg">Conteúdo do plano pago</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            No plano gratuito você organiza seus estudos e marca o que já estudou. O material
+            completo, o resumo e as questões deste tópico fazem parte dos planos pagos.
+          </p>
+          <Link href="/planos" className="btn-primary btn-md inline-flex items-center gap-2">
+            Assinar pra desbloquear <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      ) : semConteudo ? (
         <div className="rounded-lg border-2 border-dashed border-border p-8 text-center space-y-3">
           <Sparkles className="w-8 h-8 text-muted-foreground/40 mx-auto" />
           <h2 className="font-bold">Material em produção</h2>

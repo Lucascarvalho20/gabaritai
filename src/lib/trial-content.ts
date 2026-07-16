@@ -16,20 +16,34 @@
 
 import { getUserPlanLimits } from '@/lib/plan-access'
 
-export type TrialContentMode = 'TRIAL_RESUMOS' | 'FULL_ACCESS' | 'NO_ACCESS'
+export type TrialContentMode = 'TRIAL_RESUMOS' | 'FULL_ACCESS' | 'FREE_PLANNER' | 'NO_ACCESS'
 
 /**
  * Determina o modo de conteúdo do usuário:
  *   - TRIAL_RESUMOS: está no trial (cronograma sugere resumos)
  *   - FULL_ACCESS: plano pago / admin / beta tester / cortesia
- *   - NO_ACCESS: trial expirou, sem plano ativo (visualização limitada)
+ *   - FREE_PLANNER: tier gratuito permanente — usa cronograma/planner, mas
+ *     todo o conteúdo (material, questões, flashcards, simulados) fica bloqueado
+ *   - NO_ACCESS: caso de erro (usuário/plano inválido)
  */
 export async function getUserContentMode(userId: string): Promise<TrialContentMode> {
   const limits = await getUserPlanLimits(userId)
   if (limits.isBypassed) return 'FULL_ACCESS'
   if (limits.isTrial) return 'TRIAL_RESUMOS'
+  if (limits.isFree) return 'FREE_PLANNER'
   if (limits.hasPlan) return 'FULL_ACCESS'
   return 'NO_ACCESS'
+}
+
+/**
+ * true se o conteúdo pago (material, questões, flashcards, IA) deve ficar
+ * BLOQUEADO pro usuário — vale pro tier GRATUITO (planner) e pra sem-acesso.
+ * Use no início dos endpoints de conteúdo/IA como defesa de servidor
+ * (os cadeados na UI são só a primeira camada).
+ */
+export async function isContentLockedForUser(userId: string): Promise<boolean> {
+  const mode = await getUserContentMode(userId)
+  return mode === 'FREE_PLANNER' || mode === 'NO_ACCESS'
 }
 
 /**
@@ -45,6 +59,18 @@ export function getTrialBannerMessage(mode: TrialContentMode): {
   ctaHref: string
 } | null {
   if (mode === 'FULL_ACCESS') return null
+
+  if (mode === 'FREE_PLANNER') {
+    return {
+      show: true,
+      variant: 'info',
+      title: 'Plano gratuito — só o cronograma',
+      message:
+        'Você está no plano gratuito: pode montar seu cronograma, ver a estrutura do edital, marcar o que já estudou e cronometrar seu tempo. O conteúdo (material, questões, flashcards e simulados) é do plano pago — assine pra desbloquear.',
+      ctaLabel: 'Ver planos',
+      ctaHref: '/planos',
+    }
+  }
 
   if (mode === 'TRIAL_RESUMOS') {
     return {

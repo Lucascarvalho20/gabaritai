@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
     maxCourses: limits.maxCourses,
     isTrial: limits.isTrial,
     isBypassed: limits.isBypassed,
+    isFree: limits.isFree,
     expiresAt: limits.expiresAt,
   }
 

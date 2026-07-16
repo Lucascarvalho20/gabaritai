@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
 import { apiError } from '@/lib/api-errors'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const maxDuration = 60
 
@@ -24,6 +25,10 @@ type RedacaoFeedback = {
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'A correção de redação faz parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   try {
     const { text, banca, tema, resultId } = await req.json()

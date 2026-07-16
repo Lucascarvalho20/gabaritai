@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
       coverageType: limits.coverageType,
       maxCourses: limits.maxCourses,
       isBypassed: limits.isBypassed,
+      isFree: limits.isFree,
       expiresAt: limits.expiresAt,
     },
     usage: {

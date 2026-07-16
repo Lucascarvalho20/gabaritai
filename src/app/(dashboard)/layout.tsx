@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Calendar, BookOpen, Zap, Target, Brain,
   TrendingUp, Settings, LogOut, Menu, X,
   Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles, FileText, Trophy,
-  MessageCircle, Gift, Clock,
+  MessageCircle, Gift, Clock, Lock,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/auth'
@@ -18,23 +18,26 @@ import { OfflineIndicator } from '@/components/offline-indicator'
 import { StudyTimerWidget } from '@/components/study/study-timer-widget'
 import { EnrollmentGate } from '@/components/EnrollmentGate'
 import { EmailVerificationBanner } from '@/components/EmailVerificationBanner'
+import { FreePlanBanner } from '@/components/FreePlanBanner'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
+// lockFree: recurso bloqueado no plano GRATUITO (aparece com 🔒 → leva pra /planos).
+// O gratuito mantém: cronograma, edital, tempo, progresso e itens de conta/social.
 const NAV_ALUNO = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/meus-cursos', label: 'Meus Cursos', icon: BookOpen },
-  { href: '/dashboard/diagnostico', label: 'Diagnóstico inicial', icon: Brain, badge: 'IA' },
+  { href: '/dashboard/diagnostico', label: 'Diagnóstico inicial', icon: Brain, badge: 'IA', lockFree: true },
   { href: '/dashboard/cronograma', label: 'Cronograma', icon: Calendar },
-  { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen },
-  { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap },
-  { href: '/dashboard/simulados', label: 'Simulados', icon: Target },
+  { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen, lockFree: true },
+  { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap, lockFree: true },
+  { href: '/dashboard/simulados', label: 'Simulados', icon: Target, lockFree: true },
   { href: '/dashboard/tempo', label: 'Meu tempo', icon: Clock },
-  { href: '/dashboard/provas', label: 'Provas anteriores', icon: FileText },
-  { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA' },
-  { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo' },
-  { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp },
+  { href: '/dashboard/provas', label: 'Provas anteriores', icon: FileText, lockFree: true },
+  { href: '/dashboard/mentor', label: 'Mentor IA', icon: Brain, badge: 'IA', lockFree: true },
+  { href: '/dashboard/resumos', label: 'Resumos IA', icon: Sparkles, badge: 'Novo', lockFree: true },
+  { href: '/dashboard/historico', label: 'Histórico e fraquezas', icon: TrendingUp, lockFree: true },
   { href: '/dashboard/edital-verticalizado', label: 'Edital verticalizado', icon: FileText },
   { href: '/dashboard/chat', label: 'Mensagens', icon: Sparkles },
   { href: '/dashboard/progresso', label: 'Meu progresso', icon: BarChart3 },
@@ -72,19 +75,24 @@ function ThemeToggle() {
   )
 }
 
-function NavItem({ href, label, icon: Icon, badge, active }: { href: string; label: string; icon: any; badge?: string; active: boolean }) {
+function NavItem({ href, label, icon: Icon, badge, active, locked }: { href: string; label: string; icon: any; badge?: string; active: boolean; locked?: boolean }) {
   return (
-    <Link href={href}
+    <Link href={locked ? '/planos' : href}
+      title={locked ? 'Disponível nos planos pagos — clique pra assinar' : undefined}
       className={cn(
         'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group',
         active
           ? 'bg-brand-600 text-white shadow-glow-blue'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          : locked
+            ? 'text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >
       <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-white' : 'group-hover:text-foreground')} />
       <span className="flex-1">{label}</span>
-      {badge && (
+      {locked ? (
+        <Lock className="w-3.5 h-3.5 shrink-0 opacity-70" />
+      ) : badge && (
         <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-semibold', active ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400')}>
           {badge}
         </span>
@@ -138,6 +146,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifs, setNotifs] = useState<Notif[]>([])
+  const [isFree, setIsFree] = useState(false)
   const isAdmin = user?.role === 'ADMIN'
   const isAdminArea = pathname.startsWith('/admin')
   // Admin vê nav de aluno quando está em /dashboard (modo vitalício)
@@ -163,6 +172,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const id = setInterval(load, 60_000)
     return () => { alive = false; clearInterval(id) }
   }, [user?.id])
+
+  // Descobre se o aluno está no plano GRATUITO (pra mostrar os cadeados no menu)
+  useEffect(() => {
+    if (!user || isAdmin) { setIsFree(false); return }
+    let alive = true
+    ;(async () => {
+      try {
+        const { api } = await import('@/lib/api')
+        const { data } = await api.get('/me/plan')
+        if (alive) setIsFree(!!data.plan?.isFree)
+      } catch { /* silencioso */ }
+    })()
+    return () => { alive = false }
+  }, [user?.id, isAdmin])
 
   async function markAllRead() {
     try {
@@ -207,18 +230,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
-        {navItems.map(item => (
-          <NavItem
-            key={item.href}
-            {...item}
-            active={item.href === '/dashboard' || item.href === '/admin'
-              ? pathname === item.href
-              : pathname.startsWith(item.href)}
-          />
-        ))}
+        {navItems.map(item => {
+          const active = item.href === '/dashboard' || item.href === '/admin'
+            ? pathname === item.href
+            : pathname.startsWith(item.href)
+          const locked = isFree && (item as any).lockFree === true
+          return (
+            <NavItem
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              badge={(item as any).badge}
+              active={active}
+              locked={locked}
+            />
+          )
+        })}
       </nav>
 
       <div className="p-3 border-t border-border space-y-1">
+        {!isAdmin && (
+          <button
+            onClick={() => window.dispatchEvent(new Event('gabaritai:open-tour'))}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            Como usar a plataforma
+          </button>
+        )}
         <Link href="/dashboard/configuracoes"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
           <Settings className="w-4 h-4" />
@@ -357,6 +397,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Page content (com gate de enrollment — força aluno a ter curso) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
           <div className="mb-4"><EmailVerificationBanner /></div>
+          <div className="mb-4"><FreePlanBanner /></div>
           <EnrollmentGate>{children}</EnrollmentGate>
         </main>
       </div>

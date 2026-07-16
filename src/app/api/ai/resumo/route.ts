@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const maxDuration = 60
 
@@ -20,6 +21,10 @@ function dailyLimitForUser(plan: string | null, hasFullAccess: boolean): number 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Resumos IA fazem parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true }, { status: 403 })
+  }
 
   const { conteudo, concurso } = await req.json()
 

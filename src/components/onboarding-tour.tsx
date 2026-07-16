@@ -2,45 +2,43 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X, Calendar, Target, Brain, Zap, Sparkles, ArrowRight, Check } from 'lucide-react'
+import { X, Calendar, Target, Sparkles, ArrowRight, Check, Clock, ListChecks } from 'lucide-react'
 import { api } from '@/lib/api'
 
 type Step = {
   icon: any
   title: string
   description: string
-  cta?: { label: string; href: string }
 }
 
+// Walkthrough puramente informativo (NÃO navega no meio — antes o overlay
+// ficava por cima da página). Ensina o fluxo real de uso e é consciente do
+// plano gratuito (recursos pagos aparecem como "no plano pago").
 const STEPS: Step[] = [
   {
     icon: Sparkles,
-    title: 'Bem-vindo ao Gabaritai! 👋',
-    description: 'Sua plataforma de mentoria com IA pra concursos militares e policiais. Vamos te mostrar o essencial em 5 passos.',
+    title: 'Bem-vindo ao GabaritAI! 👋',
+    description: 'Em 1 minuto te mostro como usar a plataforma pra organizar seus estudos e ir com tudo pro seu concurso.',
   },
   {
     icon: Calendar,
-    title: '1. Crie seu cronograma',
-    description: 'Escolha o concurso, define horas/dia e data da prova. Nossa IA gera um cronograma diário automático com intercalação por matéria e revisões espaçadas.',
-    cta: { label: 'Criar cronograma', href: '/dashboard/cronograma' },
+    title: '1. Monte seu cronograma',
+    description: 'Em "Meus Cursos" você escolhe o concurso; no "Cronograma", a IA distribui as matérias por dia até a data da prova. É o coração da plataforma — e é grátis pra sempre.',
+  },
+  {
+    icon: ListChecks,
+    title: '2. Estude e marque o que já viu',
+    description: 'Abra cada tópico do edital, estude e clique em "Marcar como estudado". Seu progresso e o "quanto falta pra concluir" atualizam sozinhos.',
+  },
+  {
+    icon: Clock,
+    title: '3. Cronometre seu tempo',
+    description: 'Use "Meu tempo" pra cronometrar o estudo. Cria hábito e mostra sua evolução real semana a semana.',
   },
   {
     icon: Target,
-    title: '2. Faça um mini-simulado',
-    description: 'Treino rápido (15-20 questões) por matéria do seu curso. Você recebe nota, comentários e a IA atualiza seu desempenho automaticamente.',
-    cta: { label: 'Ir aos simulados', href: '/dashboard/simulados' },
-  },
-  {
-    icon: Brain,
-    title: '3. Converse com o Mentor IA',
-    description: 'Tire dúvidas, peça dicas, peça um resumo. O mentor conhece seu curso e seu progresso.',
-    cta: { label: 'Abrir Mentor', href: '/dashboard/mentor' },
-  },
-  {
-    icon: Zap,
-    title: '4. Revise com flashcards',
-    description: 'Sistema de repetição espaçada (SRS) baseado em ciência: você vê os cards no momento certo pra memorizar de verdade.',
-    cta: { label: 'Ver flashcards', href: '/dashboard/flashcards' },
+    title: '4. Treine e evolua',
+    description: 'Questões, simulados no formato da banca, flashcards e o Mentor IA turbinam a preparação. No plano gratuito eles aparecem com 🔒 — quando quiser, é só assinar pra desbloquear.',
   },
 ]
 
@@ -50,31 +48,36 @@ export function OnboardingTour() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    // Abre automático só pra quem ainda não concluiu
     api.get('/users/tutorial').then(({ data }) => {
       if (!data.tutorialCompleted) {
         setStep(data.tutorialStep ?? 0)
-        // Pequeno delay pra UI carregar antes do overlay
         setTimeout(() => setOpen(true), 600)
       }
     }).catch(() => {})
+
+    // Permite REABRIR o tutorial a qualquer momento (botão "Como usar a plataforma")
+    const reopen = () => { setStep(0); setOpen(true) }
+    window.addEventListener('gabaritai:open-tour', reopen)
+    return () => window.removeEventListener('gabaritai:open-tour', reopen)
   }, [])
 
-  async function next() {
+  function next() {
     const newStep = step + 1
     if (newStep >= STEPS.length) {
-      await complete()
+      complete()
     } else {
       setStep(newStep)
       api.patch('/users/tutorial', { tutorialStep: newStep }).catch(() => {})
     }
   }
 
-  async function skip() {
+  function skip() {
     setOpen(false)
     api.patch('/users/tutorial', { tutorialCompleted: true }).catch(() => {})
   }
 
-  async function complete() {
+  function complete() {
     setOpen(false)
     api.patch('/users/tutorial', { tutorialCompleted: true, tutorialStep: STEPS.length }).catch(() => {})
   }
@@ -86,7 +89,7 @@ export function OnboardingTour() {
   const isLast = step === STEPS.length - 1
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-fade-in">
       <div className="card max-w-md w-full p-6 space-y-5 relative">
         <button onClick={skip} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-muted text-muted-foreground">
           <X className="w-4 h-4" />
@@ -114,26 +117,25 @@ export function OnboardingTour() {
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          {s.cta && (
+        <div className="flex items-center gap-2">
+          {isLast ? (
             <Link
-              href={s.cta.href}
-              onClick={() => { next() }}
+              href="/dashboard/comecar"
+              onClick={complete}
               className="flex-1 rounded-xl bg-brand-500 text-white py-2.5 text-sm font-semibold text-center hover:bg-brand-600 inline-flex items-center justify-center gap-1.5"
             >
-              {s.cta.label} <ArrowRight className="w-3 h-3" />
+              <Check className="w-3.5 h-3.5" /> Montar meu cronograma
             </Link>
-          )}
-          {!s.cta && (
+          ) : (
             <button
               onClick={next}
               className="flex-1 rounded-xl bg-brand-500 text-white py-2.5 text-sm font-semibold hover:bg-brand-600 inline-flex items-center justify-center gap-1.5"
             >
-              {isLast ? <><Check className="w-3 h-3" /> Concluir</> : <>Próximo <ArrowRight className="w-3 h-3" /></>}
+              Próximo <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
           <button onClick={skip} className="text-xs text-muted-foreground hover:text-foreground px-3">
-            Pular tutorial
+            {isLast ? 'Fechar' : 'Pular'}
           </button>
         </div>
       </div>

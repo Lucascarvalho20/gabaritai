@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { getUserContentMode } from '@/lib/trial-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,12 @@ export async function GET(
     orderBy: [{ order: 'asc' }, { id: 'asc' }],
   })
 
+  // Gate do modo gratuito: FREE_PLANNER/NO_ACCESS enxergam a ESTRUTURA
+  // (nome do tópico + próximo) pra planejar, mas o CONTEÚDO fica bloqueado.
+  // A UI usa `locked` pra mostrar o cadeado "assine pra desbloquear".
+  const mode = await getUserContentMode(auth.user.id)
+  const contentLocked = mode === 'FREE_PLANNER' || mode === 'NO_ACCESS'
+
   return NextResponse.json({
     topic: {
       id: topic.id,
@@ -68,7 +75,8 @@ export async function GET(
       weight: topic.weight,
       subject: topic.subject,
     },
-    material: material
+    locked: contentLocked,
+    material: (!contentLocked && material)
       ? {
           id: material.id,
           title: material.title,
@@ -78,7 +86,7 @@ export async function GET(
           legislacao: (material as any).legislacao ?? [],
         }
       : null,
-    resumo: material?.resumo
+    resumo: (!contentLocked && material?.resumo)
       ? {
           id: material.resumo.id,
           resumo: material.resumo.resumo,

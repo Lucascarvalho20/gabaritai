@@ -75,7 +75,7 @@ const COMO_FUNCIONA = [
   {
     step: '01',
     title: 'Escolhe o concurso e cargo',
-    desc: 'PF Agente, PMDF Soldado, PCDF Escrivão e outros 50+ cursos divididos por cargo específico.',
+    desc: 'PF, PRF, PMDF, PMGO e PCDF — todos os cargos das carreiras policiais no ar, e novos concursos chegando.',
     icon: GraduationCap,
   },
   {
@@ -93,18 +93,18 @@ const COMO_FUNCIONA = [
 ]
 
 const CONCURSOS_DISPONIVEIS = [
-  { sigla: 'PF', nome: 'Polícia Federal', cargos: ['Agente', 'Escrivão', 'Delegado', 'Papiloscopista', 'Perito'] },
-  { sigla: 'PRF', nome: 'Polícia Rodoviária Federal', cargos: ['Policial Rodoviário'] },
-  { sigla: 'PMDF', nome: 'PM-DF', cargos: ['Soldado', 'Oficial'] },
-  { sigla: 'PMGO', nome: 'PM-GO', cargos: ['Soldado', 'Oficial'] },
-  { sigla: 'PMMG', nome: 'PM-MG', cargos: ['Soldado', 'Oficial'] },
-  { sigla: 'PMSC', nome: 'PM-SC', cargos: ['Soldado', 'Oficial'] },
-  { sigla: 'PCDF', nome: 'Polícia Civil-DF', cargos: ['Agente', 'Escrivão', 'Delegado', 'Perito'] },
-  { sigla: 'PCGO', nome: 'Polícia Civil-GO', cargos: ['Agente', 'Escrivão', 'Delegado', 'Perito'] },
-  { sigla: 'PCMG', nome: 'Polícia Civil-MG', cargos: ['Investigador', 'Escrivão', 'Delegado'] },
-  { sigla: 'CBMDF', nome: 'Bombeiros DF', cargos: ['Soldado', 'Oficial'] },
-  { sigla: 'PPMG', nome: 'Polícia Penal', cargos: ['Agente'] },
-  { sigla: 'GCM', nome: 'Guarda Civil', cargos: ['GCM Goiânia', 'GCM SP'] },
+  { sigla: 'PF', nome: 'Polícia Federal', cargos: ['Agente', 'Escrivão', 'Delegado', 'Papiloscopista', 'Perito'], pronto: true },
+  { sigla: 'PRF', nome: 'Polícia Rodoviária Federal', cargos: ['Policial Rodoviário'], pronto: true },
+  { sigla: 'PMDF', nome: 'PM-DF', cargos: ['Soldado', 'Oficial'], pronto: true },
+  { sigla: 'PMGO', nome: 'PM-GO', cargos: ['Soldado', 'Oficial'], pronto: true },
+  { sigla: 'PCDF', nome: 'Polícia Civil-DF', cargos: ['Agente', 'Escrivão', 'Delegado', 'Perito'], pronto: true },
+  { sigla: 'PMMG', nome: 'PM-MG', cargos: ['Soldado', 'Oficial'], pronto: false },
+  { sigla: 'PMSC', nome: 'PM-SC', cargos: ['Soldado', 'Oficial'], pronto: false },
+  { sigla: 'PCGO', nome: 'Polícia Civil-GO', cargos: ['Agente', 'Escrivão', 'Delegado', 'Perito'], pronto: false },
+  { sigla: 'PCMG', nome: 'Polícia Civil-MG', cargos: ['Investigador', 'Escrivão', 'Delegado'], pronto: false },
+  { sigla: 'CBMDF', nome: 'Bombeiros DF', cargos: ['Soldado', 'Oficial'], pronto: false },
+  { sigla: 'PPMG', nome: 'Polícia Penal', cargos: ['Agente'], pronto: false },
+  { sigla: 'GCM', nome: 'Guarda Civil', cargos: ['GCM Goiânia', 'GCM SP'], pronto: false },
 ]
 
 const BANCAS = ['Cebraspe', 'FGV', 'FCC', 'VUNESP', 'IDECAN', 'Quadrix', 'IBFC', 'AOCP', 'IADES']
@@ -362,7 +362,7 @@ function Hero() {
               variants={fadeInUp}
               className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Mentoria de estudos para concurseiros sérios: cronograma diário que se adapta, simulados reais cronometrados (Cebraspe, FGV, FCC), banco de questões oficiais, flashcards SRS e <strong className="text-foreground">edital verticalizado</strong> com o que mais cai.
+              Mentoria de estudos para concurseiros sérios: cronograma diário que se adapta, simulados no formato da banca (Cebraspe, FGV, FCC), banco de questões comentadas, flashcards SRS e <strong className="text-foreground">edital verticalizado</strong> com o que mais cai.
             </motion.p>
 
             <motion.div variants={fadeInUp} className="mt-7 max-w-md mx-auto lg:mx-0">
@@ -434,10 +434,10 @@ function Hero() {
 
 function Stats() {
   const stats = [
-    { v: '50+', l: 'Cursos por cargo' },
-    { v: '9', l: 'Bancas suportadas' },
-    { v: '5k+', l: 'Questões oficiais' },
-    { v: '24/7', l: 'Mentor sempre on' },
+    { v: '5', l: 'Concursos policiais no ar' },
+    { v: '9', l: 'Bancas no formato exato' },
+    { v: 'SM-2', l: 'Flashcards com revisão espaçada' },
+    { v: '7 dias', l: 'Grátis pra testar' },
   ]
   return (
     <section className="border-y border-border bg-muted/30">
@@ -547,7 +547,7 @@ function Concursos() {
         <Reveal className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Concursos cobertos</h2>
           <p className="mt-3 text-muted-foreground">
-            Foco total em <strong className="text-foreground">militares e policiais</strong>. Mais de 50 cursos divididos por cargo específico.
+            Foco total em <strong className="text-foreground">militares e policiais</strong>. PF, PRF, PMDF, PMGO e PCDF com todos os cargos — e novos concursos chegando.
           </p>
         </Reveal>
 
@@ -557,10 +557,20 @@ function Concursos() {
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className="card p-4 hover:border-brand-500/40 hover:shadow-md transition-all"
+                className={cn(
+                  'card p-4 hover:border-brand-500/40 hover:shadow-md transition-all',
+                  !c.pronto && 'opacity-60',
+                )}
               >
-                <div className="font-bold text-brand-600 dark:text-brand-400 text-lg tracking-tight">{c.sigla}</div>
-                <div className="text-xs text-muted-foreground truncate">{c.nome}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-brand-600 dark:text-brand-400 text-lg tracking-tight">{c.sigla}</div>
+                  {c.pronto ? (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">no ar</span>
+                  ) : (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">em breve</span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate mt-1">{c.nome}</div>
                 <div className="text-[10px] text-muted-foreground mt-2 italic">{c.cargos.join(' · ')}</div>
               </motion.div>
             </StaggerItem>

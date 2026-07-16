@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Flashcards fazem parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true, flashcards: [], total: 0 }, { status: 403 })
+  }
 
   const { searchParams } = new URL(req.url)
   const subjectId = searchParams.get('subjectId') ?? undefined
@@ -94,6 +99,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Flashcards fazem parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   const body = await req.json().catch(() => ({}))
   const frente = String(body.frente ?? '').trim()
