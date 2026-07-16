@@ -39,7 +39,8 @@ export type PlanLimits = {
   maxCourses: number | null       // null = ilimitado
   expiresAt: Date | null
   isBypassed: boolean             // admin/beta/full access
-  isTrial: boolean                // está em trial gratuito
+  isTrial: boolean                // está em trial gratuito (7 dias com conteúdo)
+  isFree: boolean                 // tier GRATUITO permanente — só cronograma/planner, sem conteúdo
   reason?: string                 // texto descritivo
 }
 
@@ -61,7 +62,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     return {
       hasPlan: false, planSlug: null, planName: null,
       coverageType: null, maxCourses: 0, expiresAt: null,
-      isBypassed: false, isTrial: false, reason: 'Usuário não encontrado',
+      isBypassed: false, isTrial: false, isFree: false, reason: 'Usuário não encontrado',
     }
   }
 
@@ -76,6 +77,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
       expiresAt: null,
       isBypassed: true,
       isTrial: false,
+      isFree: false,
     }
   }
 
@@ -115,20 +117,29 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
         expiresAt: activeTrial.endsAt,
         isBypassed: false,
         isTrial: true,
+        isFree: false,
         reason: 'Trial gratuito ativo',
       }
     }
 
+    // Sem pagamento e sem trial ativo → cai no TIER GRATUITO PERMANENTE (planner).
+    // Antes isso retornava NO_ACCESS; agora o aluno continua podendo usar o
+    // cronograma de graça pra sempre (montar plano, ver estrutura do edital,
+    // marcar "já estudei", cronômetro). O CONTEÚDO (material, questões,
+    // flashcards, simulados, mentor) fica bloqueado — isso é garantido pelos
+    // guards `isFree` em canAttemptQuestion/canTakeMockExam/hasAccessToCourse
+    // e pelo modo FREE_PLANNER em getUserContentMode.
     return {
-      hasPlan: false,
-      planSlug: null,
-      planName: null,
-      coverageType: null,
-      maxCourses: 0,
-      expiresAt: null,
+      hasPlan: true,
+      planSlug: 'gratuito',
+      planName: 'Gratuito (planner)',
+      coverageType: null,   // sem cobertura de conteúdo
+      maxCourses: 1,        // 1 curso pra organizar no cronograma
+      expiresAt: null,      // permanente
       isBypassed: false,
       isTrial: false,
-      reason: 'Sem plano ativo',
+      isFree: true,
+      reason: 'Plano gratuito — só cronograma/planner',
     }
   }
 
@@ -159,7 +170,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     return {
       hasPlan: false, planSlug: null, planName: null,
       coverageType: null, maxCourses: 0, expiresAt: payment.expiresAt,
-      isBypassed: false, isTrial: false,
+      isBypassed: false, isTrial: false, isFree: false,
       reason: 'Plano do pagamento não encontrado',
     }
   }
@@ -175,6 +186,7 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
     expiresAt: payment.expiresAt,
     isBypassed: false,
     isTrial,
+    isFree: false,
   }
 }
 
@@ -313,6 +325,17 @@ export async function canAttemptQuestion(userId: string): Promise<QuestionAttemp
   // Bypass: admin/beta/full access
   if (limits.isBypassed) return { ok: true, isTrial: false, used: 0, max: null }
 
+  // Gratuito (planner): questões são conteúdo pago → bloqueia
+  if (limits.isFree) {
+    return {
+      ok: false,
+      reason: 'No plano gratuito você usa só o cronograma. Assine pra responder questões.',
+      used: 0,
+      max: 0,
+      upgradeMessage: 'Assinar pra liberar',
+    }
+  }
+
   // Pagante (não-trial): sem limite
   if (!limits.isTrial) return { ok: true, isTrial: false, used: 0, max: null }
 
@@ -352,7 +375,18 @@ export async function canTakeMockExam(
     }
   }
 
-  if (limits.isBypassed || !limits.isTrial) return { ok: true }
+  if (limits.isBypassed) return { ok: true }
+
+  // Gratuito (planner): simulados são conteúdo pago → bloqueia
+  if (limits.isFree) {
+    return {
+      ok: false,
+      reason: 'Simulados fazem parte do plano pago. No gratuito você usa o cronograma pra se organizar.',
+      upgradeMessage: 'Assinar pra liberar',
+    }
+  }
+
+  if (!limits.isTrial) return { ok: true }
 
   if (TRIAL_LIMITS.allowedMockTypes.includes(type)) return { ok: true }
 
@@ -377,6 +411,7 @@ export async function hasAccessToCourse(
   const limits = await getUserPlanLimits(userId)
   if (!limits.hasPlan) return false
   if (limits.isBypassed) return true
+  if (limits.isFree) return false   // gratuito não tem acesso a conteúdo de curso
   if (limits.coverageType === 'ALL') {
     // Plano "todos" — basta ter pago, mas ainda assim precisa estar enrolled
     // (o checkout enrolls automaticamente em todos os cursos no caso ALL)

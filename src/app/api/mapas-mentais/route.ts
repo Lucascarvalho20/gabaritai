@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const maxDuration = 90
 
@@ -10,6 +11,10 @@ export const maxDuration = 90
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Mapas mentais fazem parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   const { searchParams } = new URL(req.url)
   const subjectSlug = searchParams.get('subjectSlug') ?? undefined
@@ -37,6 +42,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Mapas mentais fazem parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   const body = await req.json()
   const { subjectId, topic } = body

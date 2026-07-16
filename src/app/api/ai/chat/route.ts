@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { DEMO_USERS } from '@/lib/demo-users'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 /**
  * Persiste mensagem do user + resposta da IA na AiConversation.
@@ -116,6 +117,10 @@ export async function POST(req: NextRequest) {
       profile: { select: { concursoLabel: true, nivel: true, horasDia: true, meta: true } },
     },
   })
+  if (realUser && await isContentLockedForUser(realUser.id)) {
+    return NextResponse.json({ message: 'O Mentor IA faz parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true }, { status: 403 })
+  }
+
   const demoUser = !realUser ? DEMO_USERS.find(u => u.id === payload.sub) : null
   // Normaliza pra forma que buildMentorPrompt espera (concursoAlvo, nivel, etc.)
   const user = realUser
