@@ -1,22 +1,50 @@
 # Next.js
 .next/
 out/
+next-env.d.ts
 
 # Dependencies
 node_modules/
 
-# Env files
+# ─── SEGREDOS ───────────────────────────────────────────────────────────────
+# Amplo de propósito: qualquer .env em qualquer nível, menos os .example
 .env
-.env.local
-.env.*.local
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
 
 # Build
 dist/
 build/
+*.tsbuildinfo
 
-# OS
+# ─── DADOS / OPERAÇÃO — não vai pro repo público ────────────────────────────
+# SQL ad-hoc: seeds de conteúdo (questões, editais) e scripts de operação.
+# É acervo do negócio e ruído puro pra quem lê o código. As migrations
+# oficiais do Prisma (prisma/migrations/*/migration.sql) continuam versionadas.
+prisma/migrations/*.sql
+supabase-schema.sql
+
+# Documentação interna / briefings
+ANTIGRAVITY_CONTEXT.md
+BRIEFINGS_ANTIGRAVITY.md
+CHAVES_API.md
+DEPLOY_VERCEL.md
+SETUP_DEPLOY.md
+GUIA_MARKETING.md
+PARA_OS_AMIGOS.md
+
+# Scripts soltos de análise
+check_*.js
+
+# OS / logs
 .DS_Store
-
-# Logs
 *.log
 npm-debug.log*
+.vscode/
+.claude/
