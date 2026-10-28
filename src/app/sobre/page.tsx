@@ -23,7 +23,7 @@ export default function SobrePage() {
         <div className="grid md:grid-cols-3 gap-6">
           {[
             { icon: Target, title: 'Missão', text: 'Democratizar o acesso à mentoria de qualidade para concursos públicos, usando IA para personalizar cada jornada de estudo.' },
-            { icon: Brain, title: 'Visão', text: 'Ser a plataforma de referência para concurseiros brasileiros, combinando tecnologia de ponta com método pedagógico comprovado.' },
+            { icon: Brain, title: 'Visão', text: 'Ser uma plataforma de referência para concurseiros brasileiros, unindo tecnologia a um método de estudo baseado em evidência: repetição espaçada, prática ativa e diagnóstico por matéria.' },
             { icon: Award, title: 'Valores', text: 'Excelência, transparência e foco no aluno. Cada funcionalidade é construída pensando em quem estuda 4, 6, 8 horas por dia.' },
           ].map(({ icon: Icon, title, text }) => (
             <div key={title} className="rounded-2xl border border-border bg-card p-6">
@@ -40,13 +40,13 @@ export default function SobrePage() {
         <div className="rounded-2xl border border-border bg-card p-8 space-y-4">
           <h2 className="text-2xl font-black text-foreground">Nossa história</h2>
           <p className="text-muted-foreground leading-relaxed">
-            O GabaritAI foi fundado por João Lucas, um empreendedor do Distrito Federal que percebeu uma lacuna enorme no mercado de preparação para concursos públicos: ferramentas genéricas que não se adaptam ao perfil de cada aluno.
+            Eu sou o João Lucas, moro no Distrito Federal e construí o GabaritAI sozinho. A ideia veio de um incômodo simples: as plataformas que eu conhecia entregavam o mesmo cronograma para todo mundo, sem olhar o edital, o peso de cada matéria ou o que a pessoa já sabe.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Vendo amigos e familiares gastando fortunas em cursinhos e ainda não conseguindo aprovação, a ideia surgiu: criar uma plataforma que usa inteligência artificial para adaptar o estudo a cada pessoa — identificando pontos fracos, criando cronogramas personalizados e oferecendo mentoria disponível 24 horas por dia.
+            Vi gente perto de mim gastando caro em cursinho e continuando perdida sobre o que estudar primeiro. Então o foco aqui é outro: o cronograma sai de um cálculo determinístico em cima do edital e das horas que você realmente tem — e ele te avisa antes se o tempo até a prova não vai dar.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Hoje, o GabaritAI oferece <strong className="text-foreground">17 cursos</strong> para os principais concursos do DF e Brasil, com Mentor IA, banco de questões, simulados adaptativos, flashcards com repetição espaçada e Resumos IA — similar ao NotebookLM, mas integrado ao seu plano de estudos.
+            Hoje a plataforma cobre <strong className="text-foreground">5 concursos com conteúdo completo</strong> (PF, PRF, PM-DF, PM-GO e PC-DF), somando 14 cargos, e outros 7 estão em preparação. Cada curso tem cronograma, banco de questões, simulados cronometrados, flashcards com repetição espaçada e resumos gerados a partir do edital.
           </p>
         </div>
 

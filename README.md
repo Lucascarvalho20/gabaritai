@@ -2,7 +2,8 @@
 
 Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **162 endpoints de API**, banco PostgreSQL de **44 modelos** e orquestração de múltiplos provedores de LLM.
 
-🔗 **Produção:** [gabaritai.app](https://gabaritai.app)
+> ⚠️ **Preencher antes de publicar:** a URL de produção. O domínio `gabaritai.app`
+> pertence a outra empresa — não usar.
 
 ---
 
@@ -23,7 +24,6 @@ flowchart TB
     subgraph Next["Next.js 14 — App Router (Vercel)"]
         RSC["Server Components<br/>(render + data fetching)"]
         API["162 Route Handlers<br/>/api/*"]
-        MW["Middleware<br/>sessão + guard de rota"]
     end
 
     subgraph Dominio["Camada de domínio — src/lib"]
@@ -36,15 +36,17 @@ flowchart TB
 
     AI["ai-client.ts<br/>roteador multi-provider"]
     DB[("PostgreSQL · Supabase<br/>44 modelos via Prisma")]
-    PAY["Mercado Pago · Stripe<br/>webhooks"]
+    PAY["Mercado Pago<br/>webhooks"]
 
-    Browser --> MW --> RSC & API
+    Browser --> RSC & API
     API --> Dominio
     Dominio --> DB
     Dominio --> AI
     AI -->|"fallback em cascata"| LLM["Groq · Gemini<br/>Claude · OpenAI"]
     PAY -->|webhook| FULFILL
 ```
+
+Não há `middleware.ts`: a sessão é verificada dentro de cada rota com `getUserFromRequest`/`verifyToken` (`src/lib/auth-server.ts`, `src/lib/jwt.ts`). É mais verboso que um middleware global, mas deixa explícito em cada endpoint quem pode chamá-lo.
 
 **Por que Next.js App Router e não um backend separado?** O projeto chegou a ter um serviço NestJS (`apps/api`, ~1.9k linhas), mas o caminho de produção ficou nos Route Handlers do Next. Motivo prático: com um único deploy na Vercel, Server Components leem o banco direto sem round-trip HTTP, e as rotas `/api/*` cobrem o que precisa de contrato REST (webhooks, cron, cliente mobile futuro). Para um time de uma pessoa, a separação em dois deploys custava mais do que entregava.
 
@@ -131,7 +133,7 @@ Também aqui: **2FA TOTP (RFC 6238)** implementado com o `crypto` nativo do Node
 | Estado | Zustand · TanStack Query |
 | UI | Tailwind · Framer Motion · Recharts · KaTeX |
 | IA | Groq · Google Gemini · Anthropic Claude · OpenAI |
-| Pagamento | Mercado Pago (PIX transparente) · Stripe |
+| Pagamento | Mercado Pago (PIX transparente, Checkout Pro) |
 | Deploy | Vercel |
 
 ---

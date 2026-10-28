@@ -86,7 +86,7 @@ export default function CursosPublicoPage() {
             Escolha seu <span className="bg-gradient-to-r from-brand-500 to-purple-500 bg-clip-text text-transparent">concurso</span>
           </h1>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-            Mais de 50 cursos divididos por cargo específico. PF Agente, PMDF Soldado, PCDF Escrivão, etc.
+            Cursos divididos por cargo específico — PF Agente, PMDF Soldado, PCDF Escrivão e outros.
             Cada curso tem cronograma adaptativo, simulados cronometrados e mentor IA.
           </p>
         </div>
