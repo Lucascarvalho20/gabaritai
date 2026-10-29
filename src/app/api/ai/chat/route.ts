@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/jwt'
-import { DEMO_USERS } from '@/lib/demo-users'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
 import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
@@ -106,8 +105,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Mensagem muito longa (máx 4000 caracteres)' }, { status: 400 })
   }
 
-  // Tenta carregar user REAL do banco (com profile pra personalizar prompt).
-  // Se não existe (token velho de demo), faz fallback pro DEMO_USERS.
+  // Carrega o usuário do banco para personalizar o prompt do mentor.
   const realUser = await prisma.user.findUnique({
     where: { id: String(payload.sub) },
     select: {
@@ -122,7 +120,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'O Mentor IA faz parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true }, { status: 403 })
   }
 
-  const demoUser = !realUser ? DEMO_USERS.find(u => u.id === payload.sub) : null
   // Normaliza pra forma que buildMentorPrompt espera (concursoAlvo, nivel, etc.)
   const user = realUser
     ? {
@@ -133,7 +130,7 @@ export async function POST(req: NextRequest) {
         horasDia: realUser.profile?.horasDia ?? '3',
         meta: realUser.profile?.meta ?? null,
       }
-    : (demoUser ?? null)
+    : null
 
   if (realUser) {
     try {

@@ -17,16 +17,6 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-// Perfis de teste — só aparecem em dev (process.env é inlined em build,
-// então em produção o array fica vazio e nada vaza pro bundle do cliente).
-const QUICK_ACCESS: Array<{ label: string; identifier: string; pass: string }> =
-  process.env.NODE_ENV === 'development'
-    ? [
-        { label: '👑 Admin',       identifier: 'admin@gabaritai.com.br',      pass: 'SENHA-REMOVIDA-DO-HISTORICO' },
-        { label: '⭐ Acesso total', identifier: 'teste-full@gabaritai.com.br', pass: 'SENHA-REMOVIDA-DO-HISTORICO' },
-        { label: '🛡️ Só PMDF',    identifier: 'teste-pmdf@gabaritai.com.br', pass: 'SENHA-REMOVIDA-DO-HISTORICO' },
-      ]
-    : []
 
 function LoginForm() {
   const router = useRouter()
@@ -36,10 +26,8 @@ function LoginForm() {
   const [needs2FA, setNeeds2FA] = useState(false)
   const [totpCode, setTotpCode] = useState('')
 
-  // Só mostra o painel se tiver perfis (dev) — em produção QUICK_ACCESS é []
-  const showDevPanel = QUICK_ACCESS.length > 0 && searchParams.get('dev') !== 'off'
 
-  const { register, handleSubmit, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -72,12 +60,6 @@ function LoginForm() {
       const msg = data?.message ?? 'Credenciais inválidas'
       toast.error(msg)
     }
-  }
-
-  function quickLogin(identifier: string, pass: string) {
-    setValue('identifier', identifier)
-    setValue('password', pass)
-    handleSubmit(onSubmit)()
   }
 
   return (
@@ -168,27 +150,6 @@ function LoginForm() {
         </p>
       </div>
 
-      {showDevPanel && (
-        <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border">
-          <p className="text-xs font-semibold text-muted-foreground mb-3">ACESSO RÁPIDO — PERFIS DE TESTE</p>
-          <div className="grid grid-cols-1 gap-1.5">
-            {QUICK_ACCESS.map(({ label, identifier, pass }) => (
-              <button
-                key={identifier}
-                type="button"
-                onClick={() => quickLogin(identifier, pass)}
-                className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background hover:bg-brand-50 dark:hover:bg-brand-900/20 border border-border hover:border-brand-300 transition-colors flex justify-between items-center group"
-              >
-                <span className="font-semibold text-foreground">{label}</span>
-                <span className="text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate ml-2">{identifier}</span>
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Clique em qualquer perfil para entrar automaticamente
-          </p>
-        </div>
-      )}
     </div>
   )
 }

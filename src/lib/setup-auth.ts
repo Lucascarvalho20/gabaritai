@@ -9,7 +9,7 @@ import type { NextRequest } from 'next/server'
  *
  * Duas coisas que a versão anterior fazia e foram removidas de propósito:
  *
- * 1. Valor padrão em código (`process.env.ADMIN_PASSWORD ?? 'SENHA-REMOVIDA-DO-HISTORICO'`).
+ * 1. Valor padrão em código (`process.env.ADMIN_PASSWORD ?? '<senha literal no código>'`).
  *    Com o repositório público, esse literal é a senha. Se a env var não
  *    estivesse configurada no ambiente, qualquer pessoa que lesse o código
  *    conseguiria redefinir o admin. Agora, sem SETUP_SECRET, o endpoint
