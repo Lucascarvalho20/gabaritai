@@ -528,12 +528,47 @@ model Material {
   sourcesUsed Json?
 
   resumo      MaterialResumo?
+  chunks      MaterialChunk[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   @@index([subjectId])
   @@index([status])
   @@map("materials")
+}
+
+/// Trechos de material indexados para busca semântica (RAG).
+///
+/// `embedding` é Unsupported porque o Prisma não conhece o tipo `vector` do pgvector.
+/// Na prática isso significa: escrita e leitura do vetor sempre via $queryRaw/$executeRaw
+/// (ver src/lib/rag/). O resto das colunas o Prisma gerencia normalmente.
+///
+/// `model` guarda qual modelo gerou o vetor. Vetores de modelos diferentes não são
+/// comparáveis entre si — a coluna existe para detectar base indexada pela metade
+/// depois de uma troca de modelo.
+model MaterialChunk {
+  id         String   @id @default(cuid())
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  // Desnormalizados do material para filtrar a busca sem JOIN extra.
+  topicId    String?
+  subjectId  String?
+
+  chunkIndex Int
+  heading    String?
+  content    String   @db.Text
+  tokens     Int
+
+  embedding  Unsupported("vector(1536)")?
+  model      String   @default("text-embedding-3-small")
+
+  createdAt  DateTime @default(now())
+
+  @@unique([materialId, chunkIndex])
+  @@index([topicId])
+  @@index([subjectId])
+  @@map("material_chunks")
 }
 
 model MaterialResumo {

@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { DEMO_USERS } from '@/lib/demo-users'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
+import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
 import { isContentLockedForUser } from '@/lib/trial-content'
 
 /**
@@ -158,7 +159,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ response: resp, provider, cronogramaUpdate, conversationId: convoId })
   }
 
-  const systemPrompt = buildMentorPrompt(user as any)
+  let systemPrompt = buildMentorPrompt(user as any)
+
+  // RAG: busca trechos do material do curso que falem da pergunta e injeta no prompt.
+  //
+  // Falhar aqui não pode derrubar o chat. Sem contexto o mentor responde pior, mas
+  // responde — enquanto um erro de embedding ou de banco deixaria o aluno sem nada.
+  // Por isso o try/catch engole a exceção e apenas registra.
+  let ragChunks = 0
+  try {
+    const trechos = await searchMaterial(message, { limit: 5 })
+    if (trechos.length) {
+      systemPrompt = `${systemPrompt}\n\n${buildContextBlock(trechos)}`
+      ragChunks = trechos.length
+    }
+  } catch (err) {
+    console.error('[mentor] busca semântica falhou, seguindo sem contexto:', err)
+  }
+
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
