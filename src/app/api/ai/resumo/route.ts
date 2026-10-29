@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { GEMINI_MODEL } from '@/lib/ai-client'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { isContentLockedForUser } from '@/lib/trial-content'
@@ -191,7 +192,8 @@ async function callAI(prompt: string): Promise<string> {
 
   // 1º — Gemini 1.5 Pro (qualidade alta, grátis 60 req/min)
   if (geminiKey) {
-    const MODELS = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'].filter(Boolean)
+    // '-exp' é experimental e pode sumir sem aviso — trocado pelo estável.
+    const MODELS = [GEMINI_MODEL, 'gemini-1.5-pro', 'gemini-1.5-flash']
     for (const model of MODELS) {
       try {
         const res = await fetch(

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { GEMINI_MODEL } from '@/lib/ai-client'
 import { verifyToken } from '@/lib/jwt'
 import { consumeQuota, type QuotaKind } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
@@ -166,7 +167,9 @@ async function callAI(prompt: string): Promise<string> {
 
   // Gemini
   if (geminiKey) {
-    const models = ['gemini-pro', 'gemini-1.0-pro', 'gemini-1.5-flash', 'gemini-1.5-pro']
+    // Ordem de tentativa. 'gemini-pro' e 'gemini-1.0-pro' saíram daqui: o Google
+    // desativou os dois, então cada chamada gastava um 404 antes de seguir.
+    const models = [GEMINI_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro']
     for (const m of models) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`, {

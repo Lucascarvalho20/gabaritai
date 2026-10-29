@@ -9,6 +9,22 @@
  * Cada categoria tem fallback automático se a primeira opção falhar.
  */
 
+/**
+ * Modelo do Gemini usado em todo o projeto.
+ *
+ * Existia divergência: aqui usava-se 'gemini-2.0-flash-exp' enquanto o chat do
+ * mentor e o health check pediam 'gemini-pro' — que o Google descontinuou, e por
+ * isso produção respondia 404. Com uma constante só, os três não voltam a divergir.
+ *
+ * Os nomes com sufixo '-exp' são experimentais e sem garantia de permanência;
+ * o padrão aqui é a versão estável. GEMINI_MODEL sobrescreve se precisar.
+ */
+export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+
+export function geminiEndpoint(model: string = GEMINI_MODEL): string {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+}
+
 export type AITask = 'extract' | 'generate' | 'quality'
 
 type AIOpts = {
@@ -76,7 +92,7 @@ async function callGemini(prompt: string, maxTokens: number, temperature: number
   if (!key) return null
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${key}`,
+      `${geminiEndpoint()}?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +194,7 @@ export async function callAIVision(opts: {
   if (geminiKey) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKey}`,
+        `${geminiEndpoint()}?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

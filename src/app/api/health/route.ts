@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { GEMINI_MODEL, geminiEndpoint } from '@/lib/ai-client'
 
 async function testOpenAICompat(url: string, model: string, apiKey: string): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -30,11 +31,11 @@ export async function GET() {
     ? await testOpenAICompat('https://api.openai.com/v1/chat/completions', 'gpt-4o-mini', openaiKey)
     : { ok: false, error: 'OPENAI_API_KEY não configurada' }
 
-  // Gemini — testa com gemini-pro (mais compatível)
+  // Gemini — usa o MESMO modelo do resto do app, senão o health mente
   if (geminiKey) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiKey}`,
+        `${geminiEndpoint()}?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

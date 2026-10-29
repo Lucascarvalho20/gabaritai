@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
 import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
+import { GEMINI_MODEL } from '@/lib/ai-client'
 import { isContentLockedForUser } from '@/lib/trial-content'
 
 /**
@@ -270,17 +271,12 @@ async function callOpenAICompat(
 }
 
 async function callGemini(message: string, history: any[], system: string, apiKey: string) {
-  const MODELS = [
-    process.env.GEMINI_MODEL,
-    'gemini-pro',
-    'gemini-1.0-pro',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-  ].filter(Boolean) as string[]
+  // 'gemini-1.0-pro' saiu: desativado pelo Google, só gastava um 404 por chamada.
+  const MODELS = [GEMINI_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro']
 
   for (const model of MODELS) {
     try {
-      // gemini-pro não suporta systemInstruction — inclui no primeiro turn
+      // Alguns modelos não suportam systemInstruction — inclui no primeiro turn
       const firstText = system ? `${system}\n\nUsuário: ${message}` : message
       const contents = history.length === 0
         ? [{ role: 'user', parts: [{ text: firstText }] }]
