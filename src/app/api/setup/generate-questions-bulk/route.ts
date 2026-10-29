@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkSetupAuth } from '@/lib/setup-auth'
 import { prisma } from '@/lib/prisma'
 import { callAI, parseAIJson } from '@/lib/ai-client'
 
@@ -9,12 +10,12 @@ export const maxDuration = 300
  * POST /api/setup/generate-questions-bulk
  *
  * Dispara geração de pool de 50 questões via IA pra TODOS os cursos com edital
- * ativo que ainda NÃO têm pool. Protegido por SETUP_SECRET ou ADMIN_PASSWORD.
+ * ativo que ainda NÃO têm pool. Protegido por SETUP_SECRET.
  *
  * Body opcional:
  *   { onlySlugs?: string[], regenerate?: boolean, poolSize?: number }
  *
- * Auth: `Authorization: Bearer <SETUP_SECRET ou ADMIN_PASSWORD>`
+ * Auth: `Authorization: Bearer <SETUP_SECRET>`
  *
  * Custo estimado: ~$0.50-2 por curso (Claude Sonnet). 10 cursos = ~$10-15.
  * Demora: ~5-15 min total (CONCURRENCY=2 entre matérias dentro de cada curso).
@@ -24,18 +25,8 @@ export const maxDuration = 300
 const DEFAULT_POOL_SIZE = 50
 
 export async function POST(req: NextRequest) {
-  const setupSecret = process.env.SETUP_SECRET
-  const adminPassword = process.env.ADMIN_PASSWORD ?? 'SENHA-REMOVIDA-DO-HISTORICO'
-
-  const authHeader = req.headers.get('authorization') ?? ''
-  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  const okSecret = setupSecret && bearer === setupSecret
-  const okAdminPass = bearer === adminPassword
-  if (!okSecret && !okAdminPass) {
-    return NextResponse.json({
-      message: 'Não autorizado. Envie Authorization: Bearer <SETUP_SECRET> ou <ADMIN_PASSWORD>.',
-    }, { status: 401 })
-  }
+  const auth = checkSetupAuth(req)
+  if (!auth.ok) return NextResponse.json({ message: auth.message }, { status: auth.status })
 
   const body = await req.json().catch(() => ({}))
   const onlySlugs: string[] | undefined = Array.isArray(body?.onlySlugs) ? body.onlySlugs : undefined

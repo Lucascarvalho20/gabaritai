@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { checkSetupAuth } from '@/lib/setup-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,29 +14,19 @@ export const dynamic = 'force-dynamic'
  * IDEMPOTENTE. Se admin existe, RESETA a senha + role + ativa + desbloqueia.
  * Se não existe, CRIA.
  *
- * Protegido por SETUP_SECRET env var: quem chamar precisa enviar
- * `Authorization: Bearer <SETUP_SECRET>`. Se SETUP_SECRET não estiver setado,
- * aceita o próprio ADMIN_PASSWORD como fallback (admin obviamente conhece).
+ * Exige `Authorization: Bearer <SETUP_SECRET>`. Sem SETUP_SECRET configurado o
+ * endpoint fica desativado (503) — ver src/lib/setup-auth.ts para o porquê.
  *
  * Body opcional:
  *   { email?: string, password?: string }
  * (default: ADMIN_EMAIL e ADMIN_PASSWORD do env)
  */
 export async function POST(req: NextRequest) {
-  const setupSecret = process.env.SETUP_SECRET
-  const adminEmail = (process.env.ADMIN_EMAIL ?? 'admin@gabaritai.com.br').toLowerCase().trim()
-  const adminPassword = process.env.ADMIN_PASSWORD ?? 'SENHA-REMOVIDA-DO-HISTORICO'
+  const auth = checkSetupAuth(req)
+  if (!auth.ok) return NextResponse.json({ message: auth.message }, { status: auth.status })
 
-  // Auth: aceita SETUP_SECRET OU ADMIN_PASSWORD como bearer (admin obviamente sabe)
-  const authHeader = req.headers.get('authorization') ?? ''
-  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  const okSecret = setupSecret && bearer === setupSecret
-  const okAdminPass = bearer === adminPassword
-  if (!okSecret && !okAdminPass) {
-    return NextResponse.json({
-      message: 'Não autorizado. Envie Authorization: Bearer <SETUP_SECRET> ou <ADMIN_PASSWORD>.',
-    }, { status: 401 })
-  }
+  const adminEmail = (process.env.ADMIN_EMAIL ?? '').toLowerCase().trim()
+  const adminPassword = process.env.ADMIN_PASSWORD ?? ''
 
   let bodyEmail: string | undefined
   let bodyPassword: string | undefined
@@ -47,6 +38,12 @@ export async function POST(req: NextRequest) {
 
   const finalEmail = bodyEmail ?? adminEmail
   const finalPassword = bodyPassword ?? adminPassword
+
+  if (!finalEmail || !finalPassword) {
+    return NextResponse.json({
+      message: 'Informe email e password no body, ou configure ADMIN_EMAIL e ADMIN_PASSWORD.',
+    }, { status: 400 })
+  }
   const passwordHash = await bcrypt.hash(finalPassword, 12)
 
   const existing = await prisma.user.findUnique({
