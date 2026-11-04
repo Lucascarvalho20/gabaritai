@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 // da compilação — foi o que escondeu por meses que produção estava desatualizada.
 export const dynamic = 'force-dynamic'
 import { GEMINI_MODEL, GROQ_MODELS, geminiEndpoint } from '@/lib/ai-client'
+import { isSandboxMode } from '@/lib/mercadopago'
 
 async function testOpenAICompat(url: string, model: string, apiKey: string): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -148,6 +149,16 @@ export async function GET(req: Request) {
       hasGroq:       !!groqKey,
       hasDeepSeek:   !!deepseekKey,
       hasAnthropic:  !!anthropicKey,
+    },
+    // Booleano de configuração, não segredo. Existe porque sandbox ligado faz o
+    // pagamento parecer funcionar e nunca concluir — e isso é invisível de fora.
+    pagamento: {
+      modoSandbox: isSandboxMode(),
+      tokenConfigurado: !!process.env.MERCADOPAGO_ACCESS_TOKEN,
+      tokenTipo: (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').startsWith('APP_USR-')
+        ? 'producao'
+        : (process.env.MERCADOPAGO_ACCESS_TOKEN ?? '').startsWith('TEST-') ? 'teste' : 'desconhecido',
+      webhookSecretConfigurado: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
     },
     ai: { anyWorking, results },
     instructions: anyWorking ? '✅ IA funcionando!' : '❌ Configure pelo menos uma chave. Recomendado: GROQ_API_KEY (grátis em console.groq.com)',
