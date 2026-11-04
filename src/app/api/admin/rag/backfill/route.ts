@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-server'
 import { chunkMaterial, embeddingText, estimateTokens } from '@/lib/rag/chunk'
-import { embedTexts, EMBEDDING_MODEL } from '@/lib/rag/embed'
+import { embedTexts, embeddingModelEmUso } from '@/lib/rag/embed'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req)
   if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
     return NextResponse.json(
-      { error: 'OPENAI_API_KEY não configurada — é ela que gera os embeddings.' },
+      { error: 'Nenhuma chave de embedding configurada (GEMINI_API_KEY ou OPENAI_API_KEY).' },
       { status: 503 },
     )
   }
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         VALUES
           (${randomUUID()}, ${mat.id}, ${mat.topicId}, ${mat.subjectId}, ${c.index},
            ${c.heading ?? null}, ${c.content}, ${estimateTokens(c.content)},
-           ${vec}::vector, ${EMBEDDING_MODEL})
+           ${vec}::vector, ${embeddingModelEmUso()})
         ON CONFLICT ("materialId", "chunkIndex") DO UPDATE SET
           heading   = EXCLUDED.heading,
           content   = EXCLUDED.content,
@@ -144,6 +144,6 @@ export async function GET(req: NextRequest) {
     materiaisPendentes: Math.max(materiaisComTexto - indexados.length, 0),
     chunks,
     chunksComEmbedding: Number(comEmbedding[0]?.count ?? 0),
-    modelo: EMBEDDING_MODEL,
+    modelo: embeddingModelEmUso(),
   })
 }

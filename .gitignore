@@ -48,3 +48,8 @@ check_*.js
 npm-debug.log*
 .vscode/
 .claude/
+
+# SQL que contenha hash de senha ou credencial — nunca versionar
+prisma/sql/*admin*.sql
+prisma/sql/*senha*.sql
+prisma/sql/*credencial*.sql
