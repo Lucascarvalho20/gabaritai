@@ -37,11 +37,19 @@ async function listarModelos(): Promise<Record<string, string[] | string>> {
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${gem}&pageSize=200`)
       const j: any = await r.json()
-      out.gemini = r.ok
-        ? (j.models ?? [])
-            .filter((m: any) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
-            .map((m: any) => String(m.name).replace('models/', ''))
-        : `erro ${r.status}: ${JSON.stringify(j).slice(0, 200)}`
+      if (r.ok) {
+        const todos = j.models ?? []
+        out.gemini = todos
+          .filter((m: any) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
+          .map((m: any) => String(m.name).replace('models/', ''))
+        // Embeddings são outra família: respondem embedContent, não generateContent.
+        // Interessam porque permitem rodar a busca semântica sem depender da OpenAI.
+        out.geminiEmbeddings = todos
+          .filter((m: any) => (m.supportedGenerationMethods ?? []).includes('embedContent'))
+          .map((m: any) => `${String(m.name).replace('models/', '')} (dim=${m.outputDimensions ?? '?'})`)
+      } else {
+        out.gemini = `erro ${r.status}: ${JSON.stringify(j).slice(0, 200)}`
+      }
     } catch (e: any) { out.gemini = `falhou: ${e.message}` }
   }
 
