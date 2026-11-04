@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server'
+
+// Sem isto o Next pré-renderiza a rota no build e o timestamp congela na data
+// da compilação — foi o que escondeu por meses que produção estava desatualizada.
+export const dynamic = 'force-dynamic'
 import { GEMINI_MODEL, geminiEndpoint } from '@/lib/ai-client'
 
 async function testOpenAICompat(url: string, model: string, apiKey: string): Promise<{ ok: boolean; error?: string }> {
@@ -16,7 +20,47 @@ async function testOpenAICompat(url: string, model: string, apiKey: string): Pro
   }
 }
 
-export async function GET() {
+/**
+ * Lista os modelos que a chave realmente consegue usar.
+ *
+ * Existe porque nome de modelo é descontinuado sem aviso: o Groq aposentou o
+ * llama-3.3-70b-versatile e o Google o gemini-2.0-flash, e a documentação dos
+ * dois aponta substitutos diferentes conforme a página. Perguntar ao provedor
+ * é a única fonte confiável.
+ */
+async function listarModelos(): Promise<Record<string, string[] | string>> {
+  const out: Record<string, string[] | string> = {}
+
+  const gem = process.env.GEMINI_API_KEY
+  if (gem) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${gem}&pageSize=200`)
+      const j: any = await r.json()
+      out.gemini = r.ok
+        ? (j.models ?? [])
+            .filter((m: any) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
+            .map((m: any) => String(m.name).replace('models/', ''))
+        : `erro ${r.status}: ${JSON.stringify(j).slice(0, 200)}`
+    } catch (e: any) { out.gemini = `falhou: ${e.message}` }
+  }
+
+  const groq = process.env.GROQ_API_KEY
+  if (groq) {
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${groq}` },
+      })
+      const j: any = await r.json()
+      out.groq = r.ok
+        ? (j.data ?? []).map((m: any) => String(m.id))
+        : `erro ${r.status}: ${JSON.stringify(j).slice(0, 200)}`
+    } catch (e: any) { out.groq = `falhou: ${e.message}` }
+  }
+
+  return out
+}
+
+export async function GET(req: Request) {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
@@ -88,8 +132,12 @@ export async function GET() {
 
   const anyWorking = Object.values(results).some(r => r.ok)
 
+  const querModelos = new URL(req.url).searchParams.get('models') === '1'
+  const modelosDisponiveis = querModelos ? await listarModelos() : undefined
+
   return NextResponse.json({
     ok: true,
+    ...(modelosDisponiveis ? { modelosDisponiveis } : {}),
     timestamp: new Date().toISOString(),
     nodeEnv: process.env.NODE_ENV,
     env: {
