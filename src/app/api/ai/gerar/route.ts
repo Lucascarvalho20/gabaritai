@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GEMINI_MODEL } from '@/lib/ai-client'
+import { GEMINI_MODEL, GROQ_MODELS } from '@/lib/ai-client'
 import { verifyToken } from '@/lib/jwt'
 import { consumeQuota, type QuotaKind } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
@@ -158,7 +158,7 @@ async function callAI(prompt: string): Promise<string> {
 
   // Groq first (free, fast)
   if (groqKey) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
+    const groqModels = GROQ_MODELS
     for (const gm of groqModels) {
       try { return await tryOpenAICompat('https://api.groq.com/openai/v1/chat/completions', gm, groqKey) }
       catch (e) { console.error(`[Groq ${gm}]`, e) }

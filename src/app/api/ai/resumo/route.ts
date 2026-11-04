@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GEMINI_MODEL } from '@/lib/ai-client'
+import { GEMINI_MODEL, GROQ_MODELS } from '@/lib/ai-client'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { isContentLockedForUser } from '@/lib/trial-content'
@@ -264,7 +264,7 @@ async function callAI(prompt: string): Promise<string> {
 
   // 4º — Groq Llama (rápido, fallback se top-tier falhar)
   if (groqKey) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192']
+    const groqModels = GROQ_MODELS
     for (const gm of groqModels) {
       try {
         return await callOpenAICompat(prompt, 'https://api.groq.com/openai/v1/chat/completions', gm, groqKey)

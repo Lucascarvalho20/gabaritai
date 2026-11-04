@@ -19,7 +19,23 @@
  * Os nomes com sufixo '-exp' são experimentais e sem garantia de permanência;
  * o padrão aqui é a versão estável. GEMINI_MODEL sobrescreve se precisar.
  */
-export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
+
+/**
+ * Cadeia de fallback do Gemini. O último é um alias que o Google mantém sempre
+ * apontando para a versão corrente — ele nunca retorna 404, então funciona como
+ * rede de segurança quando o modelo fixado acima for aposentado.
+ */
+export const GEMINI_FALLBACKS = [GEMINI_MODEL, 'gemini-3.5-flash', 'gemini-flash-latest']
+
+/**
+ * Modelos do Groq, em ordem de preferência.
+ *
+ * Os llama-3.x foram desligados pelo Groq em 16/08/2026 e devolviam 404 a cada
+ * chamada. Esta lista veio de GET /openai/v1/models com a chave real do projeto,
+ * não da documentação — que estava desatualizada.
+ */
+export const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b']
 
 export function geminiEndpoint(model: string = GEMINI_MODEL): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
@@ -71,7 +87,7 @@ async function callGroq(prompt: string, maxTokens: number, temperature: number):
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_MODELS[0],
         messages: [{ role: 'user', content: prompt }],
         max_tokens: maxTokens,
         temperature,

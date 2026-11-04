@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 // Sem isto o Next pré-renderiza a rota no build e o timestamp congela na data
 // da compilação — foi o que escondeu por meses que produção estava desatualizada.
 export const dynamic = 'force-dynamic'
-import { GEMINI_MODEL, geminiEndpoint } from '@/lib/ai-client'
+import { GEMINI_MODEL, GROQ_MODELS, geminiEndpoint } from '@/lib/ai-client'
 
 async function testOpenAICompat(url: string, model: string, apiKey: string): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
 
   // Groq (grátis — console.groq.com)
   results.groq = groqKey
-    ? await testOpenAICompat('https://api.groq.com/openai/v1/chat/completions', 'llama-3.3-70b-versatile', groqKey)
+    ? await testOpenAICompat('https://api.groq.com/openai/v1/chat/completions', GROQ_MODELS[0], groqKey)
     : { ok: false, error: 'GROQ_API_KEY não configurada (grátis em console.groq.com)' }
 
   // DeepSeek

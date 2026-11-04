@@ -3,7 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
 import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
-import { GEMINI_MODEL } from '@/lib/ai-client'
+import { GEMINI_FALLBACKS, GROQ_MODELS } from '@/lib/ai-client'
 import { isContentLockedForUser } from '@/lib/trial-content'
 
 /**
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
   // Cascade: Groq (grátis) → Gemini → Claude → OpenAI → DeepSeek → fallback
   if (groqKey) {
-    const groqModels = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it']
+    const groqModels = GROQ_MODELS
     for (const gm of groqModels) {
       try {
         const r = await callOpenAICompat(message, history, systemPrompt, groqKey,
@@ -271,8 +271,9 @@ async function callOpenAICompat(
 }
 
 async function callGemini(message: string, history: any[], system: string, apiKey: string) {
-  // 'gemini-1.0-pro' saiu: desativado pelo Google, só gastava um 404 por chamada.
-  const MODELS = [GEMINI_MODEL, 'gemini-1.5-flash', 'gemini-1.5-pro']
+  // Cadeia central (ver GEMINI_FALLBACKS): termina no alias gemini-flash-latest,
+  // que o Google mantém apontando pra versão corrente e por isso nunca dá 404.
+  const MODELS = GEMINI_FALLBACKS
 
   for (const model of MODELS) {
     try {

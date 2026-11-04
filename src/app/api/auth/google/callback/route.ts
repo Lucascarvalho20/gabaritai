@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { exchangeCodeForProfile } from '@/lib/google-oauth'
 import { signToken } from '@/lib/jwt'
 import { getClientIp } from '@/lib/rate-limit'
+import { randomBytes } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,8 +51,12 @@ export async function GET(req: NextRequest) {
           oauthProvider: 'google',
           oauthSub: profile.sub,
           avatar: profile.picture ?? null,
-          // Senha aleatória (não usada — login só via Google) — força reset se quiser senha
-          password: 'oauth-' + Math.random().toString(36).slice(2) + Date.now(),
+          // Preenchimento para a coluna password, que é obrigatória. Quem entra
+          // pelo Google nunca usa senha — mas o valor precisa ser imprevisível,
+          // senão alguém que estime o instante do cadastro poderia reproduzi-lo
+          // e entrar pelo login comum. Math.random() não serve: não é
+          // criptográfico e seu estado é recuperável a partir de saídas anteriores.
+          password: 'oauth-' + randomBytes(32).toString('hex'),
           profile: { create: { nivel: 'iniciante', horasDia: '3' } },
           trials: {
             create: { endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
