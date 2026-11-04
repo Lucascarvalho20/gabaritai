@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { exchangeCodeForProfile } from '@/lib/google-oauth'
 import { signToken } from '@/lib/jwt'
 import { getClientIp } from '@/lib/rate-limit'
+import { caminhoInternoSeguro } from '@/lib/safe-redirect'
 import { randomBytes } from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -98,8 +99,18 @@ export async function GET(req: NextRequest) {
     // Precisa redirecionar pra uma página intermediária que persiste o token
     // em localStorage (cliente usa Bearer, não cookie). Se faltar CPF/telefone,
     // a página manda pra /completar-cadastro depois.
+    // Destino pedido antes do login (ex.: veio da tela de checkout).
+    const pedido = caminhoInternoSeguro(req.cookies.get('oauth_next')?.value)
+    const padrao = user.role === 'ADMIN' ? '/admin' : '/dashboard'
+
+    // Cadastro incompleto tem precedência — mas o destino original é repassado
+    // adiante, para a pessoa voltar de onde saiu depois de preencher o CPF.
+    // Sem isso, quem clica em "pagar com Pix" sem CPF preenche o cadastro e é
+    // despejado no dashboard, tendo que reencontrar o checkout sozinho.
     const needsCompletion = !user.cpfHash || !user.phone
-    const next = needsCompletion ? '/completar-cadastro' : (user.role === 'ADMIN' ? '/admin' : '/dashboard')
+    const next = needsCompletion
+      ? `/completar-cadastro${pedido ? `?next=${encodeURIComponent(pedido)}` : ''}`
+      : (pedido ?? padrao)
     const finalizeUrl = new URL(`${baseUrl}/oauth-finalize`)
     finalizeUrl.searchParams.set('token', token)
     finalizeUrl.searchParams.set('next', next)
@@ -107,6 +118,7 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.redirect(finalizeUrl.toString())
     res.cookies.delete('oauth_state')
+    res.cookies.delete('oauth_next')
     // Seta cookie httpOnly igual ao login por senha — assim a sessão OAuth
     // também fica protegida por cookie (não só localStorage). O token segue
     // na URL apenas pra hidratar o store/localStorage no oauth-finalize.

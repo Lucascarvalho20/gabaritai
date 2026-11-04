@@ -131,7 +131,7 @@ function LoginForm() {
       </div>
 
       <a
-        href="/api/auth/google"
+        href={`/api/auth/google${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`}
         className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted font-semibold text-sm transition"
       >
         <svg className="w-4 h-4" viewBox="0 0 48 48" aria-hidden="true">
