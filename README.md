@@ -160,14 +160,43 @@ Nenhum segredo é versionado. Todo `.env` está no `.gitignore`; o `.env.example
 
 ---
 
+## Ambientes e promoção
+
+Mudança nenhuma vai direto para quem está pagando. O caminho é sempre o mesmo, e cada etapa só existe porque a anterior pode deixar passar algo:
+
+```mermaid
+flowchart LR
+    F["branch de trabalho"] -->|pull request| CI{"Verificar<br/>tipos · lint · testes"}
+    CI -->|falhou| F
+    CI -->|passou| H["homologacao<br/>deploy de preview"]
+    H -->|teste manual<br/>no preview| CI2{"Verificar<br/>de novo"}
+    CI2 -->|passou| M["main<br/>produção"]
+    M --> V["gabaritai-red.vercel.app"]
+```
+
+| Etapa | O que roda | O que pega |
+|---|---|---|
+| Pull request | [`.github/workflows/verificar.yml`](.github/workflows/verificar.yml) — `typecheck`, `lint`, `test` | Erro de tipo, regressão nas funções puras |
+| `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
+| `main` | Deploy de produção | — |
+
+As checagens rodam de novo na promoção para `main`, porque entre o teste no preview e o merge o `main` pode ter andado.
+
+O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves de API, e segredo de produção em runner de CI é risco sem retorno. A Vercel já builda cada branch e falha lá.
+
+**Reprodutibilidade.** O `package-lock.json` é versionado. Sem ele, dois deploys do mesmo commit podem instalar versões diferentes e produzir sites diferentes — falha que não aparece em nenhum diff.
+
+---
+
 ## O que ainda não existe
 
 Sendo honesto sobre o estado do projeto:
 
-- **Testes automatizados.** Zero. A validação hoje é manual e via Zod em runtime. É a próxima dívida a pagar — começando pelos algoritmos puros (`schedule-algorithm`, SM-2, `simulado-generator`), que são funções determinísticas e portanto o alvo mais fácil e mais útil para teste unitário.
-- **CI/CD.** O deploy é o automático da Vercel. Não há pipeline rodando lint/typecheck/teste antes do merge.
+- **Cobertura de teste.** 24 testes, sobre três módulos puros e críticos: leitura da notificação do Mercado Pago, validação da assinatura do webhook e bloqueio de open redirect. Os algoritmos de domínio (`schedule-algorithm`, SM-2, `simulado-generator`) ainda não têm — são o próximo alvo, por serem determinísticos e portanto baratos de testar.
+- **Testes de integração.** Nenhum. O que existe roda sem banco e sem rede; o caminho completo de checkout é verificado à mão.
+- **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.
 - **Observabilidade.** Logs da Vercel apenas. Sem métricas, sem tracing, sem alerta.
-- **Cache.** O Redis está previsto no desenho mas ainda não entrou — hoje todo rate limit e leitura quente vai direto ao Postgres.
+- **Cache.** O Redis está previsto no desenho mas ainda não entrou — hoje todo rate limit e leitura quente vai direto ao Postgres. O rate limit é um `Map` em memória, então na prática limita por instância, não globalmente.
 
 ---
 
