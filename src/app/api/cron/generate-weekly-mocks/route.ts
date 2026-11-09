@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateWeeklyMockExam, getWeekStart, type ScheduledDay } from '@/lib/mock-exam-scheduler'
+import { exigirTokenCron } from '@/lib/cron-auth'
 
 export const maxDuration = 300 // 5min
 
@@ -14,11 +15,8 @@ export const maxDuration = 300 // 5min
 // Todos os alunos do mesmo curso recebem o MESMO simulado naquela janela.
 // Real (domingo) só gera pra cursos com edital ativo cadastrado.
 async function handler(req: NextRequest) {
-  const token = req.headers.get('x-cron-token') ?? req.headers.get('authorization')?.replace('Bearer ', '')
-  const expected = process.env.CRON_TOKEN ?? 'gabaritai-dev-cron-token'
-  if (token !== expected) {
-    return NextResponse.json({ message: 'forbidden' }, { status: 403 })
-  }
+  const negado = exigirTokenCron(req)
+  if (negado) return negado
 
   const { searchParams } = new URL(req.url)
   const day = (searchParams.get('day') ?? '').toUpperCase() as ScheduledDay

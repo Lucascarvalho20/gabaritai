@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { exigirTokenCron } from '@/lib/cron-auth'
 
 export const maxDuration = 300
 
@@ -13,11 +14,8 @@ export const maxDuration = 300
 //  3. AiMessage (conversa com mentor) em conversas inativas > 90 dias → deleta
 //  4. AuditLog > 365 dias → deleta (legal: 1 ano basta pra LGPD/civil)
 async function handler(req: NextRequest) {
-  const token = req.headers.get('x-cron-token') ?? req.headers.get('authorization')?.replace('Bearer ', '')
-  const expected = process.env.CRON_TOKEN ?? 'gabaritai-dev-cron-token'
-  if (token !== expected) {
-    return NextResponse.json({ message: 'forbidden' }, { status: 403 })
-  }
+  const negado = exigirTokenCron(req)
+  if (negado) return negado
 
   const { searchParams } = new URL(req.url)
   const dryRun = searchParams.get('dryRun') === 'true'

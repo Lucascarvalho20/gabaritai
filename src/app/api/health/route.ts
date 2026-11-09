@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { requireAdmin } from '@/lib/auth-server'
+import { checkSetupAuth } from '@/lib/setup-auth'
 
 // Sem isto o Next pré-renderiza a rota no build e o timestamp congela na data
 // da compilação — foi o que escondeu por meses que produção estava desatualizada.
@@ -69,7 +71,7 @@ async function listarModelos(): Promise<Record<string, string[] | string>> {
   return out
 }
 
-export async function GET(req: Request) {
+async function diagnosticoCompleto(req: Request) {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
   const openaiKey    = process.env.OPENAI_API_KEY
   const geminiKey    = process.env.GEMINI_API_KEY
@@ -144,7 +146,7 @@ export async function GET(req: Request) {
   const querModelos = new URL(req.url).searchParams.get('models') === '1'
   const modelosDisponiveis = querModelos ? await listarModelos() : undefined
 
-  return NextResponse.json({
+  return {
     ok: true,
     ...(modelosDisponiveis ? { modelosDisponiveis } : {}),
     timestamp: new Date().toISOString(),
@@ -170,5 +172,48 @@ export async function GET(req: Request) {
     },
     ai: { anyWorking, results },
     instructions: anyWorking ? '✅ IA funcionando!' : '❌ Configure pelo menos uma chave. Recomendado: GROQ_API_KEY (grátis em console.groq.com)',
-  })
+  }
+}
+
+/**
+ * Duas camadas, por um motivo de custo e não só de sigilo.
+ *
+ * O diagnóstico completo faz UMA CHAMADA REAL a cada provedor de IA. Quando ele
+ * era público, qualquer pessoa que abrisse /api/health em loop esgotava a cota
+ * gratuita do Gemini e do Groq — justamente as IAs que atendem os alunos. A
+ * falha apareceria como "a IA do site parou", sem nada apontando para o health.
+ *
+ * - Público:  { ok, timestamp, versao } — liveness e qual commit está no ar.
+ *             O commit não é segredo (o repositório é público) e resolve a
+ *             pergunta "o deploy novo já subiu?" sem precisar adivinhar.
+ * - ?detalhe=1: exige sessão de admin OU o SETUP_SECRET como Bearer (curl).
+ *             Resultado guardado por 5 minutos, para nem o admin martelar as APIs.
+ */
+const CACHE_MS = 5 * 60 * 1000
+let cache: { em: number; dados: Awaited<ReturnType<typeof diagnosticoCompleto>> } | null = null
+
+export async function GET(req: NextRequest) {
+  const base = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    versao: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local',
+  }
+
+  if (new URL(req.url).searchParams.get('detalhe') !== '1') {
+    return NextResponse.json(base)
+  }
+
+  const setup = checkSetupAuth(req)
+  if (!setup.ok) {
+    const admin = await requireAdmin(req)
+    if (!admin.user) {
+      return NextResponse.json({ ...base, message: 'Diagnóstico exige admin.' }, { status: 403 })
+    }
+  }
+
+  const agora = Date.now()
+  if (!cache || agora - cache.em > CACHE_MS) {
+    cache = { em: agora, dados: await diagnosticoCompleto(req) }
+  }
+  return NextResponse.json({ ...cache.dados, ...base, cacheDe: new Date(cache.em).toISOString() })
 }

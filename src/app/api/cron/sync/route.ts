@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { syncConcursosFromApi, PRIORITY_UFS } from '@/lib/concursos-api'
 import { prisma } from '@/lib/prisma'
 import { detectAndPersistChanges } from '@/lib/edital-diff'
+import { exigirTokenCron } from '@/lib/cron-auth'
 
 export const maxDuration = 300 // 5min — sincronizar pode demorar
 
@@ -15,11 +16,8 @@ export const maxDuration = 300 // 5min — sincronizar pode demorar
  * Ou usar cron-job.org gratuito pra chamar este endpoint
  */
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('x-cron-token') ?? req.headers.get('authorization')?.replace('Bearer ', '')
-  const expected = process.env.CRON_TOKEN ?? 'gabaritai-dev-cron-token'
-  if (token !== expected) {
-    return NextResponse.json({ message: 'forbidden' }, { status: 403 })
-  }
+  const negado = exigirTokenCron(req)
+  if (negado) return negado
 
   const startedAt = Date.now()
   const results: Record<string, unknown> = {}

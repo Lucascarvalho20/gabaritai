@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runBackupAndEmail } from '@/lib/backup-export'
+import { exigirTokenCron } from '@/lib/cron-auth'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -11,11 +12,8 @@ export const dynamic = 'force-dynamic'
  * No plano Hobby do Vercel, cron roda 1x/dia automático.
  */
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('x-cron-token') ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  const expected = process.env.CRON_TOKEN
-  if (!expected || token !== expected) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+  const negado = exigirTokenCron(req)
+  if (negado) return negado
 
   const adminEmail = process.env.ADMIN_EMAIL
   if (!adminEmail) {

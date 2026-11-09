@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { segredo } from './segredo'
 
 /**
  * Limpa CPF (só dígitos).
@@ -33,7 +34,7 @@ export function isValidCpf(cpf: string): boolean {
  * Hash do CPF com SHA-256 + salt (CPF_SALT env). Usado pra dedup sem armazenar valor real.
  */
 export function hashCpf(cpf: string): string {
-  const salt = process.env.CPF_SALT ?? 'gabaritai-cpf-salt-change-in-production'
+  const salt = segredo(['CPF_SALT'], 'gabaritai-cpf-salt-change-in-production')
   return crypto.createHash('sha256').update(cleanCpf(cpf) + salt).digest('hex')
 }
 
@@ -42,7 +43,7 @@ export function hashCpf(cpf: string): string {
  * Retorna formato: iv:authTag:cipherText (base64).
  */
 export function encryptCpf(cpf: string): string {
-  const key = (process.env.CPF_ENCRYPTION_KEY ?? 'gabaritai-32byte-cpf-encryption-key!').slice(0, 32).padEnd(32, '0')
+  const key = segredo(['CPF_ENCRYPTION_KEY'], 'gabaritai-32byte-cpf-encryption-key!').slice(0, 32).padEnd(32, '0')
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(key), iv)
   let encrypted = cipher.update(cleanCpf(cpf), 'utf8', 'base64')
@@ -55,8 +56,11 @@ export function encryptCpf(cpf: string): string {
  * Decifra CPF — uso restrito (ex: solicitação do usuário ou auditoria legal).
  */
 export function decryptCpf(payload: string): string | null {
+  // A chave fica FORA do try de propósito. Chave ausente é erro de
+  // configuração e precisa aparecer; dentro do try ela virava `null`, e o
+  // checkout lia isso como "o aluno não tem CPF" e mandava completar cadastro.
+  const key = segredo(['CPF_ENCRYPTION_KEY'], 'gabaritai-32byte-cpf-encryption-key!').slice(0, 32).padEnd(32, '0')
   try {
-    const key = (process.env.CPF_ENCRYPTION_KEY ?? 'gabaritai-32byte-cpf-encryption-key!').slice(0, 32).padEnd(32, '0')
     const [ivB64, tagB64, cipherText] = payload.split(':')
     const iv = Buffer.from(ivB64, 'base64')
     const tag = Buffer.from(tagB64, 'base64')

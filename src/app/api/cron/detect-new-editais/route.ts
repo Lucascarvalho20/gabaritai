@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { syncConcursosFromApi, PRIORITY_UFS, isRelevantOrgao } from '@/lib/concursos-api'
 import { telegramNewEditalDraft } from '@/lib/telegram'
 import { EditalStatus } from '@prisma/client'
+import { exigirTokenCron } from '@/lib/cron-auth'
 
 export const maxDuration = 300
 
@@ -17,11 +18,8 @@ export const maxDuration = 300
 //
 // Admin então abre /admin/editais → tab "Rascunhos" → completa com texto do edital + IA extract.
 async function handler(req: NextRequest) {
-  const token = req.headers.get('x-cron-token') ?? req.headers.get('authorization')?.replace('Bearer ', '')
-  const expected = process.env.CRON_TOKEN ?? 'gabaritai-dev-cron-token'
-  if (token !== expected) {
-    return NextResponse.json({ message: 'forbidden' }, { status: 403 })
-  }
+  const negado = exigirTokenCron(req)
+  if (negado) return negado
 
   // 1. Sincroniza concursos-api primeiro (atualiza alertas)
   const syncResult = await syncConcursosFromApi(PRIORITY_UFS)

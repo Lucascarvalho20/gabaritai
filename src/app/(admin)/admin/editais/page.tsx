@@ -57,9 +57,12 @@ function AdminEditaisInner() {
   }
 
   async function runDetection() {
+    // Sem token não há o que tentar: o cron falha fechado e não existe mais
+    // valor padrão que funcione.
+    const token = prompt('Cron token (o valor de CRON_SECRET na Vercel):')?.trim()
+    if (!token) return
     setDetecting(true)
     try {
-      const token = prompt('Cron token (do .env):') ?? 'gabaritai-dev-cron-token'
       const { data } = await api.get(`/cron/detect-new-editais`, { headers: { 'x-cron-token': token } })
       toast.success(`${data.draftsCreated} rascunhos criados`)
       load()

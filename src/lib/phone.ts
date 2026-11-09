@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { segredo } from './segredo'
 
 /**
  * Limpa telefone (só dígitos). Aceita formatos: (11) 91234-5678, 11912345678, +55 11 91234-5678
@@ -41,7 +42,7 @@ export function isValidPhone(phone: string): boolean {
  * Hash do telefone (SHA-256 + salt). Usado pra dedup sem armazenar valor real.
  */
 export function hashPhone(phone: string): string {
-  const salt = process.env.PHONE_SALT ?? process.env.CPF_SALT ?? 'gabaritai-phone-salt-change-in-production'
+  const salt = segredo(['PHONE_SALT', 'CPF_SALT'], 'gabaritai-phone-salt-change-in-production')
   return crypto.createHash('sha256').update(cleanPhone(phone) + salt).digest('hex')
 }
 
@@ -49,7 +50,7 @@ export function hashPhone(phone: string): string {
  * Criptografia AES-256-GCM do telefone. Formato: iv:authTag:cipherText (base64).
  */
 export function encryptPhone(phone: string): string {
-  const key = (process.env.PHONE_ENCRYPTION_KEY ?? process.env.CPF_ENCRYPTION_KEY ?? 'gabaritai-32byte-phone-encryption!').slice(0, 32).padEnd(32, '0')
+  const key = segredo(['PHONE_ENCRYPTION_KEY', 'CPF_ENCRYPTION_KEY'], 'gabaritai-32byte-phone-encryption!').slice(0, 32).padEnd(32, '0')
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(key), iv)
   let encrypted = cipher.update(cleanPhone(phone), 'utf8', 'base64')
