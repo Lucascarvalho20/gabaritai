@@ -5,10 +5,7 @@ import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import {
-  BookOpen, Target, Zap, Shield, Clock, FileText, ArrowRight,
-  CheckCircle2, Award, BarChart3, Menu, X, Sun, Moon, Star, Eye,
-  TrendingUp, Calendar, GraduationCap, Trophy, Lock, ChevronDown,
-  NotebookPen, ListChecks, Sparkles, Layers,
+  BookOpen, Target, Shield, ArrowRight, CheckCircle2, BarChart3, Menu, X, Sun, Moon, Eye, TrendingUp, Calendar, GraduationCap, Lock, ChevronDown, NotebookPen, Sparkles, Layers,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
@@ -20,54 +17,40 @@ import { RemindersSection } from '@/components/RemindersSection'
 
 // ─── DADOS ────────────────────────────────────────────────────────────────────
 
+// Cada frase aqui foi conferida contra o código. Promessa que o sistema não
+// cumpre custa mais credibilidade do que qualquer bug — e "exclusivo" sem
+// fundamento é propaganda enganosa (CDC, art. 37). Antes de acrescentar um
+// item, confirme que a feature existe e funciona em produção.
 const DIFERENCIAIS = [
   {
     icon: BookOpen,
-    title: 'Mentor que conhece seu edital',
-    desc: 'Não é chatbot genérico. O mentor lê o edital exato do seu concurso, sabe seus pontos fracos pelo histórico e te orienta como um professor particular.',
-    badge: 'Exclusivo',
+    title: 'Mentor que responde pelo seu edital',
+    desc: 'Busca no material das matérias que caem na sua prova e mostra as fontes de cada resposta. Quando o material não cobre a pergunta, ele diz.',
   },
   {
     icon: Calendar,
-    title: 'Cronograma que se adapta',
-    desc: 'Outras plataformas vendem PDF com plano fixo. Aqui o cronograma se ajusta sozinho a cada semana, baseado no seu desempenho e nas matérias que ainda não dominou.',
-    badge: 'Exclusivo',
+    title: 'Cronograma que acompanha você',
+    desc: 'Distribui o tempo pelo peso de cada matéria no edital. Ligue o ajuste por desempenho e ele redistribui: onde você erra mais, ganha mais tempo — sem tirar nenhuma matéria.',
   },
   {
     icon: Target,
-    title: 'Simulado real cronometrado',
-    desc: 'Toda semana, 1 simulado completo no formato exato da banca (Cebraspe certo/errado ou múltipla escolha), com cronômetro real e PDF pra imprimir.',
-    badge: 'Diferencial',
-  },
-  {
-    icon: FileText,
-    title: 'Edital novo, sem atraso',
-    desc: 'Quando sai edital atualizado, o sistema percebe e atualiza matérias, peso e banca do seu cronograma. Outras plataformas demoram semanas pra ajustar.',
-    badge: 'Exclusivo',
+    title: 'Simulado no formato da banca',
+    desc: 'Certo/errado com desconto no Cebraspe, múltipla escolha nas demais, com cronômetro. Você treina a prova que vai fazer, não uma genérica.',
   },
   {
     icon: TrendingUp,
-    title: 'Repetição espaçada (SRS)',
-    desc: 'Flashcards baseados em ciência do aprendizado (SuperMemo SM-2). Você revê os conteúdos no momento exato pra fixar na memória de longo prazo.',
-    badge: 'Diferencial',
+    title: 'Repetição espaçada',
+    desc: 'Flashcards com o algoritmo SM-2, o mesmo do Anki: cada cartão volta no intervalo certo para fixar na memória de longo prazo.',
   },
   {
     icon: NotebookPen,
-    title: 'Correção criteriosa de redação',
-    desc: 'Envia sua redação e recebe correção em segundos com nota global e por critério (coesão, gramática, argumentação) e sugestão de reescrita. Treino infinito.',
-    badge: 'Exclusivo',
+    title: 'Correção de redação por critério',
+    desc: 'Envie sua redação e receba nota por critério — coesão, gramática, argumentação — com sugestão de reescrita.',
   },
   {
     icon: Layers,
     title: 'Edital verticalizado',
-    desc: 'Veja matéria por matéria do último edital: peso, assuntos mais cobrados e seu acerto em cada. Sabe exatamente onde focar.',
-    badge: 'Exclusivo',
-  },
-  {
-    icon: Trophy,
-    title: 'Ranking semanal por cargo',
-    desc: 'Compare sua nota com outros candidatos do mesmo concurso no simulado de domingo. Motivação extra pra estudar.',
-    badge: 'Diferencial',
+    desc: 'Matéria por matéria do edital: peso, assuntos e o seu acerto em cada um. Você vê onde concentrar o estudo.',
   },
 ]
 
@@ -87,7 +70,7 @@ const COMO_FUNCIONA = [
   {
     step: '03',
     title: 'Estuda, simula, evolui',
-    desc: 'Mini-simulados terça e quinta, simulado real domingo, mentor 24h, flashcards no momento certo. A cada semana você fica mais perto.',
+    desc: 'Estude pelo cronograma, faça simulados no formato da banca e revise os flashcards no dia certo. O painel mostra seu acerto matéria por matéria.',
     icon: Target,
   },
 ]
@@ -116,36 +99,36 @@ const PILARES = [
   {
     icon: 'method',
     titulo: 'Método antes de hype',
-    desc: 'Sem promessa fácil. O sistema é construído sobre repetição espaçada (SuperMemo SM-2), simulado no formato exato da banca e curadoria humana de cada matéria.',
+    desc: 'Sem promessa fácil. O sistema é construído sobre o peso oficial do edital, repetição espaçada (SM-2) e simulado no formato da banca.',
   },
   {
     icon: 'transparency',
     titulo: 'Transparência total',
-    desc: '7 dias grátis pra testar + 15 dias de garantia: não se adaptou, devolvemos 100%. Sem fidelidade. Pix com 5% de desconto. Cancela em 2 cliques, sem ligação pra reter.',
+    desc: '7 dias grátis pra testar + 15 dias de garantia: não se adaptou, devolvemos 100%. Sem cobrança automática: você paga o período e nada é cobrado de novo sem você pedir. Pix com 5% de desconto.',
   },
   {
     icon: 'guarantee',
-    titulo: 'Conteúdo sempre atualizado',
-    desc: 'Quando sai edital novo, seu cronograma atualiza automaticamente. Você nunca estuda matéria que foi removida nem perde matéria que entrou.',
+    titulo: 'O edital é a fonte da verdade',
+    desc: 'Matérias, pesos, banca e formato de prova vêm do edital do seu concurso. Quando sai um novo, ele é revisado antes de entrar — nada muda no seu estudo sem conferência.',
   },
 ]
 
 const FAQS = [
   {
     q: 'Como o Gabaritai é diferente do Gran Cursos, Estratégia e outros?',
-    a: 'Eles vendem AULAS. Aqui você tem MENTORIA. O sistema conhece seu edital, sabe seus pontos fracos e te guia. Cronograma adaptativo, correção criteriosa de redação, simulados no formato exato da banca. É como ter um professor particular 24h + um plano de estudo que se ajusta a você.',
+    a: 'O foco aqui não é videoaula: é organizar o que estudar e medir onde você está. Cronograma pelo peso do edital (com ajuste opcional pelo seu desempenho), simulados no formato da banca, flashcards com repetição espaçada e um mentor que responde com base no material do seu edital.',
   },
   {
     q: 'Quanto tempo até eu ver resultado?',
-    a: 'Nos primeiros 7 dias você já tem cronograma montado, dashboard de progresso e simulados. Em 30 dias dá pra medir evolução em pontos específicos (matéria por matéria). Quem estuda 3h/dia consistente costuma estar pronto pra prova em 4-6 meses.',
+    a: 'No primeiro dia você já tem o cronograma montado. Com algumas semanas de questões respondidas, o painel mostra seu acerto matéria por matéria — e o ajuste por desempenho do cronograma passa a ter dados para trabalhar. Quanto tempo até a prova depende do edital e das suas horas; o cronograma mostra se o tempo que você tem é suficiente antes de você começar.',
   },
   {
     q: 'Funciona pra qualquer banca?',
-    a: 'Sim. O sistema usa o edital ATIVO como fonte da verdade. Se a banca é Cebraspe, simulados vêm em formato certo/errado com regra de errada-anula-certa. Se é FGV/FCC/VUNESP, vem em múltipla escolha. Tudo no estilo da banca.',
+    a: 'Funciona com as 9 bancas mais comuns em concursos policiais: Cebraspe, FGV, FCC, VUNESP, IDECAN, Quadrix, IBFC, AOCP e IADES. O simulado segue a banca do edital ativo — certo/errado com desconto no Cebraspe, múltipla escolha nas demais.',
   },
   {
     q: 'O que acontece se sair edital novo?',
-    a: 'O sistema detecta automaticamente e atualiza seu cronograma com novas matérias e pesos. Você é avisado e não precisa começar do zero — o progresso anterior é preservado.',
+    a: 'Os editais dos concursos cobertos são acompanhados. Quando sai um novo, matérias e pesos são revisados antes de entrar no sistema. O progresso que você já fez continua salvo.',
   },
   {
     q: 'E se eu não conseguir passar?',
@@ -362,7 +345,7 @@ function Hero() {
               variants={fadeInUp}
               className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Mentoria de estudos para concurseiros sérios: cronograma diário que se adapta, simulados no formato da banca (Cebraspe, FGV, FCC), banco de questões comentadas, flashcards SRS e <strong className="text-foreground">edital verticalizado</strong> com o que mais cai.
+              Mentoria de estudos para concurseiros sérios: cronograma diário pelo peso do edital, simulados no formato da banca (Cebraspe, FGV, FCC), banco de questões comentadas, flashcards com repetição espaçada e <strong className="text-foreground">edital verticalizado</strong> com o que mais cai.
             </motion.p>
 
             <motion.div variants={fadeInUp} className="mt-7 max-w-md mx-auto lg:mx-0">
@@ -462,12 +445,9 @@ function Diferenciais() {
     <section id="diferenciais" className="py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-amber-200/60 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/15 text-amber-700 dark:text-amber-300 text-xs font-semibold mb-4">
-            <Trophy className="w-3.5 h-3.5" /> O que só o Gabaritai tem
-          </div>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Não é mais uma plataforma de aulas</h2>
           <p className="mt-3 text-muted-foreground text-base leading-relaxed">
-            É um <strong className="text-foreground">sistema de mentoria</strong>. Aprende com você, se ajusta ao seu edital, te guia até a aprovação.
+            É um <strong className="text-foreground">sistema de estudo organizado pelo seu edital</strong>: diz o que estudar, em que ordem, e mostra onde você está.
           </p>
         </Reveal>
 
@@ -481,18 +461,8 @@ function Diferenciais() {
                   transition={{ duration: 0.2 }}
                   className="card p-5 hover:border-brand-500/40 hover:shadow-md hover:shadow-brand-500/5 transition-all h-full"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className={cn(
-                      'text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                      d.badge === 'Exclusivo'
-                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                    )}>
-                      {d.badge}
-                    </span>
+                  <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-3">
+                    <Icon className="w-5 h-5" />
                   </div>
                   <h3 className="font-semibold text-base mb-1.5">{d.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{d.desc}</p>
