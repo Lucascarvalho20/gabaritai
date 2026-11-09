@@ -1,5 +1,7 @@
 import { createHash, timingSafeEqual } from 'crypto'
-import { NextResponse, type NextRequest } from 'next/server'
+// Só o TIPO vem do Next. A resposta é o `Response` padrão da web, que as rotas
+// do Next aceitam e o Node executa sem o framework — dá pra testar isolado.
+import type { NextRequest } from 'next/server'
 
 /**
  * Autenticação dos endpoints de /api/cron/*.
@@ -22,10 +24,20 @@ import { NextResponse, type NextRequest } from 'next/server'
  *
  * Devolve `null` quando autorizado, ou a resposta de erro pronta.
  */
-export function exigirTokenCron(req: NextRequest): NextResponse | null {
-  const esperado = process.env.CRON_TOKEN || process.env.CRON_SECRET
-  if (!esperado) {
-    return NextResponse.json(
+function igualEmTempoConstante(x: string, y: string): boolean {
+  // SHA-256 iguala o tamanho dos buffers (exigência do timingSafeEqual) sem
+  // vazar o comprimento do segredo; a comparação em tempo constante impede
+  // descobrir o token medindo o tempo de resposta.
+  return timingSafeEqual(createHash('sha256').update(x).digest(), createHash('sha256').update(y).digest())
+}
+
+export function exigirTokenCron(req: Pick<NextRequest, 'headers'>): Response | null {
+  // As duas valem, cada uma por si. Escolher só a primeira (`A || B`) quebrava o
+  // caso comum: CRON_TOKEN usado à mão e CRON_SECRET, diferente, mandado pela
+  // própria Vercel nos agendamentos — que passavam a ser recusados.
+  const validos = [process.env.CRON_TOKEN, process.env.CRON_SECRET].filter((v): v is string => !!v)
+  if (!validos.length) {
+    return Response.json(
       { message: 'Cron desativado: configure CRON_SECRET na Vercel.' },
       { status: 503 },
     )
@@ -36,13 +48,10 @@ export function exigirTokenCron(req: NextRequest): NextResponse | null {
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
     ''
 
-  // SHA-256 iguala o tamanho dos buffers (exigência do timingSafeEqual) sem
-  // vazar o comprimento do segredo; a comparação em tempo constante impede
-  // descobrir o token medindo o tempo de resposta.
-  const a = createHash('sha256').update(recebido).digest()
-  const b = createHash('sha256').update(esperado).digest()
-  if (!timingSafeEqual(a, b)) {
-    return NextResponse.json({ message: 'forbidden' }, { status: 403 })
+  // `some` em vez de parar no primeiro acerto não muda o tempo de forma útil
+  // para um atacante: ele não sabe qual dos dois está testando.
+  if (!validos.some((v) => igualEmTempoConstante(recebido, v))) {
+    return Response.json({ message: 'forbidden' }, { status: 403 })
   }
   return null
 }
