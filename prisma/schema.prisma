@@ -546,6 +546,12 @@ model Material {
 /// `model` guarda qual modelo gerou o vetor. Vetores de modelos diferentes não são
 /// comparáveis entre si — a coluna existe para detectar base indexada pela metade
 /// depois de uma troca de modelo.
+// ATENÇÃO: o índice vetorial HNSW desta tabela é criado por SQL
+// (prisma/sql/2026-11-09-cronograma-adaptativo-e-rag.sql), porque o Prisma não
+// sabe representar índice de vetor. Consequência: `prisma db push` ou
+// `prisma migrate` contra o banco APAGA o índice, e a busca do mentor vira
+// varredura completa — lenta, sem nenhum erro aparente. Depois de qualquer um
+// dos dois, rode o SQL de novo (é idempotente).
 model MaterialChunk {
   id         String   @id @default(cuid())
   materialId String

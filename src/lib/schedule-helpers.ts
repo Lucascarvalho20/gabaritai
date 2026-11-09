@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import { buildSchedule, ScheduleInput, ScheduleResult } from './schedule-algorithm'
+import { buildSchedule, type ScheduleInput, type ScheduleResult } from './schedule-algorithm'
 import { aplicarDesempenho, type AjusteDesempenho, type Desempenho } from './peso-adaptativo'
 import { StudySessionType, StudySessionStatus, Prisma } from '@prisma/client'
 
