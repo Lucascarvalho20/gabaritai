@@ -33,6 +33,8 @@ type SearchOpts = {
   topicId?: string | null
   /** Restringe à matéria. Ignorado se topicId for informado. */
   subjectId?: string | null
+  /** Restringe a um conjunto de matérias — as do edital do aluno (escopo-aluno.ts). */
+  subjectIds?: string[] | null
   /** Quantos trechos retornar. Acima de ~6 o prompt incha sem ganho de precisão. */
   limit?: number
 }
@@ -42,6 +44,7 @@ export async function searchMaterial(
   opts: SearchOpts = {},
 ): Promise<RetrievedChunk[]> {
   const { topicId = null, subjectId = null, limit = 5 } = opts
+  const subjectIds = opts.subjectIds?.length ? opts.subjectIds : null
 
   const trimmed = query.trim()
   if (trimmed.length < 3) return []
@@ -50,7 +53,13 @@ export async function searchMaterial(
 
   // Busca mais que o necessário e corta pelo limiar depois: filtrar por similaridade
   // dentro do SQL impediria o uso do índice HNSW.
-  const overfetch = Math.min(limit * 4, 40)
+  //
+  // Com filtro de matérias, busca ainda mais. O HNSW encontra os vizinhos mais
+  // próximos ANTES de aplicar o WHERE: se muitos deles forem de matérias fora do
+  // edital, sobram poucos depois do filtro. Buscar uma folga maior compensa.
+  // (O pgvector 0.8 resolve isso de verdade com `hnsw.iterative_scan`; aqui a
+  // folga basta para o tamanho da base.)
+  const overfetch = subjectIds ? Math.min(limit * 10, 100) : Math.min(limit * 4, 40)
 
   const rows = await prisma.$queryRaw<
     Array<{
@@ -75,6 +84,7 @@ export async function searchMaterial(
       AND m.active = true
       AND (${topicId}::text   IS NULL OR c."topicId"   = ${topicId}::text)
       AND (${subjectId}::text IS NULL OR c."subjectId" = ${subjectId}::text)
+      AND (${subjectIds}::text[] IS NULL OR c."subjectId" = ANY(${subjectIds}::text[]))
     ORDER BY c.embedding <=> ${vector}::vector
     LIMIT ${overfetch}
   `

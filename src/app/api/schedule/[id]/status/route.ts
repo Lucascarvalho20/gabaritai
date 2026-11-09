@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { ajustesDoPlano } from '@/lib/schedule-helpers'
 
 // GET /api/schedule/[id]/status
 // Retorna status do plano: % concluído, dias atraso, viabilidade, alerta de horas insuficientes.
@@ -142,6 +143,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   return NextResponse.json({
+    turbo: plan.turbo,
+    adaptarDesempenho: plan.adaptarDesempenho,
+    ajustesDesempenho: plan.adaptarDesempenho ? await ajustesDoPlano(plan) : undefined,
     plan: {
       id: plan.id,
       hoursPerDay: plan.hoursPerDay,

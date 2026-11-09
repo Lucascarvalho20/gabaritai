@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt'
 import { consumeQuota } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
 import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
+import { materiasDoAluno } from '@/lib/rag/escopo-aluno'
 import { GEMINI_FALLBACKS, GROQ_MODELS } from '@/lib/ai-client'
 import { isContentLockedForUser } from '@/lib/trial-content'
 
@@ -144,6 +145,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // De onde veio o que o mentor disse. Sem isso o RAG é invisível: o aluno não
+  // tem como distinguir o que saiu do material do curso do que o modelo supôs.
+  let fontes: Array<{ titulo: string; secao: string | null }> = []
+
   // Helper local: persiste E retorna response com conversationId
   const persistAndRespond = async (resp: string, provider: string, cronogramaUpdate: any) => {
     const convoId = realUser
@@ -154,7 +159,7 @@ export async function POST(req: NextRequest) {
           aiResponse: resp,
         })
       : null
-    return NextResponse.json({ response: resp, provider, cronogramaUpdate, conversationId: convoId })
+    return NextResponse.json({ response: resp, provider, cronogramaUpdate, conversationId: convoId, fontes })
   }
 
   let systemPrompt = buildMentorPrompt(user as any)
@@ -166,10 +171,21 @@ export async function POST(req: NextRequest) {
   // Por isso o try/catch engole a exceção e apenas registra.
   let ragChunks = 0
   try {
-    const trechos = await searchMaterial(message, { limit: 5 })
+    // Só nas matérias do edital do aluno (escopo-aluno.ts).
+    const subjectIds = realUser ? await materiasDoAluno(realUser.id) : null
+    const trechos = await searchMaterial(message, { limit: 5, subjectIds })
     if (trechos.length) {
       systemPrompt = `${systemPrompt}\n\n${buildContextBlock(trechos)}`
       ragChunks = trechos.length
+      const vistas = new Set<string>()
+      fontes = trechos
+        .map((c) => ({ titulo: c.materialTitle, secao: c.heading }))
+        .filter((f) => {
+          const k = `${f.titulo}::${f.secao ?? ''}`
+          if (vistas.has(k)) return false
+          vistas.add(k)
+          return true
+        })
     }
   } catch (err) {
     console.error('[mentor] busca semântica falhou, seguindo sem contexto:', err)

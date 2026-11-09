@@ -12,6 +12,8 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   createdAt: Date
+  /** Materiais do curso usados na resposta (RAG). Vazio = respondeu sem material. */
+  fontes?: Array<{ titulo: string; secao: string | null }>
 }
 
 const SUGESTOES = [
@@ -90,6 +92,7 @@ export default function MentorPage() {
           role: 'assistant',
           content: res.data.response + '\n\n✅ **Cronograma atualizado!** Acesse a aba Cronograma para ver as mudanças.',
           createdAt: new Date(),
+          fontes: res.data.fontes,
         }
         setMessages(prev => [...prev, aiMsg])
       } else {
@@ -98,6 +101,7 @@ export default function MentorPage() {
           role: 'assistant',
           content: res.data.response,
           createdAt: new Date(),
+          fontes: res.data.fontes,
         }
         setMessages(prev => [...prev, aiMsg])
       }
@@ -188,9 +192,26 @@ export default function MentorPage() {
                 : 'bg-brand-600 text-white'
             )}>
               {msg.role === 'assistant' ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
+                <>
+                  <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                  {msg.fontes && msg.fontes.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-border">
+                      <div className="text-[11px] font-semibold text-muted-foreground mb-1">
+                        Baseado no material do seu curso
+                      </div>
+                      <ol className="space-y-0.5">
+                        {msg.fontes.map((f, i) => (
+                          <li key={i} className="text-[11px] text-muted-foreground">
+                            <span className="tabular-nums">[{i + 1}]</span> {f.titulo}
+                            {f.secao && <span className="opacity-70"> — {f.secao}</span>}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p>{msg.content}</p>
               )}

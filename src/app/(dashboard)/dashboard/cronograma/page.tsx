@@ -322,6 +322,7 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
   const [recalculating, setRecalculating] = useState(false)
   const [planStatus, setPlanStatus] = useState<any>(null)
   const [turboMode, setTurboMode] = useState(false)
+  const [adaptarMode, setAdaptarMode] = useState(false)
 
   async function loadMonth(y: number, m: number) {
     setLoading(true)
@@ -347,6 +348,14 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
   }, [viewYear, viewMonth, plan.id])
 
   useEffect(() => { loadStatus() }, [plan.id])
+
+  // Os botões refletem o modo GRAVADO no plano. Antes o turbo vivia só aqui:
+  // recarregar a página mostrava "desligado" com o cronograma ainda em turbo.
+  useEffect(() => {
+    if (!planStatus) return
+    setTurboMode(Boolean(planStatus.turbo))
+    setAdaptarMode(Boolean(planStatus.adaptarDesempenho))
+  }, [planStatus])
 
   const grid = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
   const sessionsByDate = useMemo(() => {
@@ -375,6 +384,7 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
     try {
       await api.post(`/schedule/${plan.id}/recalculate`, {
         turbo: opts?.turbo ?? turboMode,
+        adaptarDesempenho: adaptarMode,
       })
       toast.success(opts?.turbo ?? turboMode
         ? 'Modo turbo ligado — dobra tempo nas matérias top do verticalizado'
@@ -400,6 +410,24 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
       onChanged()
     } catch (e: any) {
       setTurboMode(!novo) // rollback
+      toast.error(e.response?.data?.message ?? 'Erro ao mudar modo')
+    } finally {
+      setRecalculating(false)
+    }
+  }
+
+  async function toggleAdaptar() {
+    const novo = !adaptarMode
+    setAdaptarMode(novo)
+    setRecalculating(true)
+    try {
+      await api.post(`/schedule/${plan.id}/recalculate`, { adaptarDesempenho: novo })
+      toast.success(novo
+        ? 'Ajuste por desempenho ligado — mais tempo onde você erra mais'
+        : 'Ajuste por desempenho desligado — tempo pelo peso do edital')
+      onChanged()
+    } catch (e: any) {
+      setAdaptarMode(!novo) // rollback
       toast.error(e.response?.data?.message ?? 'Erro ao mudar modo')
     } finally {
       setRecalculating(false)
@@ -495,6 +523,83 @@ function ActivePlanView({ plan, onChanged }: { plan: StudyPlan; onChanged: () =>
               turboMode ? 'left-5' : 'left-0.5',
             )} />
           </button>
+        </div>
+
+        {/* Toggle AJUSTE POR DESEMPENHO */}
+        <div className={cn(
+          'mt-2 rounded-xl border p-3 transition-colors',
+          adaptarMode
+            ? 'bg-brand-50/60 dark:bg-brand-900/15 border-brand-300 dark:border-brand-700/60'
+            : 'bg-card border-border',
+        )}>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              'w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0',
+              adaptarMode ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground',
+            )}>
+              🎯
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm flex items-center gap-1.5">
+                Ajustar pelo meu desempenho
+                {adaptarMode && <span className="badge bg-brand-500 text-white text-[10px] py-0.5 px-2">LIGADO</span>}
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {adaptarMode
+                  ? 'O tempo segue seu acerto nas questões. Matéria sem questões respondidas fica com o peso do edital.'
+                  : 'Onde você erra mais, ganha mais tempo. Nenhuma matéria sai do cronograma.'}
+              </p>
+            </div>
+            <button
+              onClick={toggleAdaptar}
+              disabled={recalculating}
+              className={cn(
+                'relative w-11 h-6 rounded-full transition-colors shrink-0 disabled:opacity-50',
+                adaptarMode ? 'bg-brand-500' : 'bg-muted',
+              )}
+              title={adaptarMode ? 'Desligar ajuste por desempenho' : 'Ligar ajuste por desempenho'}
+              aria-pressed={adaptarMode}
+            >
+              <span className={cn(
+                'absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all',
+                adaptarMode ? 'left-5' : 'left-0.5',
+              )} />
+            </button>
+          </div>
+
+          {/* Por que o tempo mudou — só as matérias que de fato mudaram */}
+          {adaptarMode && Array.isArray(planStatus?.ajustesDesempenho) && (() => {
+            const mudaram = (planStatus.ajustesDesempenho as Array<{
+              id: string; name: string; fator: number; acerto: number | null; tentativas: number
+            }>)
+              .filter((a) => a.fator !== 1)
+              .sort((a, b) => b.fator - a.fator)
+            if (!mudaram.length) {
+              return (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Ainda sem questões respondidas suficientes para ajustar. Resolva questões e recalcule.
+                </p>
+              )
+            }
+            return (
+              <ul className="mt-2 space-y-1">
+                {mudaram.slice(0, 6).map((a) => {
+                  const pct = Math.round((a.fator - 1) * 100)
+                  return (
+                    <li key={a.id} className="flex items-baseline justify-between gap-2 text-[11px]">
+                      <span className="truncate">{a.name}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        <span className={cn('font-semibold', pct > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400')}>
+                          {pct > 0 ? `+${pct}%` : `${pct}%`}
+                        </span>
+                        {a.acerto != null && ` · ${Math.round(a.acerto * 100)}% em ${a.tentativas} questões`}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )
+          })()}
         </div>
       </div>
 

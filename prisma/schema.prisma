@@ -739,6 +739,13 @@ model StudyPlan {
   isFeasible          Boolean  @default(true)
   deficit             Float    @default(0)
 
+  // Modos com que o plano foi gerado. Antes o turbo vivia só no estado da tela:
+  // o aluno ligava, recarregava a página e o botão voltava desligado, com o
+  // cronograma ainda montado em turbo. Gravado aqui, a tela mostra a verdade e
+  // o "Recalcular" preserva os modos em vez de desligá-los sem avisar.
+  turbo               Boolean  @default(false)
+  adaptarDesempenho   Boolean  @default(false)
+
   active              Boolean  @default(true)
   sessions            StudyPlanSession[]
   createdAt           DateTime @default(now())

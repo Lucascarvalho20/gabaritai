@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!dto.courseId || !dto.startDate || !dto.endDate || !dto.hoursPerDay || !dto.daysPerWeek) {
       return NextResponse.json({ message: 'Faltam campos obrigatórios' }, { status: 400 })
     }
-    const result = await runSchedule(dto)
+    const result = await runSchedule(dto, user.id)
     const plan = await persistSchedule(user.id, dto, result)
     return NextResponse.json({ planId: plan.id, ...summarize(result) })
   } catch (e: any) {

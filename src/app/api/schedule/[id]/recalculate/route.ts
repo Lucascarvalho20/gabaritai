@@ -8,13 +8,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
-  const turbo = Boolean(body?.turbo)
   const turboTopN = typeof body?.turboTopN === 'number' ? body.turboTopN : undefined
 
   const plan = await prisma.studyPlan.findFirst({
     where: { id: params.id, userId: user.id, active: true },
   })
   if (!plan) return NextResponse.json({ message: 'Plano não encontrado' }, { status: 404 })
+
+  // Modo não informado no pedido = mantém o do plano. Antes, `Boolean(undefined)`
+  // virava false: clicar em "Recalcular" desligava o turbo sem avisar.
+  const turbo = typeof body?.turbo === 'boolean' ? body.turbo : plan.turbo
+  const adaptarDesempenho = typeof body?.adaptarDesempenho === 'boolean' ? body.adaptarDesempenho : plan.adaptarDesempenho
 
   try {
     const dto = {
@@ -26,10 +30,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       endDate: plan.endDate.toISOString(),
       turbo,
       turboTopN,
+      adaptarDesempenho,
     }
-    const result = await runSchedule(dto)
+    const result = await runSchedule(dto, user.id)
     const newPlan = await persistSchedule(user.id, dto, result)
-    return NextResponse.json({ planId: newPlan.id, turbo, ...summarize(result) })
+    return NextResponse.json({ planId: newPlan.id, turbo, adaptarDesempenho, ...summarize(result) })
   } catch (e: any) {
     return NextResponse.json({ message: e.message ?? 'Erro' }, { status: 400 })
   }
