@@ -1063,6 +1063,11 @@ model Payment {
   metadata        Json?         // dados auxiliares (UTM, origem, etc.)
 
   paidAt          DateTime?
+  // Quando a liberação (plano + matrículas) foi concluída. É campo SEPARADO de
+  // paidAt de propósito: "foi pago" e "foi liberado" são fatos diferentes, e
+  // usar paidAt pros dois deixava o pagamento preso pra sempre se o processo
+  // morresse entre uma coisa e outra — pago, sem acesso, e sem como repetir.
+  fulfilledAt     DateTime?
   expiresAt       DateTime?     // vencimento da assinatura (ano = +365d, mês = +30d, vitalício = null)
   refundedAt      DateTime?
 

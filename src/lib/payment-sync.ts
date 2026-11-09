@@ -51,8 +51,16 @@ export async function applyMpPaymentToLocal(mpPayment: MpPayment): Promise<SyncR
     return { ok: false, reason: 'amount_mismatch', flagged: 'amount_mismatch' }
   }
 
-  const newStatus = MP_STATUS_TO_LOCAL[mpPayment.status] ?? 'PENDING'
-  const wasUnpaid = !payment.paidAt
+  const statusConhecido = MP_STATUS_TO_LOCAL[mpPayment.status]
+  if (!statusConhecido) {
+    // Status que não está no mapa não pode virar PENDING silenciosamente: isso
+    // rebaixaria um pagamento já aprovado. Melhor não mexer e registrar.
+    console.error('[payment-sync] status desconhecido do MP — nada alterado', {
+      local: localPaymentId, statusMp: mpPayment.status,
+    })
+    return { ok: false, reason: `status_mp_desconhecido:${mpPayment.status}` }
+  }
+  const newStatus = statusConhecido
 
   await prisma.payment.update({
     where: { id: localPaymentId },
@@ -67,13 +75,31 @@ export async function applyMpPaymentToLocal(mpPayment: MpPayment): Promise<SyncR
   })
 
   let fulfilled = false
-  if (newStatus === 'APPROVED' && wasUnpaid) {
-    try {
-      await fulfillPayment(localPaymentId)
-      fulfilled = true
-    } catch (err: any) {
-      console.error('[payment-sync] fulfillment falhou:', err)
-      // Admin pode reprocessar via /admin/pagamentos
+  if (newStatus === 'APPROVED') {
+    // Reivindica o direito de liberar com um UPDATE condicional. `updateMany`
+    // devolve quantas linhas mudou, e o Postgres garante que só UMA chamada
+    // concorrente encontra `fulfilledAt` nulo — quem recebe 1 libera, os outros
+    // recebem 0 e saem. Ler-e-depois-decidir, como era antes, deixava uma
+    // janela entre a leitura e a escrita por onde dois webhooks passavam.
+    const reivindicado = await prisma.payment.updateMany({
+      where: { id: localPaymentId, fulfilledAt: null },
+      data: { fulfilledAt: new Date() },
+    })
+
+    if (reivindicado.count === 1) {
+      try {
+        await fulfillPayment(localPaymentId)
+        fulfilled = true
+      } catch (err: any) {
+        // Devolve a reivindicação. Sem isto, uma falha transitória (banco
+        // indisponível, timeout) prenderia o pagamento no mesmo beco sem saída
+        // que esta mudança existe pra eliminar.
+        await prisma.payment.updateMany({
+          where: { id: localPaymentId },
+          data: { fulfilledAt: null },
+        })
+        console.error('[payment-sync] fulfillment falhou, reivindicação devolvida:', err)
+      }
     }
   }
 
