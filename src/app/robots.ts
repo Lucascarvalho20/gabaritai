@@ -1,6 +1,7 @@
 import { type MetadataRoute } from 'next'
+import { urlDoSite } from '@/lib/site-url'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
+const BASE_URL = urlDoSite()
 
 export default function robots(): MetadataRoute.Robots {
   return {
