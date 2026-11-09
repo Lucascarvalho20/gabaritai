@@ -1,6 +1,6 @@
 # GabaritAI
 
-Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **163 endpoints de API**, banco PostgreSQL de **45 modelos** e orquestração de múltiplos provedores de LLM.
+Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **166 endpoints de API**, banco PostgreSQL de **45 modelos** e orquestração de múltiplos provedores de LLM.
 
 > ⚠️ **Preencher antes de publicar:** a URL de produção. O domínio `gabaritai.app`
 > pertence a outra empresa — não usar.
@@ -23,7 +23,7 @@ flowchart TB
 
     subgraph Next["Next.js 14 — App Router (Vercel)"]
         RSC["Server Components<br/>(render + data fetching)"]
-        API["163 Route Handlers<br/>/api/*"]
+        API["166 Route Handlers<br/>/api/*"]
     end
 
     subgraph Dominio["Camada de domínio — src/lib"]
@@ -106,9 +106,9 @@ O pior bug possível de um SaaS é **dinheiro cobrado, acesso não liberado** �
 
 **Atomicidade.** Quando o pagamento é confirmado, cinco escritas precisam acontecer ou nenhuma: atualizar o plano, matricular nos cursos, incrementar vendas, registrar o cupom e gravar auditoria. Tudo num `prisma.$transaction`. Um erro no meio não pode deixar o aluno pago e sem acesso.
 
-**Idempotência, em dois níveis.** O Mercado Pago reenvia webhook — por retry, por timeout, por evento duplicado. O fulfillment só roda quando `paidAt` ainda está vazio, então a segunda notificação atualiza o registro e não libera nada de novo. No outro extremo do fluxo, uma cobrança PIX ainda pendente é reaproveitada em vez de gerar outra: sem isso, quem clica duas vezes enquanto o PIX compensa fica com dois QR Codes válidos e paga duas vezes. Uma camada evita **liberar** duas vezes; a outra evita **cobrar** duas vezes.
+**Idempotência, em dois níveis.** O Mercado Pago reenvia webhook — por retry, por timeout, por evento duplicado. A liberação é **reivindicada** com um `UPDATE ... WHERE fulfilledAt IS NULL` que devolve quantas linhas mudou: só um processo consegue, e quem decide é o Postgres, não a ordem de chegada. A versão anterior lia `paidAt` e depois decidia — uma janela de *time-of-check to time-of-use* por onde dois webhooks simultâneos passavam. O teste de integração dispara três notificações com `Promise.all` contra um Postgres real e confere que a venda conta uma vez. No outro extremo do fluxo, uma cobrança PIX pendente é reaproveitada em vez de gerar outra. Uma camada evita **liberar** duas vezes; a outra evita **cobrar** duas vezes.
 
-**Confirmação por push e por pull.** O webhook é o caminho normal, mas depende de o MP alcançar o servidor. A tela de PIX também consulta o pagamento direto na API a cada 4s e aplica o resultado pela mesma função do webhook ([`applyMpPaymentToLocal`](src/lib/payment-sync.ts)) — então a liberação não fica refém de uma entrega HTTP. Os dois caminhos convergem num código só, e não em duas implementações que divergem com o tempo.
+**Três caminhos de confirmação, uma regra.** O webhook é o caminho normal, mas pode se perder. A tela de PIX consulta a API a cada 4 s — mas só com a aba aberta. E um cron diário ([`reconciliar-pagamentos`](src/app/api/cron/reconciliar-pagamentos/route.ts)) pergunta ao MP o estado de todo pagamento pendente dos últimos 3 dias, cobrindo o caso em que os outros dois falham juntos. Os três chamam a mesma função ([`applyMpPaymentToLocal`](src/lib/payment-sync.ts)) — a regra é escrita uma vez, e não em três implementações que divergem com o tempo. E o webhook distingue erro temporário de permanente: API do MP fora do ar devolve 503 (o MP reenvia), pagamento inexistente devolve 200 (reenviar não adianta).
 
 **Status só anda pra frente.** O Mercado Pago manda várias notificações do mesmo pagamento, às vezes simultâneas, e cada uma consulta a API deles. Duas consultas paralelas podem voltar em ordem trocada — a que perguntou um instante antes da aprovação responde "pending" depois da que respondeu "approved", e sobrescreve. Isso aconteceu de verdade num pagamento real. A defesa não é ordenar as notificações (não há como), é tornar a escrita monotônica: [`transicaoPermitida`](src/lib/payment-status.ts) dá um nível a cada status e só aceita troca para nível igual ou maior. Notificação atrasada vira no-op; `APPROVED` só sai para `REFUNDED`.
 
@@ -138,6 +138,22 @@ O padrão `process.env.CHAVE ?? 'valor-de-desenvolvimento'` é comum e, num repo
 A regra agora é uma só: fora de produção o fallback existe (para `next dev` funcionar sem configuração); em build de produção, incluindo previews, segredo ausente é erro explícito. Comparações de token usam `timingSafeEqual` sobre SHA-256, para não vazar o segredo pelo tempo de resposta.
 
 Mesma auditoria, outro achado: o `/api/health` público fazia uma chamada real a cada provedor de IA por acesso. Abrir em loop esgotava a cota gratuita que atende os alunos. Hoje a versão pública só responde `{ ok, versao }` — o commit no ar — e o diagnóstico completo exige admin, com cache de 5 minutos.
+
+### 7. IA: RAG com escopo, agente com ferramentas, cronograma adaptativo
+
+[`src/lib/rag/`](src/lib/rag/) · [`src/lib/agente/`](src/lib/agente/) · [`src/lib/peso-adaptativo.ts`](src/lib/peso-adaptativo.ts)
+
+**RAG no mentor.** O material dos cursos é fatiado por seção, transformado em vetores (Gemini, 1.536 dimensões) e guardado com **pgvector** no próprio Postgres, com índice HNSW. Cada pergunta busca os trechos mais próximos **só nas matérias do edital do aluno** — os materiais são compartilhados entre cursos, e sem esse filtro um aluno recebia trecho de matéria que a prova dele não cobra. A resposta mostra as fontes. pgvector em vez de um banco vetorial separado porque o vetor fica na mesma tabela que o resto: filtrar por matéria é um `WHERE`, não uma sincronização entre dois sistemas. Um cron diário indexa material novo; material sem texto ganha uma "lápide" que impede a fila de travar sobre ele.
+
+**Agente de diagnóstico.** O modelo decide quais ferramentas chamar — desempenho por matéria, tópicos fracos, erros recentes, busca no material, dias até a prova — e entrega um plano validado. Três decisões de desenho:
+
+- **A conta fica fora do modelo.** "Onde o aluno perde mais pontos" é uma função pura e testada (`fatia da prova × (1 − acerto suavizado)`); o modelo a chama e explica. LLM erra aritmética e não é reprodutível.
+- **O modelo não escolhe de quem são os dados.** O id do aluno vem da sessão e fica preso no *closure* das ferramentas; nenhuma recebe id de usuário como argumento. Prompt injection não tem por onde alcançar outro aluno — o teste de integração planta um segundo aluno e confere que nada dele aparece.
+- **O loop recebe o modelo injetado.** Nos testes, um modelo falso com respostas roteirizadas exercita erro de ferramenta, ferramenta inventada, JSON quebrado e teto de passos — sem rede, sem custo, reprodutível.
+
+Formato OpenAI de *tool calling*, que Groq e Gemini também aceitam; como a API é sem estado, o fallback entre provedores acontece por chamada, no meio da conversa.
+
+**Cronograma adaptativo (opcional).** O algoritmo de cronograma não muda: antes dele, o peso de cada matéria é multiplicado por um fator de desempenho, limitado a [0,6; 1,6] para nenhuma matéria sumir. O acerto passa por **suavização bayesiana** — `(acertos + 0,7 × 10) / (tentativas + 10)` —, então errar 2 de 2 questões quase não mexe e errar 20 de 20 mexe: transição contínua, sem limiar arbitrário.
 
 ---
 
@@ -188,7 +204,8 @@ flowchart LR
 
 | Etapa | O que roda | O que pega |
 |---|---|---|
-| Pull request | [`.github/workflows/verificar.yml`](.github/workflows/verificar.yml) — `typecheck`, `lint`, `test` | Erro de tipo, regressão nas funções puras |
+| Pull request | `typecheck`, `lint`, `test` (95 testes unitários) | Erro de tipo, regressão nas funções puras |
+| Pull request | `test:integracao` — 16 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
 | `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
 | `main` | Deploy de produção | — |
 
@@ -204,8 +221,9 @@ O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves 
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura de teste.** 24 testes, sobre três módulos puros e críticos: leitura da notificação do Mercado Pago, validação da assinatura do webhook e bloqueio de open redirect. Os algoritmos de domínio (`schedule-algorithm`, SM-2, `simulado-generator`) ainda não têm — são o próximo alvo, por serem determinísticos e portanto baratos de testar.
-- **Testes de integração.** Nenhum. O que existe roda sem banco e sem rede; o caminho completo de checkout é verificado à mão.
+- **Cobertura ampla de teste.** 95 testes unitários e 16 cenários de integração, concentrados onde o erro custa dinheiro ou dado pessoal: pagamento, segurança, algoritmo de cronograma e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
+- **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
 - **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.
 - **Observabilidade.** Logs da Vercel apenas. Sem métricas, sem tracing, sem alerta.
 - **Cache.** O Redis está previsto no desenho mas ainda não entrou — hoje todo rate limit e leitura quente vai direto ao Postgres. O rate limit é um `Map` em memória, então na prática limita por instância, não globalmente.
@@ -217,7 +235,7 @@ Sendo honesto sobre o estado do projeto:
 ```
 src/
 ├─ app/
-│  ├─ api/            163 route handlers
+│  ├─ api/            166 route handlers
 │  │  ├─ admin/       68  gestão de conteúdo, cursos, usuários
 │  │  ├─ me/          35  dados do próprio usuário (flashcards, progresso)
 │  │  ├─ auth/        10  login, registro, OAuth, 2FA
