@@ -153,6 +153,8 @@ Mesma auditoria, outro achado: o `/api/health` público fazia uma chamada real a
 
 Formato OpenAI de *tool calling*, que Groq e Gemini também aceitam; como a API é sem estado, o fallback entre provedores acontece por chamada, no meio da conversa.
 
+**Servidor MCP para o admin.** [`mcp/`](mcp/) expõe, pelo Model Context Protocol, quatro ferramentas de análise de conteúdo — cobertura do edital (matérias e tópicos sem questão), busca de questões, desempenho agregado da turma — para o admin usar conversando com o Claude. O protocolo está implementado direto (JSON-RPC sobre stdio: `initialize`, `tools/list`, `tools/call`, `ping`), sem SDK. Ferramenta de admin e não pública porque o banco de questões é o produto. Três camadas de proteção: as ferramentas só leem; nada devolve dado pessoal (desempenho agregado omite grupos com menos de 3 alunos); e o usuário do banco é um papel com `SELECT` em 10 tabelas, sem acesso a `users` nem `payments` — verificado contra um Postgres real.
+
 **Cronograma adaptativo (opcional).** O algoritmo de cronograma não muda: antes dele, o peso de cada matéria é multiplicado por um fator de desempenho, limitado a [0,6; 1,6] para nenhuma matéria sumir. O acerto passa por **suavização bayesiana** — `(acertos + 0,7 × 10) / (tentativas + 10)` —, então errar 2 de 2 questões quase não mexe e errar 20 de 20 mexe: transição contínua, sem limiar arbitrário.
 
 ---
@@ -204,8 +206,8 @@ flowchart LR
 
 | Etapa | O que roda | O que pega |
 |---|---|---|
-| Pull request | `typecheck`, `lint`, `test` (95 testes unitários) | Erro de tipo, regressão nas funções puras |
-| Pull request | `test:integracao` — 16 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
+| Pull request | `typecheck`, `lint`, `test` (104 testes unitários) | Erro de tipo, regressão nas funções puras |
+| Pull request | `test:integracao` — 19 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
 | `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
 | `main` | Deploy de produção | — |
 
@@ -221,7 +223,7 @@ O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves 
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura ampla de teste.** 95 testes unitários e 16 cenários de integração, concentrados onde o erro custa dinheiro ou dado pessoal: pagamento, segurança, algoritmo de cronograma e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Cobertura ampla de teste.** 104 testes unitários e 19 cenários de integração, concentrados onde o erro custa dinheiro ou dado pessoal: pagamento, segurança, algoritmo de cronograma e IA. O SM-2 e o gerador de simulado ainda não têm.
 - **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
 - **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.

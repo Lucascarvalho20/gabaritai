@@ -55,6 +55,7 @@ const { carregarContextoAluno, ferramentasDiagnostico } = await import(W + 'agen
 const { rodarAgente } = await import(W + 'agente/loop.ts')
 const { runSchedule, persistSchedule, ajustesDoPlano } = await import(W + 'schedule-helpers.ts')
 const { applyMpPaymentToLocal } = await import(W + 'payment-sync.ts')
+const { ferramentasMcp } = await import(new URL('../../mcp/ferramentas.ts', import.meta.url).href)
 
 let falhas = 0
 async function caso(nome: string, fn: () => Promise<void>) {
@@ -227,6 +228,30 @@ await caso('pagamento liberado antes de fulfilledAt existir NÃO é liberado de 
   exigir(r.ok && !r.fulfilled, `liberou de novo: ${JSON.stringify(r)}`)
   exigir(plano?.soldCount === 1, `soldCount foi para ${plano?.soldCount}`)
   exigir(p?.status === 'APPROVED', `status=${p?.status} (deveria virar APPROVED)`)
+})
+
+console.log('\nMCP')
+const mcp = (n: string) => ferramentasMcp.find((f: any) => f.nome === n)!
+await caso('listar_concursos conta matérias e questões do edital', async () => {
+  const r: any[] = await mcp('listar_concursos').executar({}) as any[]
+  const c = r.find((x) => x.slug === 'ens-curso')
+  exigir(c?.materias === 2 && c?.questoes === 2, JSON.stringify(c))
+})
+await caso('cobertura_do_edital acha a lacuna: matéria sem questão', async () => {
+  const r: any = await mcp('cobertura_do_edital').executar({ concurso: 'ens-curso' })
+  exigir(r.resumo.sem_questao.includes('Português Ensaio'), JSON.stringify(r.resumo))
+  const penal = r.materias.find((m: any) => m.materia === 'Direito Penal Ensaio')
+  exigir(penal.questoes === 2 && penal.topicos_sem_questao.includes('Prescrição'), JSON.stringify(penal))
+})
+await caso('desempenho_agregado omite grupo com menos de 3 alunos (privacidade)', async () => {
+  const antes: any = await mcp('desempenho_agregado').executar({ concurso: 'ens-curso' })
+  exigir(antes.materias.length === 0 && antes.omitidas_por_privacidade === 2, JSON.stringify(antes))
+  await prisma.user.create({ data: { id: 'ens-terceiro', name: 'Terceiro', password: 'x', email: 'terceiro@teste.local' } })
+  await prisma.userSubjectMastery.create({ data: { userId: 'ens-terceiro', courseId: 'ens-curso', subjectId: 'ens-penal', totalAttempts: 10, correctAttempts: 5 } })
+  const depois: any = await mcp('desempenho_agregado').executar({ concurso: 'ens-curso' })
+  const penal = depois.materias.find((m: any) => m.materia === 'Direito Penal Ensaio')
+  exigir(penal?.alunos === 3, JSON.stringify(depois))
+  exigir(!JSON.stringify(depois).includes('ens-user'), 'vazou id de aluno')
 })
 
 await prisma.$disconnect()

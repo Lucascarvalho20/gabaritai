@@ -11,7 +11,8 @@
     "test": "node --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "verificar": "npm run typecheck && npm run lint && npm run test",
-    "test:integracao": "bash tests/integracao/rodar.sh"
+    "test:integracao": "bash tests/integracao/rodar.sh",
+    "mcp": "node --experimental-transform-types --no-warnings --import ./scripts/alias/registrar.mjs ./mcp/servidor.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

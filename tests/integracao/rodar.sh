@@ -21,4 +21,4 @@ DATABASE_URL="$URL" npx prisma db push --skip-generate --accept-data-loss >/dev/
 docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/sql/2026-11-09-cronograma-adaptativo-e-rag.sql >/dev/null
 
 INTEGRACAO_DATABASE_URL="$URL" node --experimental-transform-types --no-warnings \
-  --import ./tests/integracao/registrar.mjs ./tests/integracao/integracao.mts
+  --import ./scripts/alias/registrar.mjs ./tests/integracao/integracao.mts
