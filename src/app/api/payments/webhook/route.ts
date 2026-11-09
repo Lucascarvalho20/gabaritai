@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchPayment, verifyWebhookSignature } from '@/lib/mercadopago'
+import { fetchPayment, verifyWebhookSignature, MercadoPagoErro } from '@/lib/mercadopago'
 import { applyMpPaymentToLocal } from '@/lib/payment-sync'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
 import { lerNotificacaoMp, ehEventoDePagamento } from '@/lib/mp-notification'
@@ -77,7 +77,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. A verdade vem do Mercado Pago, não da notificação.
-    const mpPayment = await fetchPayment(notificacao.recursoId!)
+    let mpPayment
+    try {
+      mpPayment = await fetchPayment(notificacao.recursoId!)
+    } catch (err) {
+      if (err instanceof MercadoPagoErro && err.status === 404) {
+        // Pagamento que não existe na nossa conta: não adianta tentar de novo.
+        return NextResponse.json({ ok: true, ignored: true, reason: 'payment_not_found' })
+      }
+      throw err // temporário: cai no catch de baixo, que pede reenvio
+    }
     const result = await applyMpPaymentToLocal(mpPayment)
 
     if (!result.ok) {
@@ -92,10 +101,15 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ ok: true, paymentId: result.paymentId, status: result.status })
   } catch (err: any) {
-    // Log completo no servidor, mas resposta genérica (webhook é público)
-    console.error('[webhook-mp]', err)
-    // 200 evita MP reenviar infinitamente; investigamos via log
-    return NextResponse.json({ ok: false, message: 'Erro processando webhook' }, { status: 200 })
+    // Chegar aqui = erro inesperado, quase sempre TEMPORÁRIO (API do Mercado
+    // Pago ou banco fora do ar). Antes respondia 200 "para o MP não reenviar
+    // infinitamente" — e o efeito real era o oposto do desejado: o MP entendia
+    // "entregue", nunca reenviava, e se o aluno tivesse fechado a aba o
+    // pagamento ficava PENDING para sempre. 5xx faz o MP tentar de novo com
+    // espera crescente. Os casos PERMANENTES (não é pagamento, não existe,
+    // transição ignorada) já saíram acima com 200 explícito.
+    console.error('[webhook-mp] falha temporária, pedindo reenvio', err)
+    return NextResponse.json({ ok: false, retry: true }, { status: 503 })
   }
 }
 
