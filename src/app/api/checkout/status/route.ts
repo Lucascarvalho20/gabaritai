@@ -16,6 +16,13 @@ export const dynamic = 'force-dynamic'
  *   praticamente instantânea quando o PIX cai.
  *
  * Só o dono do pagamento (ou admin) pode consultar.
+ *
+ * SOBRE O CAMPO `diagnostico`: antes, qualquer falha aqui era engolida e a tela
+ * dizia "ainda não identificamos o pagamento" — a mesma frase para "o PIX não
+ * caiu" e para "a consulta ao Mercado Pago quebrou". São problemas opostos e a
+ * pessoa não tinha como distinguir. Agora o motivo real sobe junto da resposta.
+ * Não vaza nada: o endpoint já exige ser dono do pagamento, e a mensagem do MP
+ * não contém credencial.
  */
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -34,14 +41,29 @@ export async function GET(req: NextRequest) {
   }
 
   let status = payment.status
+  let statusMp: string | null = null
+  let diagnostico: string | null = null
 
-  // Pull instantâneo: se ainda não confirmou, pergunta direto ao MP.
-  if (status === 'PENDING' && payment.providerPaymentId) {
+  if (status !== 'PENDING') {
+    diagnostico = 'ja_resolvido_localmente'
+  } else if (!payment.providerPaymentId) {
+    // Sem o id do MP não há o que consultar — só o webhook poderia resolver.
+    diagnostico = 'sem_provider_payment_id'
+  } else {
+    // Pull instantâneo: se ainda não confirmou, pergunta direto ao MP.
     try {
       const mp = await fetchPayment(payment.providerPaymentId)
+      statusMp = mp.status
       const result = await applyMpPaymentToLocal(mp)
-      if (result.ok) status = result.status
-    } catch (err) {
+      if (result.ok) {
+        status = result.status
+        diagnostico = 'sincronizado'
+      } else {
+        diagnostico = `sync_recusado:${result.reason}`
+        console.error('[checkout/status] sync recusado', { paymentId, reason: result.reason })
+      }
+    } catch (err: any) {
+      diagnostico = `erro_mp:${err?.message ?? 'desconhecido'}`
       console.error('[checkout/status] falha ao consultar MP:', err)
       // mantém status local
     }
@@ -50,6 +72,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     paymentId: payment.id,
     status,
+    statusMp,
+    diagnostico,
     paid: status === 'APPROVED',
     failed: status === 'REJECTED' || status === 'CANCELLED',
   })

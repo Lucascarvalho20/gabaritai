@@ -2,8 +2,12 @@
  * Rate limiter / lockout in-memory.
  *
  * Limita tentativas falhas de login por IP + identifier (email/username).
- * Em produção, mover pra Redis (ioredis já está no package.json) pra
- * funcionar com múltiplas instâncias.
+ * LIMITAÇÃO CONHECIDA: o Map vive na memória da instância. Na Vercel cada
+ * invocação concorrente roda numa instância própria, então o limite real é
+ * "5 tentativas POR INSTÂNCIA", não 5 no total — e uma instância reciclada
+ * zera o contador. Serve contra força bruta ingênua; não contra um atacante
+ * que abra muitas conexões em paralelo. A correção é mover o estado pra fora
+ * do processo (Redis ou Postgres); nenhum cliente Redis está instalado hoje.
  */
 
 type Bucket = { count: number; firstAttempt: number; lockedUntil?: number }

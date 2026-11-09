@@ -98,13 +98,21 @@ Cada provedor que falha (erro, timeout, cota) cai para o próximo sem o usuário
 
 Junto vem `parseAIJson`, que existe porque **modelo de linguagem não respeita contrato de saída**: às vezes devolve o JSON embrulhado em ```` ```json ````, às vezes precedido de "Claro! Aqui está:". A função limpa a marcação, e se o `JSON.parse` ainda falhar, extrai o primeiro `{...}` ou `[...]` por regex antes de desistir com erro rastreável.
 
-### 4. Fulfillment de pagamento em transação atômica
+### 4. Pagamento: três camadas de defesa contra o dinheiro sumir
 
-[`src/lib/checkout-fulfillment.ts`](src/lib/checkout-fulfillment.ts) · 224 linhas
+[`src/lib/checkout-fulfillment.ts`](src/lib/checkout-fulfillment.ts) · [`src/lib/payment-sync.ts`](src/lib/payment-sync.ts) · [`src/lib/mercadopago.ts`](src/lib/mercadopago.ts)
 
-Quando o webhook do Mercado Pago confirma o pagamento, cinco escritas precisam acontecer **ou nenhuma**: atualizar o plano, matricular nos cursos, incrementar vendas, registrar o cupom e gravar auditoria. Tudo dentro de um `prisma.$transaction`.
+O pior bug possível de um SaaS é **dinheiro cobrado, acesso não liberado** — e ele tem mais de uma causa. Cada uma pede uma defesa diferente.
 
-Sem isso, um erro no meio produz o pior bug possível de um SaaS: **dinheiro cobrado, acesso não liberado.**
+**Atomicidade.** Quando o pagamento é confirmado, cinco escritas precisam acontecer ou nenhuma: atualizar o plano, matricular nos cursos, incrementar vendas, registrar o cupom e gravar auditoria. Tudo num `prisma.$transaction`. Um erro no meio não pode deixar o aluno pago e sem acesso.
+
+**Idempotência, em dois níveis.** O Mercado Pago reenvia webhook — por retry, por timeout, por evento duplicado. O fulfillment só roda quando `paidAt` ainda está vazio, então a segunda notificação atualiza o registro e não libera nada de novo. No outro extremo do fluxo, uma cobrança PIX ainda pendente é reaproveitada em vez de gerar outra: sem isso, quem clica duas vezes enquanto o PIX compensa fica com dois QR Codes válidos e paga duas vezes. Uma camada evita **liberar** duas vezes; a outra evita **cobrar** duas vezes.
+
+**Confirmação por push e por pull.** O webhook é o caminho normal, mas depende de o MP alcançar o servidor. A tela de PIX também consulta o pagamento direto na API a cada 4s e aplica o resultado pela mesma função do webhook ([`applyMpPaymentToLocal`](src/lib/payment-sync.ts)) — então a liberação não fica refém de uma entrega HTTP. Os dois caminhos convergem num código só, e não em duas implementações que divergem com o tempo.
+
+Junto: validação HMAC-SHA256 da assinatura do webhook com janela anti-replay de 5 minutos, e checagem de valor divergente que rejeita o pagamento se o valor aprovado não bate com o cobrado.
+
+Um detalhe de interface que também é correção de bug: `/api/checkout/status` devolve **por que** não confirmou (`sincronizado`, `erro_mp:…`, `sem_provider_payment_id`), em vez de só devolver que não confirmou. Antes, uma falha de rede e um PIX legitimamente pendente apareciam idênticos para o usuário — um erro disfarçado de estado normal é um erro que ninguém reporta.
 
 ### 5. Dados pessoais sob LGPD
 

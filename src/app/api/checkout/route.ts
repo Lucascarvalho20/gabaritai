@@ -98,6 +98,50 @@ export async function POST(req: NextRequest) {
 
     const finalAmount = +(finalCents / 100).toFixed(2)
 
+    // 0. PIX já aberto? Devolve o mesmo em vez de gerar outro.
+    //
+    // Sem isto, cada clique em "Pagar com Pix" cria um Payment e uma cobrança
+    // nova no Mercado Pago. Como o PIX demora alguns segundos pra compensar, é
+    // natural a pessoa achar que falhou e clicar de novo — e aí ela paga duas
+    // vezes, com dois QR Codes válidos ao mesmo tempo. Reaproveitar a cobrança
+    // pendente enquanto ela não expira elimina a janela inteira.
+    if (method === 'pix') {
+      const emAberto = await prisma.payment.findFirst({
+        where: {
+          userId: user.id,
+          status: 'PENDING',
+          provider: 'mercadopago',
+          paymentMethod: 'pix',
+          pricingPlanSlug: plan.slug,
+          courseSlug: courseSlug ?? null,
+          amount: finalAmount,
+          providerPaymentId: { not: null },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      const bruto = emAberto?.rawPreference as any
+      const expiraEm = bruto?.date_of_expiration ? new Date(bruto.date_of_expiration) : null
+      const aindaVale = expiraEm != null && expiraEm.getTime() > Date.now() + 60_000
+
+      if (emAberto && aindaVale) {
+        const td = bruto?.point_of_interaction?.transaction_data
+        return NextResponse.json({
+          ok: true,
+          method: 'pix',
+          reaproveitado: true,
+          paymentId: emAberto.id,
+          pix: {
+            qrCode: td?.qr_code ?? null,
+            qrCodeBase64: td?.qr_code_base64 ?? null,
+            ticketUrl: td?.ticket_url ?? null,
+            expiresAt: bruto.date_of_expiration,
+            amount: emAberto.amount,
+          },
+        })
+      }
+    }
+
     // 1. Cria registro de Payment (PENDING)
     const payment = await prisma.payment.create({
       data: {
