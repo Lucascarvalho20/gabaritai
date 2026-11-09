@@ -53,3 +53,7 @@ npm-debug.log*
 prisma/sql/*admin*.sql
 prisma/sql/*senha*.sql
 prisma/sql/*credencial*.sql
+
+# Workflow do CI: so entra quando houver token com escopo `workflow`.
+# O arquivo existe em .github/workflows/verificar.yml, fora do git por enquanto.
+.github/

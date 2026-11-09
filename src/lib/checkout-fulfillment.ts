@@ -14,6 +14,7 @@ import { audit } from './audit-log'
 import { telegramPaymentReceived } from './telegram'
 import { sendEmail, buildPaymentReceiptEmail } from './email'
 import { Plan, PricingType, PricingInterval, CoverageType, ConcursoArea } from '@prisma/client'
+import { planejarCobertura, type TipoCobertura, type TipoPlano } from './cobertura-plano'
 
 const PRICING_TO_PLAN: Record<PricingType, Plan> = {
   TRIAL: Plan.FREE,
@@ -34,6 +35,13 @@ function calcExpiresAt(interval: PricingInterval): Date | null {
   }
 }
 
+/**
+ * Traduz a cobertura do plano em ids de curso.
+ *
+ * A REGRA fica em `planejarCobertura` (pura, testada); aqui só a consulta.
+ * Separado porque é a regra que decide quem recebe o que pagou — ela precisa
+ * ser verificável sem um banco do lado.
+ */
 async function resolveCourseIds(opts: {
   coverageType: CoverageType
   coverageData: any
@@ -41,39 +49,25 @@ async function resolveCourseIds(opts: {
   maxCourses: number | null
   planType: PricingType
 }): Promise<string[]> {
-  if (opts.coverageType === 'SPECIFIC') {
-    const coverageSlugs = Array.isArray(opts.coverageData) ? (opts.coverageData as string[]) : []
-    const isCombo = opts.planType === 'COMBO' || opts.planType === 'FULL_ACCESS'
+  const plano = planejarCobertura({
+    coverageType: opts.coverageType as TipoCobertura,
+    coverageData: opts.coverageData,
+    courseSlug: opts.courseSlug,
+    planType: opts.planType as TipoPlano,
+  })
 
-    // Combo/FullAccess SPECIFIC: matricula em TODOS os cursos da coverageData (ignora courseSlug)
-    if (isCombo && coverageSlugs.length > 0) {
-      const courses = await prisma.course.findMany({
-        where: { slug: { in: coverageSlugs }, active: true },
-        select: { id: true },
-      })
-      return courses.map((c) => c.id)
-    }
+  if (plano.modo === 'nenhum') {
+    console.warn('[fulfillment] cobertura não resolveu nenhum curso', { motivo: plano.motivo })
+    return []
+  }
 
-    // Single course: se vier courseSlug usa ele (validado no checkout que tá na coverageData se houver restrição).
-    // Se NÃO vier courseSlug mas coverageData tem 1 curso, usa esse.
-    const finalSlug = opts.courseSlug ?? (coverageSlugs.length === 1 ? coverageSlugs[0] : null)
-    if (!finalSlug) return []
-    const course = await prisma.course.findUnique({ where: { slug: finalSlug }, select: { id: true } })
-    return course ? [course.id] : []
-  }
-  if (opts.coverageType === 'AREA') {
-    const areas = Array.isArray(opts.coverageData) ? opts.coverageData : []
-    const courses = await prisma.course.findMany({
-      where: { active: true, area: { in: areas as ConcursoArea[] } },
-      select: { id: true },
-    })
-    return courses.map((c) => c.id)
-  }
-  if (opts.coverageType === 'ALL') {
-    const courses = await prisma.course.findMany({ where: { active: true }, select: { id: true } })
-    return courses.map((c) => c.id)
-  }
-  return []
+  const where =
+    plano.modo === 'slugs' ? { slug: { in: plano.slugs }, active: true }
+    : plano.modo === 'areas' ? { area: { in: plano.areas as ConcursoArea[] }, active: true }
+    : { active: true }
+
+  const courses = await prisma.course.findMany({ where, select: { id: true } })
+  return courses.map((c) => c.id)
 }
 
 export async function fulfillPayment(paymentId: string): Promise<{ ok: boolean; enrolled: number; plan?: Plan }> {
