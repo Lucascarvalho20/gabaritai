@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { fulfillPayment } from '@/lib/checkout-fulfillment'
 import { PaymentStatus } from '@prisma/client'
 import type { MpPayment } from '@/lib/mercadopago'
+import { transicaoPermitida } from '@/lib/payment-status'
 
 const MP_STATUS_TO_LOCAL: Record<string, PaymentStatus> = {
   approved: 'APPROVED',
@@ -23,8 +24,13 @@ export type SyncResult =
  * Aplica o estado de um pagamento do Mercado Pago no Payment local.
  *
  * Usado tanto pelo webhook (push do MP) quanto pelo endpoint de status
- * (pull/polling do frontend). Idempotente: o fulfillment só roda uma vez
- * (guardado por `paidAt`). Inclui a checagem anti-fraude de valor divergente.
+ * (pull/polling do frontend). Três garantias:
+ *
+ *  - Status só anda pra frente (`transicaoPermitida`). Notificação atrasada
+ *    dizendo "pending" não desfaz um "approved" que já foi gravado.
+ *  - Liberação roda uma vez só, reivindicada por `fulfilledAt` com UPDATE
+ *    condicional — quem decide é o Postgres, não a ordem de chegada.
+ *  - Valor aprovado tem que bater com o cobrado (anti-fraude).
  */
 export async function applyMpPaymentToLocal(mpPayment: MpPayment): Promise<SyncResult> {
   const localPaymentId = mpPayment.external_reference
@@ -61,6 +67,16 @@ export async function applyMpPaymentToLocal(mpPayment: MpPayment): Promise<SyncR
     return { ok: false, reason: `status_mp_desconhecido:${mpPayment.status}` }
   }
   const newStatus = statusConhecido
+
+  if (!transicaoPermitida(payment.status as any, newStatus as any)) {
+    // Leitura velha chegando depois da nova. Não escreve NADA — nem o
+    // rawWebhook, senão o registro de auditoria passa a mostrar o estado
+    // antigo como se fosse o último.
+    console.warn('[payment-sync] transição ignorada (notificação fora de ordem)', {
+      local: localPaymentId, de: payment.status, para: newStatus, statusMp: mpPayment.status,
+    })
+    return { ok: false, reason: `transicao_ignorada:${payment.status}->${newStatus}` }
+  }
 
   await prisma.payment.update({
     where: { id: localPaymentId },
