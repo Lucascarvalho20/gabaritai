@@ -35,6 +35,10 @@
       "schedule": "0 7 * * 1"
     },
     {
+      "path": "/api/cron/reconciliar-pagamentos",
+      "schedule": "30 6 * * *"
+    },
+    {
       "path": "/api/cron/rag-index",
       "schedule": "0 5 * * *"
     }

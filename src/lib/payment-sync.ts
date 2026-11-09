@@ -97,8 +97,15 @@ export async function applyMpPaymentToLocal(mpPayment: MpPayment): Promise<SyncR
     // concorrente encontra `fulfilledAt` nulo — quem recebe 1 libera, os outros
     // recebem 0 e saem. Ler-e-depois-decidir, como era antes, deixava uma
     // janela entre a leitura e a escrita por onde dois webhooks passavam.
+    //
+    // `expiresAt: null` é a segunda trava, para pagamentos liberados ANTES de
+    // `fulfilledAt` existir: neles a coluna nova está vazia, mas a liberação já
+    // aconteceu — e o único lugar que grava `expiresAt` do pagamento é a
+    // transação de liberação. Sem esta condição, um "approved" reenviado pelo
+    // Mercado Pago liberaria de novo: acesso estendido e venda contada em dobro.
+    // (Planos vitalícios não têm expiresAt; para eles vale só fulfilledAt.)
     const reivindicado = await prisma.payment.updateMany({
-      where: { id: localPaymentId, fulfilledAt: null },
+      where: { id: localPaymentId, fulfilledAt: null, expiresAt: null },
       data: { fulfilledAt: new Date() },
     })
 

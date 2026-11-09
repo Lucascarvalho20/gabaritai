@@ -174,6 +174,20 @@ export type MpPayment = {
   metadata?: Record<string, unknown>
 }
 
+/**
+ * Erro da API do Mercado Pago com o status HTTP junto. Quem chama precisa
+ * distinguir "não existe" (404, permanente) de "fora do ar" (5xx, temporário):
+ * um merece desistir, o outro merece tentar de novo.
+ */
+export class MercadoPagoErro extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'MercadoPagoErro'
+    this.status = status
+  }
+}
+
 export async function fetchPayment(paymentId: string | number): Promise<MpPayment> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN
   if (!token) throw new Error('MERCADOPAGO_ACCESS_TOKEN não configurado')
@@ -181,8 +195,8 @@ export async function fetchPayment(paymentId: string | number): Promise<MpPaymen
   const res = await fetch(`${MP_BASE}/v1/payments/${paymentId}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.message ?? 'Erro ao buscar payment')
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new MercadoPagoErro(data.message ?? 'Erro ao buscar payment', res.status)
   return data as MpPayment
 }
 
