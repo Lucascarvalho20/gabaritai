@@ -4,20 +4,25 @@ import { QueryProvider } from '@/components/ui/query-provider'
 import { PWARegister } from '@/components/pwa-register'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
+import { urlDoSite } from '@/lib/site-url'
 
 export const metadata: Metadata = {
+  // Sem isto as URLs de og:image saem relativas e o LinkedIn não acha a imagem.
+  metadataBase: new URL(urlDoSite()),
+  alternates: { canonical: '/' },
   title: {
     default: 'Gabaritai — Mentoria de estudos para concursos',
     template: '%s | Gabaritai',
   },
   description: 'Plataforma de mentoria para concursos militares e policiais. Cronograma adaptativo, simulados reais cronometrados e edital verticalizado para acelerar sua aprovação.',
-  keywords: ['concursos públicos', 'PMDF', 'Polícia Federal', 'PRF', 'PCDF', 'TJDFT', 'CNU', 'mentoria concursos', 'flashcards', 'simulados', 'edital verticalizado'],
+  keywords: ['concursos públicos', 'concursos policiais', 'Polícia Federal', 'PRF', 'PMDF', 'PMGO', 'PCDF', 'cronograma de estudos', 'simulados', 'repetição espaçada', 'edital verticalizado'],
   authors: [{ name: 'Gabaritai' }],
   manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
     siteName: 'Gabaritai',
+    url: '/',
     title: 'Gabaritai — Mentoria de estudos para concursos',
     description: 'Cronograma adaptativo, simulados reais e edital verticalizado para acelerar sua aprovação.',
   },

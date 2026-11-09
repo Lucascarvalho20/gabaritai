@@ -1,6 +1,7 @@
 import { type MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getAllPosts } from '@/lib/blog-posts'
+import { urlDoSite } from '@/lib/site-url'
 
 /**
  * Sitemap dinâmico. Inclui:
@@ -12,7 +13,7 @@ import { getAllPosts } from '@/lib/blog-posts'
  * Convertido em /sitemap.xml automaticamente pelo Next.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gabaritai-red.vercel.app'
+const BASE_URL = urlDoSite()
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
