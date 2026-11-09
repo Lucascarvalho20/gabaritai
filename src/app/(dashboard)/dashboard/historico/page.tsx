@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { History, TrendingDown, TrendingUp, AlertTriangle, Loader2, Filter, ChevronDown, CheckCircle2, XCircle, MinusCircle, Sparkles, Target, Timer } from 'lucide-react'
 import { api } from '@/lib/api'
+import { DiagnosticoAgente } from '@/components/DiagnosticoAgente'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -117,6 +118,8 @@ export default function HistoricoPage() {
           Onde você anda errando + onde precisa reforçar.
         </p>
       </div>
+
+      <DiagnosticoAgente />
 
       {studyTime && studyTime.totalMin > 0 && (
         <div className="card p-4 flex items-center gap-4">
