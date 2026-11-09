@@ -1,6 +1,6 @@
 # GabaritAI
 
-Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **162 endpoints de API**, banco PostgreSQL de **44 modelos** e orquestração de múltiplos provedores de LLM.
+Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **163 endpoints de API**, banco PostgreSQL de **45 modelos** e orquestração de múltiplos provedores de LLM.
 
 > ⚠️ **Preencher antes de publicar:** a URL de produção. O domínio `gabaritai.app`
 > pertence a outra empresa — não usar.
@@ -23,7 +23,7 @@ flowchart TB
 
     subgraph Next["Next.js 14 — App Router (Vercel)"]
         RSC["Server Components<br/>(render + data fetching)"]
-        API["162 Route Handlers<br/>/api/*"]
+        API["163 Route Handlers<br/>/api/*"]
     end
 
     subgraph Dominio["Camada de domínio — src/lib"]
@@ -35,7 +35,7 @@ flowchart TB
     end
 
     AI["ai-client.ts<br/>roteador multi-provider"]
-    DB[("PostgreSQL · Supabase<br/>44 modelos via Prisma")]
+    DB[("PostgreSQL · Supabase<br/>45 modelos via Prisma")]
     PAY["Mercado Pago<br/>webhooks"]
 
     Browser --> RSC & API
@@ -110,6 +110,8 @@ O pior bug possível de um SaaS é **dinheiro cobrado, acesso não liberado** �
 
 **Confirmação por push e por pull.** O webhook é o caminho normal, mas depende de o MP alcançar o servidor. A tela de PIX também consulta o pagamento direto na API a cada 4s e aplica o resultado pela mesma função do webhook ([`applyMpPaymentToLocal`](src/lib/payment-sync.ts)) — então a liberação não fica refém de uma entrega HTTP. Os dois caminhos convergem num código só, e não em duas implementações que divergem com o tempo.
 
+**Status só anda pra frente.** O Mercado Pago manda várias notificações do mesmo pagamento, às vezes simultâneas, e cada uma consulta a API deles. Duas consultas paralelas podem voltar em ordem trocada — a que perguntou um instante antes da aprovação responde "pending" depois da que respondeu "approved", e sobrescreve. Isso aconteceu de verdade num pagamento real. A defesa não é ordenar as notificações (não há como), é tornar a escrita monotônica: [`transicaoPermitida`](src/lib/payment-status.ts) dá um nível a cada status e só aceita troca para nível igual ou maior. Notificação atrasada vira no-op; `APPROVED` só sai para `REFUNDED`.
+
 Junto: validação HMAC-SHA256 da assinatura do webhook com janela anti-replay de 5 minutos, e checagem de valor divergente que rejeita o pagamento se o valor aprovado não bate com o cobrado.
 
 Um detalhe de interface que também é correção de bug: `/api/checkout/status` devolve **por que** não confirmou (`sincronizado`, `erro_mp:…`, `sem_provider_payment_id`), em vez de só devolver que não confirmou. Antes, uma falha de rede e um PIX legitimamente pendente apareciam idênticos para o usuário — um erro disfarçado de estado normal é um erro que ninguém reporta.
@@ -127,6 +129,16 @@ Hash sozinho não permitiria devolver o dado ao titular; criptografia sozinha n�
 
 Também aqui: **2FA TOTP (RFC 6238)** implementado com o `crypto` nativo do Node — decode Base32, HMAC-SHA1 do contador de 8 bytes, truncamento dinâmico, módulo 10⁶, tolerância de ±1 janela para clock drift. E **rate limiting** em janela deslizante por `identifier:ip`: 5 tentativas em 15 min, lockout de 30 min, com trilha em `login_attempts` e `audit_logs`.
 
+### 6. Segredo ausente é erro, nunca valor padrão
+
+[`src/lib/segredo.ts`](src/lib/segredo.ts) · [`src/lib/cron-auth.ts`](src/lib/cron-auth.ts) · [`src/lib/setup-auth.ts`](src/lib/setup-auth.ts)
+
+O padrão `process.env.CHAVE ?? 'valor-de-desenvolvimento'` é comum e, num repositório público, perigoso: se a variável faltar em algum ambiente, o sistema não quebra — passa a operar com uma chave que qualquer pessoa lê no GitHub. Uma auditoria procurando essa classe de bug achou o padrão na chave de criptografia de CPF, nos salts de hash e no token dos crons.
+
+A regra agora é uma só: fora de produção o fallback existe (para `next dev` funcionar sem configuração); em build de produção, incluindo previews, segredo ausente é erro explícito. Comparações de token usam `timingSafeEqual` sobre SHA-256, para não vazar o segredo pelo tempo de resposta.
+
+Mesma auditoria, outro achado: o `/api/health` público fazia uma chamada real a cada provedor de IA por acesso. Abrir em loop esgotava a cota gratuita que atende os alunos. Hoje a versão pública só responde `{ ok, versao }` — o commit no ar — e o diagnóstico completo exige admin, com cache de 5 minutos.
+
 ---
 
 ## Stack
@@ -135,8 +147,8 @@ Também aqui: **2FA TOTP (RFC 6238)** implementado com o `crypto` nativo do Node
 |---|---|
 | Linguagem | TypeScript 5 |
 | Framework | Next.js 14.2 (App Router), React 18 |
-| Banco | PostgreSQL (Supabase) · Prisma 5 · 44 modelos |
-| Auth | NextAuth · JWT via `jose` · cookies httpOnly · bcrypt · TOTP próprio |
+| Banco | PostgreSQL (Supabase) · Prisma 5 · 45 modelos |
+| Auth | JWT próprio via `jose` · cookies httpOnly · bcrypt · TOTP próprio · Google OAuth 2.0 |
 | Validação | Zod · React Hook Form |
 | Estado | Zustand · TanStack Query |
 | UI | Tailwind · Framer Motion · Recharts · KaTeX |
@@ -205,7 +217,7 @@ Sendo honesto sobre o estado do projeto:
 ```
 src/
 ├─ app/
-│  ├─ api/            162 route handlers
+│  ├─ api/            163 route handlers
 │  │  ├─ admin/       68  gestão de conteúdo, cursos, usuários
 │  │  ├─ me/          35  dados do próprio usuário (flashcards, progresso)
 │  │  ├─ auth/        10  login, registro, OAuth, 2FA
