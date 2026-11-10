@@ -3,9 +3,9 @@
  * os tópicos de cada matéria, o tamanho do material de cada tópico, quantas
  * questões ativas existem e quanto tempo os alunos levam de verdade por questão.
  *
- * Tudo em 4 consultas agregadas, para QUALQUER número de editais — a lista
- * pública da home calcula todos os concursos de uma vez, sem uma consulta por
- * edital (o problema N+1).
+ * O número de consultas é fixo — cinco, mais a lista de editais —, seja 1
+ * edital ou 100: a lista pública da home calcula todos os concursos de uma
+ * vez, sem uma consulta por edital (o problema N+1).
  */
 import { prisma } from './prisma'
 import {
