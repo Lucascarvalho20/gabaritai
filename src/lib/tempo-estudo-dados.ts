@@ -32,14 +32,17 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
       where: { subjectId: { in: subjectIds }, archivedAt: null },
       select: { id: true, subjectId: true, parentId: true },
     }),
-    // Um material por tópico: o texto completo (TEXTO) antes do resumo, o
-    // publicado antes do rascunho, o mais novo antes do antigo. Rascunho mede
-    // o TAMANHO do conteúdo; o publicado conta à parte, na cobertura.
-    // Palavras = sequências sem espaço que não são só marcação (#, *, |, -).
+    // Um material por tópico MEDE o tamanho: o texto completo (TEXTO) antes do
+    // resumo, o publicado antes do rascunho, o mais novo antes do antigo.
+    // "Publicado" é outra pergunta — o aluno tem ALGUM texto liberado neste
+    // tópico? —, por isso olha todos os materiais do tópico (a janela), não só
+    // o escolhido: texto em rascunho com resumo publicado conta como publicado.
+    // Palavras = sequências sem espaço que não são só marcação (#, *, |, -);
+    // material só de marcação nem entra.
     prisma.$queryRaw<Array<{ topicId: string; palavras: number; publicado: boolean }>>`
       SELECT DISTINCT ON (m."topicId")
         m."topicId" AS "topicId",
-        (m.status = 'PUBLISHED') AS publicado,
+        bool_or(m.status = 'PUBLISHED') OVER (PARTITION BY m."topicId") AS publicado,
         (SELECT count(*) FROM regexp_matches(m.content, '[^[:space:]#*|>_~=+—–-]+', 'g'))::int AS palavras
       FROM materials m
       JOIN topics t ON t.id = m."topicId"
@@ -47,7 +50,7 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
         AND t."archivedAt" IS NULL
         AND m.active = true
         AND m.status IN ('PUBLISHED', 'REVIEWED', 'DRAFT')
-        AND m.content IS NOT NULL
+        AND m.content ~ '[^[:space:]#*|>_~=+—–-]'
       ORDER BY m."topicId",
         (m.type = 'TEXTO') DESC,
         CASE m.status WHEN 'PUBLISHED' THEN 0 WHEN 'REVIEWED' THEN 1 ELSE 2 END,
@@ -78,9 +81,7 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
   for (const t of topicos) {
     const m = materialDoTopico.get(t.id)
     const lista = topicosDaMateria.get(t.subjectId) ?? []
-    // Material publicado sem nenhuma palavra (só marcação) não é conteúdo: nem mede, nem conta como publicado.
-    const temTexto = m != null && m.palavras > 0
-    lista.push({ id: t.id, paiId: t.parentId, palavras: temTexto ? m.palavras : null, publicado: temTexto && m.publicado })
+    lista.push({ id: t.id, paiId: t.parentId, palavras: m && m.palavras > 0 ? m.palavras : null, publicado: Boolean(m?.publicado) })
     topicosDaMateria.set(t.subjectId, lista)
   }
   const questoesDaMateria = new Map(questoes.map((q) => [q.subjectId, q._count._all]))

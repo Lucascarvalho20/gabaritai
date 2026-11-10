@@ -289,6 +289,7 @@ await mat('ens-m-presc-inativo', 'ens-top-presc', 'ens-penal', palavras(4444), {
 await mat('ens-m-arq', 'ens-top-arq', 'ens-penal', palavras(7777))
 await mat('ens-m-crase', 'ens-top-crase', 'ens-port', palavras(2400), { status: 'DRAFT' })    // mede, mas não é publicado
 await mat('ens-m-vazio', 'ens-top-vazio', 'ens-port', '---\n| | |\n***\n> \n')
+await mat('ens-m-crase-resumo', 'ens-top-crase', 'ens-port', palavras(200), { type: 'RESUMO' }) // publicado; o texto segue rascunho
 // Questões: anulada e inativa não contam. Tempos: abaixo de 5 s e acima de 15 min ficam fora.
 await prisma.question.create({ data: { id: 'ens-q3', subjectId: 'ens-penal', enunciado: 'anulada', alternativas: [], gabarito: 'A', explicacao: '-', anulada: true } })
 await prisma.question.create({ data: { id: 'ens-q4', subjectId: 'ens-penal', enunciado: 'inativa', alternativas: [], gabarito: 'A', explicacao: '-', active: false } })
@@ -315,7 +316,9 @@ await caso('conta palavras no SQL ignorando marcação, e escolhe o material cer
   exigir(penal.topicos.find((t: any) => t.id === 'ens-top-presc')?.palavras === null, 'rejeitado/inativo foi medido')
   const vazio = port.topicos.find((t: any) => t.id === 'ens-top-vazio')
   exigir(vazio?.palavras === null && vazio?.publicado === false, `só marcação contou como conteúdo: ${JSON.stringify(vazio)}`)
-  exigir(port.topicos.find((t: any) => t.id === 'ens-top-crase')?.publicado === false, 'rascunho virou publicado')
+  const crase = port.topicos.find((t: any) => t.id === 'ens-top-crase')
+  // Mede o TEXTO (rascunho, 2.400 palavras), mas conta como publicado: o resumo dele está liberado ao aluno.
+  exigir(crase?.palavras === 2400 && crase?.publicado === true, `Crase: ${JSON.stringify(crase)}`)
   exigir(penal.questoes === 2 && port.questoes === 1, `questões: penal=${penal.questoes} port=${port.questoes}`)
   exigir(penal.tempoQuestao?.medianaMs === 60_000 && penal.tempoQuestao?.amostras === 20, `tempo penal: ${JSON.stringify(penal.tempoQuestao)}`)
 })
@@ -330,7 +333,7 @@ await caso('estimativa do edital confere número a número', async () => {
   exigir(penal.fonteTempoQuestao === 'medido' && penal.questoesMin === 2, JSON.stringify(penal))
   // Português: Crase 20 min (rascunho mede) + Concordância, Só marcação e Vírgula estimados pela mediana (20 cada) = 80;
   // "Pontuação" só agrupa a Vírgula e não soma. 3 tentativas são poucas → mediana da plataforma.
-  exigir(port.teoriaMin === 80 && port.topicosPublicados === 0, JSON.stringify(port))
+  exigir(port.teoriaMin === 80 && port.topicosPublicados === 1, JSON.stringify(port))
   exigir(port.topicosCobertos === 1 && port.topicosEstimados === 3, JSON.stringify(port))
   exigir(port.fonteTempoQuestao === 'medido_geral' && port.minPorQuestao === 1, JSON.stringify(port))
   const esperado = 20 + 2 + 20 * REVISAO_FRACAO + 80 + 1 + 80 * REVISAO_FRACAO
