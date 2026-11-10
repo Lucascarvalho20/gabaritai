@@ -1268,3 +1268,34 @@ model StudyTimeEntry {
   @@index([userId, createdAt])
   @@map("study_time_entries")
 }
+
+// ─── VIGIA DOS CRONS ────────────────────────────────────────────────────────
+
+/// Uma rodada de tarefa agendada (src/lib/vigia.ts). É aqui que o vigia
+/// descobre a AUSÊNCIA: tarefa cuja última rodada boa ficou velha demais.
+/// Tabela criada por prisma/sql/2026-11-10-vigia-crons.sql.
+model CronExecucao {
+  id        String   @id @default(cuid())
+  tarefa    String
+  ok        Boolean
+  status    Int?     // HTTP da resposta; null quando a tarefa lançou exceção
+  detalhe   String?  // resumo curto da resposta (até 500 caracteres)
+  duracaoMs Int
+  criadoEm  DateTime @default(now())
+
+  @@index([tarefa, criadoEm])
+  @@map("cron_execucoes")
+}
+
+/// Aviso de tarefa sumida já enviado. A chave única é a trava: o mesmo sumiço
+/// não avisa duas vezes, nem com dois crons terminando ao mesmo tempo.
+/// `referencia` = id da última rodada boa, ou "nunca".
+model CronAlerta {
+  id         String   @id @default(cuid())
+  tarefa     String
+  referencia String
+  criadoEm   DateTime @default(now())
+
+  @@unique([tarefa, referencia])
+  @@map("cron_alertas")
+}

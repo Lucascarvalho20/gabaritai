@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+import { TarefasAgendadas } from '@/components/TarefasAgendadas'
 
 type Metrics = {
   users: { total: number; active: number; students: number; admins: number; fullAccess: number; betaTesters: number; activeStudents30d: number }
@@ -82,6 +83,8 @@ export default function AdminDashboard() {
         <StatCard label="Acesso liberado" value={fmtInt(data.users.fullAccess)} hint="hasFullAccess=true" icon={Shield} accent="text-amber-500" />
         <StatCard label="Beta testers" value={fmtInt(data.users.betaTesters)} hint="testando a plataforma" icon={Sparkles} accent="text-purple-500" />
       </div>
+
+      <TarefasAgendadas />
 
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">

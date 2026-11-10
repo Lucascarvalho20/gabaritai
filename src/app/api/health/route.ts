@@ -7,6 +7,7 @@ import { checkSetupAuth } from '@/lib/setup-auth'
 export const dynamic = 'force-dynamic'
 import { GEMINI_MODEL, GROQ_MODELS, geminiEndpoint } from '@/lib/ai-client'
 import { isSandboxMode } from '@/lib/mercadopago'
+import { situacaoDasTarefas, vigiaNaoInstalado } from '@/lib/vigia'
 
 async function testOpenAICompat(url: string, model: string, apiKey: string): Promise<{ ok: boolean; error?: string }> {
   try {
@@ -175,6 +176,25 @@ async function diagnosticoCompleto(req: Request) {
   }
 }
 
+/** Estado das tarefas agendadas pelo vigia. Fora do cache de 5 min: é uma consulta barata e precisa estar atual. */
+async function resumoCrons() {
+  try {
+    return {
+      instalado: true,
+      tarefas: (await situacaoDasTarefas()).map((t) => ({
+        tarefa: t.tarefa,
+        estado: t.estado,
+        ultimaOk: t.ultimaOk?.criadoEm ?? null,
+        ultima: t.ultima ? { em: t.ultima.criadoEm, ok: t.ultima.ok, status: t.ultima.status } : null,
+      })),
+    }
+  } catch (err) {
+    if (vigiaNaoInstalado(err)) return { instalado: false, instrucao: 'Rode prisma/sql/2026-11-10-vigia-crons.sql no Supabase.' }
+    console.error('[health-crons]', err)
+    return { instalado: true, erro: 'Não foi possível ler o vigia.' }
+  }
+}
+
 /**
  * Duas camadas, por um motivo de custo e não só de sigilo.
  *
@@ -215,5 +235,5 @@ export async function GET(req: NextRequest) {
   if (!cache || agora - cache.em > CACHE_MS) {
     cache = { em: agora, dados: await diagnosticoCompleto(req) }
   }
-  return NextResponse.json({ ...cache.dados, ...base, cacheDe: new Date(cache.em).toISOString() })
+  return NextResponse.json({ ...cache.dados, ...base, crons: await resumoCrons(), cacheDe: new Date(cache.em).toISOString() })
 }

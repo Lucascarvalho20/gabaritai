@@ -37,10 +37,17 @@ function vetor(texto: string): number[] {
   return v.map((x) => x / n)
 }
 const fetchReal = globalThis.fetch
+// Mensagens que o Telegram "recebeu", e um interruptor para simular o Telegram fora do ar.
+const telegram: string[] = []
+let telegramFora = false
 globalThis.fetch = (async (url: any, init?: any) => {
   if (String(url).includes('batchEmbedContents')) {
     const corpo = JSON.parse(init.body)
     return Response.json({ embeddings: corpo.requests.map((r: any) => ({ values: vetor(r.content.parts[0].text) })) })
+  }
+  if (String(url).includes('api.telegram.org')) {
+    if (telegramFora) return Response.json({ ok: false }, { status: 502 })
+    telegram.push(JSON.parse(init.body).text)
   }
   return Response.json({ ok: true }) // telegram/e-mail: sem rede no ensaio
 }) as typeof fetch
@@ -59,6 +66,7 @@ const { ferramentasMcp } = await import(new URL('../../mcp/ferramentas.ts', impo
 const { carregarConteudo, estimativaDoEdital, estimativasDosConcursos } = await import(W + 'tempo-estudo-dados.ts')
 const { REVISAO_FRACAO } = await import(W + 'tempo-estudo.ts')
 const rotaTempo = await import(new URL('../../src/app/api/tempo/concursos/route.ts', import.meta.url).href)
+const { monitorarCron, avisarAtrasos, situacaoDasTarefas, vigiaNaoInstalado } = await import(W + 'vigia.ts')
 
 let falhas = 0
 async function caso(nome: string, fn: () => Promise<void>) {
@@ -353,6 +361,70 @@ await caso('cronograma sem editalId usa o edital do curso e o tempo medido', asy
   const salvo = await prisma.studyPlan.findUnique({ where: { id: plano.id } })
   exigir(salvo?.editalId === 'ens-edital', `plano salvo sem edital: ${salvo?.editalId}`)
   exigir(Math.abs(salvo!.totalHoursNeeded * 60 - e!.totalMin) < 0.5, `horas gravadas: ${salvo?.totalHoursNeeded}`)
+})
+
+console.log('\nVIGIA DOS CRONS')
+process.env.TELEGRAM_BOT_TOKEN = 'token-falso-do-ensaio'
+process.env.TELEGRAM_CHAT_ID = '1'
+delete process.env.ADMIN_EMAIL
+await prisma.$executeRawUnsafe('TRUNCATE cron_execucoes, cron_alertas')
+const pedidoCron = () => new Request('http://ensaio/api/cron/x')
+const diasAtras = (d: number) => new Date(Date.now() - d * 864e5)
+
+await caso('rodada boa grava; recusada não grava; falha grava e avisa na hora', async () => {
+  await monitorarCron('rag-index', async () => Response.json({ processados: 2 }))(pedidoCron())
+  await monitorarCron('rag-index', async () => Response.json({ message: 'sem senha' }, { status: 403 }))(pedidoCron())
+  const antes = telegram.length
+  await monitorarCron('sync', async () => Response.json({ erro: 'x' }, { status: 500 }))(pedidoCron())
+  const linhas = await prisma.cronExecucao.findMany({ orderBy: { criadoEm: 'asc' } })
+  exigir(linhas.length === 2, `gravou ${linhas.length} (a recusada não podia contar)`)
+  exigir(linhas[0].tarefa === 'rag-index' && linhas[0].ok && /processados/.test(linhas[0].detalhe ?? ''), JSON.stringify(linhas[0]))
+  exigir(linhas[1].tarefa === 'sync' && !linhas[1].ok && linhas[1].status === 500, JSON.stringify(linhas[1]))
+  exigir(telegram.slice(antes).some((t) => t.includes('Tarefa falhou') && t.includes('sync')), `telegram: ${telegram.slice(antes)}`)
+})
+await caso('vigia recém-ligado: quem ainda não rodou aguarda, ninguém é acusado', async () => {
+  const s = Object.fromEntries((await situacaoDasTarefas()).map((x: any) => [x.tarefa, x]))
+  exigir(s['rag-index'].estado === 'ok' && s.sync.estado === 'falhando', `${s['rag-index'].estado}/${s.sync.estado}`)
+  exigir(s['weekly-backup'].estado === 'aguardando' && !s['weekly-backup'].chaveAtraso, s['weekly-backup'].estado)
+  exigir((await avisarAtrasos()).length === 0, 'acusou cedo demais')
+})
+await caso('cron parado é denunciado pelos outros — uma vez só, mesmo com 3 conferências em paralelo', async () => {
+  // O vigia passa a estar no ar há 8 dias: a rodada boa de reconciliar ficou velha.
+  await prisma.cronExecucao.create({ data: { tarefa: 'reconciliar-pagamentos', ok: true, duracaoMs: 1, criadoEm: diasAtras(8) } })
+  const antes = telegram.length
+  const r = await Promise.all([avisarAtrasos(), avisarAtrasos(), avisarAtrasos()])
+  const esperado = ['detect-new-editais', 'generate-weekly-mocks', 'reconciliar-pagamentos', 'sync', 'weekly-backup']
+  exigir(r.flat().sort().join() === esperado.join(), `avisadas: ${r.flat().sort()}`)
+  exigir(telegram.length - antes === 5, `${telegram.length - antes} mensagens para 5 sumiços`)
+  exigir(telegram.slice(antes).some((t) => /Tarefa sumiu.*reconciliar-pagamentos/s.test(t)), 'faltou a mensagem com a última rodada boa')
+  exigir((await avisarAtrasos()).length === 0, 'avisou o mesmo sumiço de novo')
+})
+await caso('Telegram fora do ar: a trava é solta e a próxima conferência tenta de novo', async () => {
+  await prisma.cronExecucao.create({ data: { tarefa: 'cleanup', ok: true, duracaoMs: 1, criadoEm: diasAtras(40) } })
+  telegramFora = true
+  exigir((await avisarAtrasos()).length === 0, 'contou como avisado sem entregar')
+  exigir((await prisma.cronAlerta.count({ where: { tarefa: 'cleanup' } })) === 0, 'trava ficou presa')
+  telegramFora = false
+  const r = await avisarAtrasos()
+  exigir(r.join() === 'cleanup', `segunda tentativa: ${r}`)
+})
+await caso('voltou a rodar: deixa de estar atrasada', async () => {
+  await monitorarCron('reconciliar-pagamentos', async () => Response.json({ verificados: 0 }))(pedidoCron())
+  const s = (await situacaoDasTarefas()).find((x: any) => x.tarefa === 'reconciliar-pagamentos')
+  exigir(s.estado === 'ok' && !s.chaveAtraso, JSON.stringify(s))
+})
+
+await caso('antes do SQL do vigia rodar em produção: nada quebra, a falha ainda avisa', async () => {
+  await prisma.$executeRawUnsafe('DROP TABLE cron_execucoes, cron_alertas')
+  let lido: unknown = null
+  try { await situacaoDasTarefas() } catch (e) { lido = e }
+  exigir(lido && vigiaNaoInstalado(lido), `painel não reconheceu a tabela ausente: ${String(lido).slice(0, 120)}`)
+  const ok = await monitorarCron('rag-index', async () => Response.json({ processados: 1 }))(pedidoCron())
+  exigir(ok.status === 200, `cron bom quebrou: ${ok.status}`)
+  const antes = telegram.length
+  const ruim = await monitorarCron('sync', async () => Response.json({ erro: 'x' }, { status: 500 }))(pedidoCron())
+  exigir(ruim.status === 500, 'a resposta da tarefa mudou')
+  exigir(telegram.slice(antes).some((t) => t.includes('Tarefa falhou')), 'sem tabela, a falha deixou de avisar')
 })
 
 await prisma.$disconnect()

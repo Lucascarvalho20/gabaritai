@@ -14,6 +14,8 @@ export const maxDuration = 300
 //  2. LoginAttempt > 60 dias → deleta (não precisa de auditoria tão antiga)
 //  3. AiMessage (conversa com mentor) em conversas inativas > 90 dias → deleta
 //  4. AuditLog > 365 dias → deleta (legal: 1 ano basta pra LGPD/civil)
+//  5. Usuário inativo sem assinatura → arquiva
+//  6. Histórico do vigia dos crons > 180 dias → deleta
 async function handler(req: NextRequest) {
   const negado = exigirTokenCron(req)
   if (negado) return negado
@@ -103,8 +105,24 @@ async function handler(req: NextRequest) {
     archived = r.count
   }
 
+  // 6. Histórico do vigia. Em try: antes do SQL do vigia rodar no banco, a
+  //    tabela não existe — e isso não pode derrubar a limpeza do resto.
+  const d180 = new Date(now - 180 * 24 * 3600 * 1000)
+  let vigiaDeleted = 0
+  try {
+    if (!dryRun) {
+      vigiaDeleted = (await prisma.cronExecucao.deleteMany({ where: { criadoEm: { lt: d180 } } })).count
+      await prisma.cronAlerta.deleteMany({ where: { criadoEm: { lt: d180 } } })
+    } else {
+      vigiaDeleted = await prisma.cronExecucao.count({ where: { criadoEm: { lt: d180 } } })
+    }
+  } catch (err) {
+    console.warn('[cleanup] histórico do vigia não limpo', String(err))
+  }
+
   return NextResponse.json({
     dryRun,
+    deleted_cron_runs: vigiaDeleted,
     compressed_mock_exam_results: dryRun ? oldResults.length : compressed,
     deleted_login_attempts: loginAttemptsDeleted,
     deleted_ai_messages: aiMessagesDeleted,
