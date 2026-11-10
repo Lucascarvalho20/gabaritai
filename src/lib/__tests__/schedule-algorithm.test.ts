@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildSchedule } from '../schedule-algorithm.ts'
+import { buildSchedule, minutosEfetivosPorDia } from '../schedule-algorithm.ts'
 
 const materias = [
   { id: 'con', name: 'Constitucional', weight: 2 },
@@ -86,6 +86,41 @@ describe('buildSchedule — propriedades do cronograma', () => {
     const depois = simulados.filter((d) => d >= limite).length
     const diasAntes = (limite.getTime() - base.startDate.getTime()) / 864e5
     assert.ok(depois / 30 > antes / diasAntes, 'densidade de simulado maior no fim')
+  })
+
+  test('o dia rende só sessões inteiras de 50 min, no mínimo uma', () => {
+    assert.equal(minutosEfetivosPorDia(3), 150)
+    assert.equal(minutosEfetivosPorDia(2.5), 150)
+    assert.equal(minutosEfetivosPorDia(1), 50)
+    assert.equal(minutosEfetivosPorDia(0.5), 50)
+    assert.equal(minutosEfetivosPorDia(10), 600)
+    assert.equal(buildSchedule({ ...base, endDate: base.startDate }).totalMinAvailable, 150)
+  })
+
+  // Antes: 60 h por matéria, iguais para todas. Continua sendo a reserva para
+  // quem não traz o tempo medido do próprio conteúdo.
+  test('sem tempo medido, o necessário continua 60 h por matéria', () => {
+    assert.equal(buildSchedule(base).totalMinRecommended, 3 * 60 * 60)
+  })
+
+  test('com tempo medido, o necessário é a soma do conteúdo de cada matéria', () => {
+    const medidas = [
+      { ...materias[0], hoursRecommended: 12.5 },
+      { ...materias[1], hoursRecommended: 30 },
+      materias[2], // sem medida: reserva de 60 h
+    ]
+    const r = buildSchedule({ ...base, subjects: medidas })
+    assert.equal(r.totalMinRecommended, (12.5 + 30 + 60) * 60)
+    // A distribuição do tempo continua pelo PESO da prova, não pelo conteúdo.
+    const razao = r.perSubject.con.minutes / r.perSubject.pen.minutes
+    assert.ok(razao > 1.8 && razao < 2.2, `razão ${razao.toFixed(2)}`)
+  })
+
+  test('conteúdo pequeno cabe onde a regra fixa dizia que não cabia', () => {
+    const curto = { ...base, endDate: new Date('2027-01-29T12:00:00'), hoursPerDay: 1 }
+    assert.equal(buildSchedule(curto).isFeasible, false)
+    const medido = materias.map((m) => ({ ...m, hoursRecommended: 4 }))
+    assert.equal(buildSchedule({ ...curto, subjects: medido }).isFeasible, true)
   })
 
   test('sem matéria nenhuma não quebra', () => {

@@ -16,6 +16,8 @@ export type ScheduleSubjectInput = {
   id: string
   name: string
   weight: number
+  /** Horas para cobrir o conteúdo desta matéria, medidas no banco (tempo-estudo.ts). Sem ela, vale hoursPerSubjectRecommended. */
+  hoursRecommended?: number
 }
 
 export type ScheduleInput = {
@@ -27,7 +29,7 @@ export type ScheduleInput = {
   sessionDurationMin?: number   // default 50
   includeMocks?: boolean        // default true
   mockEveryNDays?: number       // default 14
-  hoursPerSubjectRecommended?: number // baseline pra cálculo de "vai dar tempo" (default 60)
+  hoursPerSubjectRecommended?: number // reserva para matéria sem hoursRecommended (default 60)
   // Modo "30 dias pra prova": dentro dos últimos 30 dias antes do endDate,
   // cronograma corta ESTUDO novo e foca em REVISAO + SIMULADO + QUESTOES.
   // Reduz ansiedade pré-prova e maximiza fixação.
@@ -57,15 +59,26 @@ export type ScheduleResult = {
   sessions: ScheduledSession[]
 }
 
-const DEFAULT_SESSION_MIN = 50
+export const DEFAULT_SESSION_MIN = 50
 const DEFAULT_MOCK_INTERVAL = 14
 const DEFAULT_RECOMMENDED_HOURS = 60
 const DEFAULT_PRE_PRESENCE_WINDOW = 30
 
-// Mix padrão durante o período normal
-const MIX = { ESTUDO: 0.65, REVISAO: 0.2, QUESTOES: 0.15 } as const
+// Mix padrão durante o período normal. Exportado porque a estimativa de tempo
+// do edital (tempo-estudo.ts) reserva revisão na MESMA proporção — a conta da
+// home e a do cronograma não podem discordar.
+export const MIX = { ESTUDO: 0.65, REVISAO: 0.2, QUESTOES: 0.15 } as const
 // Mix dos últimos 30 dias (modo intensivo pré-prova): zero ESTUDO novo
 const MIX_PRE_PROVA = { ESTUDO: 0, REVISAO: 0.55, QUESTOES: 0.45 } as const
+
+/**
+ * Minutos de estudo que cabem num dia: só sessões inteiras (Pomodoro). Com 3 h
+ * declaradas, são 3 sessões de 50 min = 150 min; o resto vira pausa. Mínimo de
+ * uma sessão, mesmo com menos tempo declarado.
+ */
+export function minutosEfetivosPorDia(hoursPerDay: number, sessionMin = DEFAULT_SESSION_MIN): number {
+  return Math.max(1, Math.floor((hoursPerDay * 60) / sessionMin)) * sessionMin
+}
 
 function startOfDay(d: Date): Date {
   const x = new Date(d)
@@ -164,13 +177,14 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
   const studyDates = enumerateStudyDays(input.startDate, input.endDate, input.daysPerWeek)
   const studyDays = studyDates.length
 
-  const sessionsPerDay = Math.max(1, Math.floor((input.hoursPerDay * 60) / sessionMin))
+  const sessionsPerDay = minutosEfetivosPorDia(input.hoursPerDay, sessionMin) / sessionMin
   const totalMinAvailable = studyDays * sessionsPerDay * sessionMin
 
-  // 2. Tempo recomendado (baseline) — usado pra calcular "vai dar tempo?"
+  // 2. Tempo necessário — usado pra calcular "vai dar tempo?". Cada matéria
+  //    traz o tempo medido do seu conteúdo; a de fora usa a reserva fixa.
   const totalWeight = input.subjects.reduce((acc, s) => acc + s.weight, 0) || 1
   const recommendedHoursTotal = input.subjects.reduce(
-    (acc, s) => acc + (s.weight / totalWeight) * input.subjects.length * recommendedHoursPerSubject,
+    (acc, s) => acc + (s.hoursRecommended ?? recommendedHoursPerSubject),
     0,
   )
   const totalMinRecommended = recommendedHoursTotal * 60

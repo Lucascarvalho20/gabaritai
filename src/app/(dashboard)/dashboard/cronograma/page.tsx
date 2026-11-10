@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, Brain, Play, Calendar, RefreshCw, ChevronLeft, Che
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+import type { ResumoCronograma } from '@/lib/schedule-helpers'
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────
 type Course = {
@@ -143,7 +144,7 @@ function CreatePlanForm({ onCreated }: { onCreated: () => void }) {
     d.setMonth(d.getMonth() + 6)
     return toIsoDay(d)
   })
-  const [preview, setPreview] = useState<any>(null)
+  const [preview, setPreview] = useState<ResumoCronograma | null>(null)
   const [creating, setCreating] = useState(false)
   const [previewing, setPreviewing] = useState(false)
 
@@ -282,7 +283,7 @@ function CreatePlanForm({ onCreated }: { onCreated: () => void }) {
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {preview.studyDays} dias úteis · {preview.totalHoursAvailable}h disponíveis · {preview.sessionCount} sessões
-                {' · '}recomendado: {preview.totalHoursRecommended}h
+                {' · '}o conteúdo do edital pede {preview.totalHoursRecommended}h
               </p>
             </div>
           </div>

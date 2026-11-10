@@ -56,6 +56,9 @@ const { rodarAgente } = await import(W + 'agente/loop.ts')
 const { runSchedule, persistSchedule, ajustesDoPlano } = await import(W + 'schedule-helpers.ts')
 const { applyMpPaymentToLocal } = await import(W + 'payment-sync.ts')
 const { ferramentasMcp } = await import(new URL('../../mcp/ferramentas.ts', import.meta.url).href)
+const { carregarConteudo, estimativaDoEdital, estimativasDosConcursos } = await import(W + 'tempo-estudo-dados.ts')
+const { REVISAO_FRACAO } = await import(W + 'tempo-estudo.ts')
+const rotaTempo = await import(new URL('../../src/app/api/tempo/concursos/route.ts', import.meta.url).href)
 
 let falhas = 0
 async function caso(nome: string, fn: () => Promise<void>) {
@@ -252,6 +255,104 @@ await caso('desempenho_agregado omite grupo com menos de 3 alunos (privacidade)'
   const penal = depois.materias.find((m: any) => m.materia === 'Direito Penal Ensaio')
   exigir(penal?.alunos === 3, JSON.stringify(depois))
   exigir(!JSON.stringify(depois).includes('ens-user'), 'vazou id de aluno')
+})
+
+console.log('\nTEMPO DE ESTUDO (economizador de tempo)')
+// Conteúdo com tudo o que pode enganar a contagem: markdown, rascunho mais
+// novo que o publicado, resumo, material rejeitado, inativo, tópico arquivado.
+const palavras = (n: number, p = 'termo') => Array.from({ length: n }, (_, i) => `${p}${i}`).join(' ')
+const markdown11 = '# Tentativa\n\n| Conceito | Artigo |\n|---|---|\n| Tentativa | art. 14 |\n\n- **Início** da execução — sem consumação.\n'
+await prisma.topic.create({ data: { id: 'ens-top-tent', subjectId: 'ens-penal', name: 'Tentativa' } })
+await prisma.topic.create({ data: { id: 'ens-top-arq', subjectId: 'ens-penal', name: 'Arquivado', archivedAt: new Date() } })
+await prisma.topic.create({ data: { id: 'ens-top-crase', subjectId: 'ens-port', name: 'Crase' } })
+await prisma.topic.create({ data: { id: 'ens-top-conc', subjectId: 'ens-port', name: 'Concordância' } })
+await prisma.topic.create({ data: { id: 'ens-top-vazio', subjectId: 'ens-port', name: 'Só marcação' } })
+const mat = (id: string, topicId: string, subjectId: string, content: string, extra: Record<string, unknown> = {}) =>
+  prisma.material.create({ data: { id, title: id, topicId, subjectId, content, type: 'TEXTO', status: 'PUBLISHED', active: true, ...extra } })
+await mat('ens-m-tent', 'ens-top-tent', 'ens-penal', markdown11 + palavras(1189))          // 1200 palavras = 10 min
+await mat('ens-m-tent-draft', 'ens-top-tent', 'ens-penal', palavras(5000), { status: 'DRAFT' }) // mais novo, mas rascunho
+await mat('ens-m-tent-resumo', 'ens-top-tent', 'ens-penal', palavras(300), { type: 'RESUMO' })  // resumo perde do texto
+await mat('ens-m-presc-rej', 'ens-top-presc', 'ens-penal', palavras(9999), { status: 'REJECTED' })
+await mat('ens-m-presc-inativo', 'ens-top-presc', 'ens-penal', palavras(4444), { active: false })
+await mat('ens-m-arq', 'ens-top-arq', 'ens-penal', palavras(7777))
+await mat('ens-m-crase', 'ens-top-crase', 'ens-port', palavras(2400), { status: 'DRAFT' })    // mede, mas não é publicado
+await mat('ens-m-vazio', 'ens-top-vazio', 'ens-port', '---\n| | |\n***\n> \n')
+// Questões: anulada e inativa não contam. Tempos: abaixo de 5 s e acima de 15 min ficam fora.
+await prisma.question.create({ data: { id: 'ens-q3', subjectId: 'ens-penal', enunciado: 'anulada', alternativas: [], gabarito: 'A', explicacao: '-', anulada: true } })
+await prisma.question.create({ data: { id: 'ens-q4', subjectId: 'ens-penal', enunciado: 'inativa', alternativas: [], gabarito: 'A', explicacao: '-', active: false } })
+await prisma.question.create({ data: { id: 'ens-qp1', subjectId: 'ens-port', enunciado: 'crase', alternativas: [], gabarito: 'A', explicacao: '-' } })
+const tentativa = (questionId: string, timeMs: number) => ({ userId: 'ens-user', questionId, selected: 'A', correct: true, timeMs })
+await prisma.questionAttempt.createMany({ data: [
+  ...Array.from({ length: 20 }, () => tentativa('ens-q1', 60_000)),
+  tentativa('ens-q1', 2_000), tentativa('ens-q2', 3_600_000),
+  ...Array.from({ length: 3 }, () => tentativa('ens-qp1', 30_000)),
+] })
+// Concursos que NÃO podem aparecer na lista pública.
+await prisma.course.create({ data: { id: 'ens-inativo', slug: 'ens-inativo', name: 'Curso Inativo', active: false } })
+await prisma.edital.create({ data: { courseId: 'ens-inativo', ano: 2027, titulo: 'x', isActive: true, subjects: { create: [{ subjectId: 'ens-penal' }] } } })
+await prisma.course.create({ data: { id: 'ens-sem-ativo', slug: 'ens-sem-ativo', name: 'Sem Edital Ativo' } })
+await prisma.edital.create({ data: { courseId: 'ens-sem-ativo', ano: 2027, titulo: 'x', isActive: false, subjects: { create: [{ subjectId: 'ens-penal' }] } } })
+
+await caso('conta palavras no SQL ignorando marcação, e escolhe o material certo do tópico', async () => {
+  const { porEdital } = await carregarConteudo(new Map([['e', [{ id: 'ens-penal', nome: 'P', peso: 1 }, { id: 'ens-port', nome: 'L', peso: 1 }]]]))
+  const [penal, port] = porEdital.get('e')!
+  const tent = penal.topicos.find((t: any) => t.id === 'ens-top-tent')
+  exigir(tent?.palavras === 1200 && tent?.publicado === true, `Tentativa: ${JSON.stringify(tent)} (publicado de 1200 palavras, não o rascunho nem o resumo)`)
+  exigir(penal.topicos.length === 2, `tópico arquivado entrou: ${penal.topicos.map((t: any) => t.id)}`)
+  exigir(penal.topicos.find((t: any) => t.id === 'ens-top-presc')?.palavras === null, 'rejeitado/inativo foi medido')
+  const vazio = port.topicos.find((t: any) => t.id === 'ens-top-vazio')
+  exigir(vazio?.palavras === null && vazio?.publicado === false, `só marcação contou como conteúdo: ${JSON.stringify(vazio)}`)
+  exigir(port.topicos.find((t: any) => t.id === 'ens-top-crase')?.publicado === false, 'rascunho virou publicado')
+  exigir(penal.questoes === 2 && port.questoes === 1, `questões: penal=${penal.questoes} port=${port.questoes}`)
+  exigir(penal.tempoQuestao?.medianaMs === 60_000 && penal.tempoQuestao?.amostras === 20, `tempo penal: ${JSON.stringify(penal.tempoQuestao)}`)
+})
+await caso('estimativa do edital confere número a número', async () => {
+  const e: any = await estimativaDoEdital('ens-edital')
+  const penal = e.materias.find((m: any) => m.id === 'ens-penal')
+  const port = e.materias.find((m: any) => m.id === 'ens-port')
+  // Penal: Tentativa medida (10 min) + Prescrição herdando a mediana da matéria (10) = 20; 2 questões × 1 min reais.
+  exigir(penal.teoriaMin === 20 && penal.topicosMedidos === 1 && penal.topicosPublicados === 1, JSON.stringify(penal))
+  exigir(penal.fonteTempoQuestao === 'medido' && penal.questoesMin === 2, JSON.stringify(penal))
+  // Português: Crase 20 min (rascunho mede) + 2 tópicos estimados pela mediana = 60; 3 tentativas são poucas → mediana da plataforma.
+  exigir(port.teoriaMin === 60 && port.topicosPublicados === 0, JSON.stringify(port))
+  exigir(port.fonteTempoQuestao === 'medido_geral' && port.minPorQuestao === 1, JSON.stringify(port))
+  const esperado = 20 + 2 + 20 * REVISAO_FRACAO + 60 + 1 + 60 * REVISAO_FRACAO
+  exigir(Math.abs(e.totalMin - esperado) < 0.2, `total ${e.totalMin} ≠ ${esperado.toFixed(1)}`)
+})
+await caso('lista pública: só curso ativo com edital ativo, e sem dado de aluno', async () => {
+  const lista: any[] = await estimativasDosConcursos()
+  const slugs = lista.map((c) => c.slug)
+  exigir(slugs.includes('ens-curso'), `faltou ens-curso: ${slugs}`)
+  exigir(!slugs.includes('ens-inativo') && !slugs.includes('ens-sem-ativo'), `entrou indevido: ${slugs}`)
+  const c = lista.find((x) => x.slug === 'ens-curso')
+  exigir(c.edital.titulo === 'Edital Ensaio' && typeof c.edital.dataProva === 'string', JSON.stringify(c.edital))
+  exigir(!JSON.stringify(lista).includes('ens-user'), 'vazou id de aluno')
+})
+await caso('rota pública responde com cache de CDN e limita abuso por IP', async () => {
+  const pedir = (ip: string) => rotaTempo.GET(new Request('http://ensaio/api/tempo/concursos', { headers: { 'x-forwarded-for': ip } }))
+  const r: Response = await pedir('10.0.0.1')
+  exigir(r.status === 200, `status ${r.status}`)
+  exigir(/s-maxage=3600/.test(r.headers.get('cache-control') ?? ''), `cache-control: ${r.headers.get('cache-control')}`)
+  const corpo = await r.json()
+  const direto = await estimativaDoEdital('ens-edital')
+  exigir(corpo.concursos.find((c: any) => c.slug === 'ens-curso').estimativa.totalMin === direto!.totalMin, 'rota e função discordam')
+  let ultimo = 200
+  for (let i = 0; i < 30; i++) ultimo = (await pedir('10.0.0.2')).status
+  exigir(ultimo === 200, `bloqueou cedo: ${ultimo}`)
+  exigir((await pedir('10.0.0.2')).status === 429, '31ª consulta no minuto deveria ser recusada')
+})
+await caso('cronograma sem editalId usa o edital do curso e o tempo medido', async () => {
+  const dto = { courseId: 'ens-curso', hoursPerDay: 3, daysPerWeek: [1, 2, 3, 4, 5],
+    startDate: new Date().toISOString(), endDate: new Date(Date.now() + 60 * 864e5).toISOString() }
+  const r: any = await runSchedule(dto, 'ens-user')
+  exigir(r.editalId === 'ens-edital', `editalId=${r.editalId}`)
+  exigir(Object.keys(r.perSubject).sort().join() === 'ens-penal,ens-port', `matérias: ${Object.keys(r.perSubject)}`)
+  const e = await estimativaDoEdital('ens-edital')
+  exigir(Math.abs(r.totalMinRecommended - e!.totalMin) < 0.5, `cronograma pede ${r.totalMinRecommended} min, estimativa diz ${e!.totalMin}`)
+  const plano = await persistSchedule('ens-user', dto, r)
+  const salvo = await prisma.studyPlan.findUnique({ where: { id: plano.id } })
+  exigir(salvo?.editalId === 'ens-edital', `plano salvo sem edital: ${salvo?.editalId}`)
+  exigir(Math.abs(salvo!.totalHoursNeeded * 60 - e!.totalMin) < 0.5, `horas gravadas: ${salvo?.totalHoursNeeded}`)
 })
 
 await prisma.$disconnect()

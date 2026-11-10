@@ -1,6 +1,8 @@
 import { prisma } from './prisma'
-import { buildSchedule, type ScheduleInput, type ScheduleResult } from './schedule-algorithm'
+import { buildSchedule, type ScheduleInput, type ScheduleResult, type ScheduleSubjectInput } from './schedule-algorithm'
 import { aplicarDesempenho, type AjusteDesempenho, type Desempenho } from './peso-adaptativo'
+import { estimativaDoEdital } from './tempo-estudo-dados'
+import { getActiveEditalForCourse } from './edital-resolver'
 import { StudySessionType, StudySessionStatus, Prisma } from '@prisma/client'
 
 export type ScheduleDto = {
@@ -24,7 +26,19 @@ export type ScheduleDto = {
   adaptarDesempenho?: boolean
 }
 
-export type ScheduleRun = ScheduleResult & { ajustesDesempenho?: AjusteDesempenho[] }
+export type ScheduleRun = ScheduleResult & { ajustesDesempenho?: AjusteDesempenho[]; editalId?: string }
+
+/**
+ * Edital que vale para o cronograma: o informado; senão, o do curso pela mesma
+ * regra do resto do sistema (getActiveEditalForCourse). Antes, as telas não
+ * mandavam editalId e o cronograma usava a lista de matérias do CURSO, que
+ * pode estar desatualizada em relação ao edital — o edital é a fonte da
+ * verdade para matérias e pesos.
+ */
+async function editalDoCronograma(courseId: string, editalId?: string): Promise<string | undefined> {
+  if (editalId) return editalId
+  return (await getActiveEditalForCourse(courseId))?.id
+}
 
 /** Acertos e tentativas do aluno por matéria, naquele curso. */
 async function carregarDesempenho(userId: string, courseId: string): Promise<Map<string, Desempenho>> {
@@ -36,7 +50,7 @@ async function carregarDesempenho(userId: string, courseId: string): Promise<Map
 }
 
 export async function resolveSubjects(dto: { courseId: string; editalId?: string; turbo?: boolean; turboTopN?: number }) {
-  let subjects: Array<{ id: string; name: string; weight: number }>
+  let subjects: Array<{ id: string; name: string; weight: number }> = []
   if (dto.editalId) {
     const editalSubjects = await prisma.editalSubject.findMany({
       where: { editalId: dto.editalId },
@@ -48,7 +62,9 @@ export async function resolveSubjects(dto: { courseId: string; editalId?: string
       name: es.subject.name,
       weight: es.weight,
     }))
-  } else {
+  }
+  // Edital sem matéria cadastrada (ou curso sem edital): lista padrão do curso.
+  if (subjects.length === 0) {
     const courseSubjects = await prisma.courseSubject.findMany({
       where: { courseId: dto.courseId },
       include: { subject: true },
@@ -92,9 +108,10 @@ export async function ajustesDoPlano(plan: {
 }
 
 export async function runSchedule(dto: ScheduleDto, userId?: string): Promise<ScheduleRun> {
-  let subjects = await resolveSubjects({
+  const editalId = await editalDoCronograma(dto.courseId, dto.editalId)
+  let subjects: ScheduleSubjectInput[] = await resolveSubjects({
     courseId: dto.courseId,
-    editalId: dto.editalId,
+    editalId,
     turbo: dto.turbo,
     turboTopN: dto.turboTopN,
   })
@@ -107,6 +124,17 @@ export async function runSchedule(dto: ScheduleDto, userId?: string): Promise<Sc
     ajustesDesempenho = r.ajustes
   }
 
+  // "Vai dar tempo?" pelo conteúdo medido de cada matéria — a mesma conta da
+  // calculadora da home. Edital ainda sem tópico nenhum fica na reserva fixa:
+  // estimar zero horas diria que qualquer prazo cabe.
+  if (editalId) {
+    const estimativa = await estimativaDoEdital(editalId)
+    if (estimativa && estimativa.topicos > 0) {
+      const horas = new Map(estimativa.materias.map((m) => [m.id, m.totalMin / 60]))
+      subjects = subjects.map((s) => ({ ...s, hoursRecommended: horas.get(s.id) }))
+    }
+  }
+
   const input: ScheduleInput = {
     startDate: new Date(dto.startDate),
     endDate: new Date(dto.endDate),
@@ -116,10 +144,10 @@ export async function runSchedule(dto: ScheduleDto, userId?: string): Promise<Sc
     sessionDurationMin: dto.sessionDurationMin,
     includeMocks: dto.includeMocks ?? true,
   }
-  return { ...buildSchedule(input), ajustesDesempenho }
+  return { ...buildSchedule(input), ajustesDesempenho, editalId }
 }
 
-export async function persistSchedule(userId: string, dto: ScheduleDto, result: ScheduleResult) {
+export async function persistSchedule(userId: string, dto: ScheduleDto, result: ScheduleRun) {
   return prisma.$transaction(async (tx) => {
     await tx.studyPlan.updateMany({
       where: { userId, courseId: dto.courseId, active: true },
@@ -130,7 +158,7 @@ export async function persistSchedule(userId: string, dto: ScheduleDto, result: 
       data: {
         userId,
         courseId: dto.courseId,
-        editalId: dto.editalId,
+        editalId: dto.editalId ?? result.editalId,
         hoursPerDay: dto.hoursPerDay,
         daysPerWeek: dto.daysPerWeek as unknown as Prisma.InputJsonValue,
         startDate: new Date(dto.startDate),
@@ -161,6 +189,9 @@ export async function persistSchedule(userId: string, dto: ScheduleDto, result: 
     return plan
   })
 }
+
+/** O que /api/schedule e /api/schedule/preview devolvem — tipado para a tela não ler campo que não existe. */
+export type ResumoCronograma = ReturnType<typeof summarize>
 
 export function summarize(result: ScheduleRun) {
   return {

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Loader2, ChevronRight, ChevronLeft, Sparkles, Target, Calendar, Clock, BookOpen, Check } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { horasParaRender } from '@/lib/tempo-estudo'
+import type { ResumoCronograma } from '@/lib/schedule-helpers'
 import toast from 'react-hot-toast'
 
 type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null; area: string }
@@ -49,7 +51,7 @@ export default function ComecarWizardPage() {
   })
 
   // Step 4: feedback
-  const [preview, setPreview] = useState<any>(null)
+  const [preview, setPreview] = useState<ResumoCronograma | null>(null)
   const [creating, setCreating] = useState(false)
   const [previewing, setPreviewing] = useState(false)
 
@@ -245,12 +247,14 @@ export default function ComecarWizardPage() {
           <>
             <h2 className="font-bold text-lg">🎉 Seu plano está pronto</h2>
             <div className="space-y-2">
-              <Stat label="Horas necessárias" value={`${preview.totalHoursNeeded ?? '?'}h`} />
-              <Stat label="Horas disponíveis" value={`${preview.totalHoursAvailable ?? '?'}h`} />
+              <Stat label="Horas que o conteúdo pede" value={`${preview.totalHoursRecommended}h`} />
+              <Stat label="Horas disponíveis" value={`${preview.totalHoursAvailable}h`} />
               <Stat label="Cabe no prazo?" value={preview.isFeasible ? '✅ SIM' : '⚠️ Apertado'} />
               {!preview.isFeasible && (
                 <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-xs">
-                  💡 Aumente {Math.ceil((preview.deficit ?? 0) / daysPerWeek.length / 4)}h por semana ou adianta a data alvo pra caber.
+                  💡 Faltam {preview.deficitHours}h. Para caber, estude{' '}
+                  {horasParaRender((preview.totalHoursRecommended * 60) / Math.max(1, preview.studyDays))}h por dia
+                  {' '}— ou escolha uma data de prova mais distante.
                 </div>
               )}
             </div>
