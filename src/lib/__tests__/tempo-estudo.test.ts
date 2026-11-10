@@ -57,6 +57,60 @@ describe('estimarEdital — teoria pelo tamanho do material', () => {
   })
 })
 
+describe('estimarEdital — a árvore de tópicos (assunto → subassuntos)', () => {
+  const no = (id: string, palavras: number | null, paiId: string | null = null): TopicoConteudo => ({ id, paiId, palavras, publicado: false })
+
+  test('subassunto sem material, sob assunto com texto, é coberto: não soma tempo', () => {
+    const r = estimarEdital([materia('Adm', [no('atos', 1200), no('atributos', null, 'atos'), no('extincao', null, 'atos')])])
+    const a = so(r, 'Adm')
+    assert.equal(a.teoriaMin, 10) // só a leitura do assunto
+    assert.equal(a.topicosCobertos, 2)
+    assert.equal(a.topicosEstimados, 0)
+  })
+
+  test('assunto que só agrupa não ganha tempo próprio: o tempo é dos filhos', () => {
+    const r = estimarEdital([materia('Adm', [no('outro', 1200), no('atos', null), no('atributos', null, 'atos'), no('extincao', null, 'atos')])])
+    const a = so(r, 'Adm')
+    // "atos" é coberto pelos filhos; os 2 filhos sem cobertura recebem a mediana (10 min) cada.
+    assert.equal(a.teoriaMin, 10 + 2 * 10)
+    assert.equal(a.topicosCobertos, 1)
+    assert.equal(a.topicosEstimados, 2)
+  })
+
+  test('assunto e subassunto com texto próprio: os dois somam', () => {
+    const r = estimarEdital([materia('Adm', [no('atos', 1200), no('atributos', 600, 'atos')])])
+    assert.equal(so(r, 'Adm').teoriaMin, 15)
+  })
+
+  test('três níveis: o texto do avô cobre o neto', () => {
+    const r = estimarEdital([materia('Adm', [no('a', 2400), no('b', null, 'a'), no('c', null, 'b')])])
+    assert.equal(so(r, 'Adm').teoriaMin, 20)
+    assert.equal(so(r, 'Adm').topicosCobertos, 2)
+  })
+
+  test('pai arquivado (fora da lista) faz o filho contar como assunto próprio', () => {
+    const r = estimarEdital([materia('Adm', [no('medido', 1200), no('orfao', null, 'pai-arquivado')])])
+    assert.equal(so(r, 'Adm').topicosEstimados, 1)
+  })
+
+  test('ciclo no banco (A pai de B, B pai de A) não trava a conta', () => {
+    const r = estimarEdital([materia('Adm', [no('m', 1200), no('a', null, 'b'), no('b', null, 'a')])])
+    assert.ok(Number.isFinite(r.totalMin))
+  })
+
+  test('lista plana dá o mesmo que antes: sem pai, nada é coberto', () => {
+    const r = estimarEdital([materia('Adm', [no('x', 1200), no('y', null), no('z', null)])])
+    assert.equal(so(r, 'Adm').teoriaMin, 30)
+    assert.equal(so(r, 'Adm').topicosCobertos, 0)
+  })
+
+  test('toda tópico cai em exatamente um balde: medido, coberto ou estimado', () => {
+    const r = estimarEdital([materia('Adm', [no('a', 1200), no('b', null, 'a'), no('c', null), no('d', null, 'c'), no('e', 300, 'c'), no('f', null)])])
+    const a = so(r, 'Adm')
+    assert.equal(a.topicosMedidos + a.topicosCobertos + a.topicosEstimados, a.topicos)
+  })
+})
+
 describe('estimarEdital — questões pelo tempo real dos alunos', () => {
   test('mediana da matéria com amostra suficiente', () => {
     const r = estimarEdital([materia('Penal', [topico(1200)], { questoes: 30, tempoQuestao: { medianaMs: 90_000, amostras: MIN_AMOSTRAS } })])

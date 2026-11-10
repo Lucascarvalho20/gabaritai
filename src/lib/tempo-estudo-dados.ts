@@ -30,7 +30,7 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
     // Os mesmos tópicos que o aluno vê na página do curso.
     prisma.topic.findMany({
       where: { subjectId: { in: subjectIds }, archivedAt: null },
-      select: { id: true, subjectId: true },
+      select: { id: true, subjectId: true, parentId: true },
     }),
     // Um material por tópico: o texto completo (TEXTO) antes do resumo, o
     // publicado antes do rascunho, o mais novo antes do antigo. Rascunho mede
@@ -80,7 +80,7 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
     const lista = topicosDaMateria.get(t.subjectId) ?? []
     // Material publicado sem nenhuma palavra (só marcação) não é conteúdo: nem mede, nem conta como publicado.
     const temTexto = m != null && m.palavras > 0
-    lista.push({ id: t.id, palavras: temTexto ? m.palavras : null, publicado: temTexto && m.publicado })
+    lista.push({ id: t.id, paiId: t.parentId, palavras: temTexto ? m.palavras : null, publicado: temTexto && m.publicado })
     topicosDaMateria.set(t.subjectId, lista)
   }
   const questoesDaMateria = new Map(questoes.map((q) => [q.subjectId, q._count._all]))

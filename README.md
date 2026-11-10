@@ -1,23 +1,24 @@
 # GabaritAI
 
-Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **166 endpoints de API**, banco PostgreSQL de **45 modelos** e orquestração de múltiplos provedores de LLM.
+Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **168 endpoints de API**, banco PostgreSQL de **47 modelos** e orquestração de múltiplos provedores de LLM.
 
 **No ar:** [gabaritai-red.vercel.app](https://gabaritai-red.vercel.app)
 
 **Para ler em 2 minutos** — os pontos com mais engenharia:
 
+- **Quanto tempo o edital pede, medido no banco.** Escolha o concurso e as suas horas: o tempo sai do conteúdo cadastrado — palavras de cada material, questões ativas, a mediana real do tempo dos alunos por questão — e a resposta diz quanto dela é dado medido. A mesma conta vale na home e no cronograma. → [seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)
 - **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
 - **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
-- **Testes onde o erro custa caro.** 104 unitários e 19 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
+- **Testes onde o erro custa caro.** 159 unitários e 30 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
 - **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
 
 ---
 
 ## O problema
 
-Quem estuda para concurso de alta concorrência enfrenta três coisas que nenhuma planilha resolve: não saber **o que** estudar (editais com pesos diferentes por banca), não saber **quando revisar** (a curva do esquecimento não espera), e não ter **diagnóstico real** do próprio desempenho por matéria.
+Quem estuda para concurso de alta concorrência enfrenta quatro coisas que nenhuma planilha resolve: não saber **o que** estudar (editais com pesos diferentes por banca), não saber **se dá tempo** de cobrir o edital até a prova, não saber **quando revisar** (a curva do esquecimento não espera), e não ter **diagnóstico real** do próprio desempenho por matéria.
 
-O GabaritAI ataca os três com uma divisão de trabalho deliberada: **algoritmo determinístico onde é preciso rigor** — cronograma, repetição espaçada, prioridade de estudo —, porque um prompt pedindo "monte um cronograma" alucina datas e não dá a mesma resposta duas vezes; e **IA onde é preciso linguagem** — tirar dúvida e montar o diagnóstico —, sempre presa ao material do curso e aos dados do aluno.
+O GabaritAI ataca os quatro com uma divisão de trabalho deliberada: **algoritmo determinístico onde é preciso rigor** — cronograma, estimativa de tempo, repetição espaçada, prioridade de estudo —, porque um prompt pedindo "monte um cronograma" alucina datas e não dá a mesma resposta duas vezes; e **IA onde é preciso linguagem** — tirar dúvida e montar o diagnóstico —, sempre presa ao material do curso e aos dados do aluno.
 
 ---
 
@@ -29,11 +30,12 @@ flowchart TB
 
     subgraph Next["Next.js 14 — App Router (Vercel)"]
         RSC["Server Components<br/>(render + data fetching)"]
-        API["166 Route Handlers<br/>/api/*"]
+        API["168 Route Handlers<br/>/api/*"]
     end
 
     subgraph Dominio["Camada de domínio — src/lib"]
         SCHED["schedule-algorithm.ts<br/>cronograma determinístico"]
+        TEMPO["tempo-estudo.ts<br/>tempo do edital, medido"]
         SIM["simulado-generator.ts<br/>regras por banca"]
         SM2["SM-2<br/>repetição espaçada"]
         SEC["cpf · totp · rate-limit<br/>segurança e LGPD"]
@@ -41,7 +43,7 @@ flowchart TB
     end
 
     AI["ai-client.ts<br/>roteador multi-provider"]
-    DB[("PostgreSQL · Supabase<br/>45 modelos via Prisma")]
+    DB[("PostgreSQL · Supabase<br/>47 modelos via Prisma")]
     PAY["Mercado Pago<br/>webhooks"]
 
     Browser --> RSC & API
@@ -67,8 +69,8 @@ Não há `middleware.ts`: a sessão é verificada dentro de cada rota com `getUs
 LLM erra data, inventa carga horária e custa dinheiro a cada regeração. O algoritmo aqui é aritmética pura e **reprodutível** — mesma entrada, mesma saída, sempre:
 
 1. Conta os dias entre hoje e a prova, filtrando só os dias da semana que o aluno marcou como disponíveis.
-2. Multiplica por horas/dia → `totalMinAvailable`.
-3. Calcula o necessário a partir dos pesos de cada matéria no edital → `totalMinRecommended`.
+2. Multiplica pelas sessões inteiras de 50 min que cabem nas horas/dia → `totalMinAvailable`.
+3. Soma o tempo que o **conteúdo** de cada matéria pede, medido no banco ([seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)) → `totalMinRecommended`. Antes eram 60 h fixas por matéria.
 4. Distribui as matérias em **round-robin ponderado** pelo peso da banca, em blocos de 50 min, na proporção 65% teoria / 20% revisão / 15% questões.
 5. Se `recomendado > disponível`, devolve `isFeasible: false` com o déficit em minutos — o aluno descobre **antes** que não vai dar tempo, e ajusta.
 
@@ -163,6 +165,24 @@ Formato OpenAI de *tool calling*, que Groq e Gemini também aceitam; como a API 
 
 **Cronograma adaptativo (opcional).** O algoritmo de cronograma não muda: antes dele, o peso de cada matéria é multiplicado por um fator de desempenho, limitado a [0,6; 1,6] para nenhuma matéria sumir. O acerto passa por **suavização bayesiana** — `(acertos + 0,7 × 10) / (tentativas + 10)` —, então errar 2 de 2 questões quase não mexe e errar 20 de 20 mexe: transição contínua, sem limiar arbitrário.
 
+### 8. Quanto tempo o edital pede, medido no banco
+
+[`src/lib/tempo-estudo.ts`](src/lib/tempo-estudo.ts) · [`src/lib/tempo-estudo-dados.ts`](src/lib/tempo-estudo-dados.ts) · `GET /api/tempo/concursos`
+
+A pergunta que mais pesa na decisão do aluno — *dá tempo de estudar o edital até a prova?* — era respondida com um número fixo: 600 h para qualquer concurso na home, 60 h por matéria no cronograma. Agora o tempo sai do conteúdo cadastrado de cada edital:
+
+| Parte | Conta | De onde vem |
+|---|---|---|
+| Teoria | palavras do material de cada tópico ÷ 120 por minuto | contadas no SQL, ignorando marcação |
+| Questões | questões ativas × mediana do tempo por questão | tentativas reais dos alunos, entre 5 s e 15 min |
+| Revisão | a fração da teoria que o cronograma reserva | a mesma constante do cronograma |
+
+- **Medido ou estimado, sempre dito.** Tópico ainda sem material herda a mediana dos tópicos medidos da matéria; matéria com poucas tentativas usa a mediana da plataforma. A resposta traz `percentualMedido` — quanto do total é dado real — para a estimativa não parecer mais certa do que é. Mediana, e não média, porque uma questão esquecida aberta por 14 minutos não pode puxar o tempo de todo mundo.
+- **Uma régua só.** A calculadora pública e o "vai dar tempo?" do cronograma usam a mesma função e o mesmo modelo de sessões de 50 min. Unificar expôs um bug antigo: o cronograma ignorava o edital ativo e montava o plano com a lista de matérias do curso.
+- **Barato de servir.** Quatro consultas agregadas calculam todos os concursos de uma vez, sem uma consulta por edital; a CDN guarda a resposta por 1 hora; a conta com as horas do aluno roda no navegador.
+
+Os testes cobrem propriedades — mais palavras nunca reduz o tempo; as horas sugeridas sempre bastam e meia hora a menos nunca basta — e, contra um Postgres real, tudo o que engana a contagem: markdown, rascunho mais novo que o publicado, resumo, material rejeitado, tópico arquivado, questão anulada, tempo absurdo.
+
 ---
 
 ## Stack
@@ -171,7 +191,7 @@ Formato OpenAI de *tool calling*, que Groq e Gemini também aceitam; como a API 
 |---|---|
 | Linguagem | TypeScript 5 |
 | Framework | Next.js 14.2 (App Router), React 18 |
-| Banco | PostgreSQL (Supabase) · Prisma 5 · 45 modelos |
+| Banco | PostgreSQL (Supabase) · Prisma 5 · 47 modelos |
 | Auth | JWT próprio via `jose` · cookies httpOnly · bcrypt · TOTP próprio · Google OAuth 2.0 |
 | Validação | Zod · React Hook Form |
 | Estado | Zustand · TanStack Query |
@@ -206,8 +226,8 @@ npm run dev                   # http://localhost:3000
 Testes:
 
 ```bash
-npm run verificar             # tipos + lint + 104 testes unitários
-npm run test:integracao       # 19 cenários num Postgres + pgvector descartável (Docker)
+npm run verificar             # tipos + lint + 159 testes unitários
+npm run test:integracao       # 30 cenários num Postgres + pgvector descartável (Docker)
 ```
 
 Servidor MCP para o admin: `npm run --silent mcp` — ver [`mcp/README.md`](mcp/README.md).
@@ -232,8 +252,8 @@ flowchart LR
 
 | Etapa | O que roda | O que pega |
 |---|---|---|
-| Pull request | `typecheck`, `lint`, `test` (104 testes unitários) | Erro de tipo, regressão nas funções puras |
-| Pull request | `test:integracao` — 19 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
+| Pull request | `typecheck`, `lint`, `test` (159 testes unitários) | Erro de tipo, regressão nas funções puras |
+| Pull request | `test:integracao` — 30 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
 | `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
 | `main` | Deploy de produção | — |
 
@@ -249,11 +269,12 @@ O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves 
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura ampla de teste.** 104 testes unitários e 19 cenários de integração, concentrados onde o erro custa dinheiro ou dado pessoal: pagamento, segurança, algoritmo de cronograma e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Cobertura ampla de teste.** 159 testes unitários e 30 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Tempo pelo programa oficial do edital.** Hoje o tamanho do edital é o conteúdo cadastrado na plataforma. O próximo passo é contar os itens do programa oficial (`EditalSubject.programa`) e mostrar quanto dele já tem material. E a teoria ainda é "palavras ÷ velocidade": o cronômetro de estudo existe, mas a página de material não registra o tópico — quando registrar, a teoria passa a usar o tempo real dos alunos, como as questões já usam.
 - **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
 - **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.
-- **Observabilidade completa.** Só há um alerta: as tarefas agendadas avisam o Healthchecks.io ao terminar, e a **ausência** do aviso dispara e-mail ([`vigia.ts`](src/lib/vigia.ts) — um *dead man's switch*, criado depois de descobrir que os crons tinham ficado meses sem rodar sem erro nenhum). Fora isso, logs da Vercel: sem métricas, sem tracing.
+- **Observabilidade completa.** Há um vigia das tarefas agendadas feito em casa ([`vigia.ts`](src/lib/vigia.ts)), criado depois de descobrir que os crons tinham ficado meses sem rodar sem erro nenhum: cada cron grava a própria rodada no banco, falha avisa na hora pelo Telegram, e ao fim de cada rodada o cron confere se algum **outro** sumiu — cada sumiço avisa uma vez, com uma chave única como trava. O limite é conhecido: se todos pararem juntos, não sobra quem avise, e o sumiço só aparece no painel do admin. Fora isso, logs da Vercel: sem métricas, sem tracing.
 - **Cache.** O Redis está previsto no desenho mas ainda não entrou — hoje todo rate limit e leitura quente vai direto ao Postgres. O rate limit é um `Map` em memória, então na prática limita por instância, não globalmente.
 
 ---
@@ -263,14 +284,15 @@ Sendo honesto sobre o estado do projeto:
 ```
 src/
 ├─ app/
-│  ├─ api/            166 route handlers
-│  │  ├─ admin/       68  gestão de conteúdo, cursos, usuários
+│  ├─ api/            168 route handlers
+│  │  ├─ admin/       70  gestão de conteúdo, cursos, usuários
 │  │  ├─ me/          35  dados do próprio usuário (flashcards, progresso)
 │  │  ├─ auth/        10  login, registro, OAuth, 2FA
 │  │  ├─ simulados/    8  geração e correção
 │  │  ├─ schedule/     7  cronograma
-│  │  ├─ cron/         6  jobs agendados
-│  │  └─ ai/           4  endpoints de IA
+│  │  ├─ cron/         8  jobs agendados
+│  │  ├─ ai/           4  endpoints de IA
+│  │  └─ tempo/        1  estimativa pública de tempo por concurso
 │  └─ (páginas do App Router)
 ├─ lib/               domínio: algoritmos, segurança, integrações
 └─ components/        UI

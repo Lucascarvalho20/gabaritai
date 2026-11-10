@@ -272,7 +272,7 @@ export function TimeBudgetCalculator() {
             <details className="card p-4 text-sm min-w-0">
               <summary className="cursor-pointer font-semibold">Como a conta é feita</summary>
               <ul className="mt-3 space-y-2 text-muted-foreground">
-                <li><strong className="text-foreground">Teoria:</strong> palavras do material de cada tópico ÷ {PALAVRAS_POR_MINUTO} por minuto, ritmo de leitura para memorizar. Tópico ainda sem material recebe a mediana dos tópicos medidos da matéria.</li>
+                <li><strong className="text-foreground">Teoria:</strong> palavras do material de cada tópico ÷ {PALAVRAS_POR_MINUTO} por minuto, ritmo de leitura para memorizar. Subassunto cujo assunto já tem texto não conta de novo; tópico ainda sem material recebe a mediana dos tópicos medidos da matéria.</li>
                 <li><strong className="text-foreground">Questões:</strong> as questões ativas do banco × a mediana do tempo real dos alunos na matéria (com pelo menos {MIN_AMOSTRAS} respostas); com menos, a mediana da plataforma; sem dado, {fmtNum(MIN_POR_QUESTAO_REFERENCIA, 1)} min.</li>
                 <li><strong className="text-foreground">Revisão:</strong> {fmtNum(REVISAO_FRACAO * 100)}% da teoria, a mesma proporção que o cronograma reserva.</li>
                 <li><strong className="text-foreground">Seu tempo:</strong> só sessões inteiras de 50 min contam, como no cronograma. Por isso esta conta e a do cronograma dão o mesmo resultado.</li>

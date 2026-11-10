@@ -14,11 +14,15 @@
  *              nº de questões × tempo mediano REAL por questão
  *   revisão  = a fração da teoria que o cronograma reserva para revisão
  *
- * MEDIDO × ESTIMADO. Cada parte diz de onde veio:
- *  - tópico COM material escrito tem a teoria medida (contamos as palavras);
- *    tópico sem material herda a mediana dos tópicos medidos da mesma matéria;
- *    sem nenhum na matéria, a mediana do edital; sem nenhum no edital, o
- *    tamanho padrão de um material da plataforma;
+ * MEDIDO × COBERTO × ESTIMADO. Os tópicos formam uma árvore (assunto →
+ * subassuntos), e cada um entra de um jeito:
+ *  - COM material escrito: teoria medida (contamos as palavras);
+ *  - sem material, mas coberto: o assunto que só agrupa subassuntos (o tempo
+ *    dele é o dos filhos) e o subassunto cujo assunto acima já tem texto (a
+ *    leitura do pai cobre o filho). Contar esses de novo inflava o total;
+ *  - sem material e sem cobertura: herda a mediana dos tópicos medidos da
+ *    mesma matéria; sem nenhum na matéria, a mediana do edital; sem nenhum no
+ *    edital, o tamanho padrão de um material da plataforma;
  *  - o tempo por questão vem das tentativas dos alunos (mediana: uma questão
  *    esquecida aberta por 14 minutos não distorce); com poucas tentativas na
  *    matéria, vale a mediana da plataforma; sem nenhuma, uma referência;
@@ -51,6 +55,8 @@ export const PALAVRAS_TOPICO_REFERENCIA = 2000
 
 export type TopicoConteudo = {
   id: string
+  /** Tópico pai (assunto), quando este é um subassunto. */
+  paiId?: string | null
   /** Palavras do material escrito do tópico; null quando ainda não há material. */
   palavras: number | null
   /** O texto do tópico já está liberado para o aluno (PUBLISHED e com palavras). */
@@ -81,6 +87,10 @@ export type EstimativaMateria = {
   totalMin: number
   topicos: number
   topicosMedidos: number
+  /** Sem material próprio, mas cobertos pela árvore (assunto que agrupa, ou subassunto de pai com texto). */
+  topicosCobertos: number
+  /** Sem material e sem cobertura: recebem a mediana. */
+  topicosEstimados: number
   topicosPublicados: number
   palavras: number
   questoes: number
@@ -99,6 +109,8 @@ export type EstimativaEdital = {
   percentualMedido: number
   topicos: number
   topicosMedidos: number
+  topicosCobertos: number
+  topicosEstimados: number
   topicosPublicados: number
   questoes: number
   materiasSemConteudo: string[]
@@ -116,6 +128,28 @@ const arred = (n: number) => Math.round(n * 10) / 10
 const temTexto = (t: TopicoConteudo) => t.palavras != null && t.palavras > 0
 const minLeitura = (palavras: number) => palavras / PALAVRAS_POR_MINUTO
 
+/**
+ * Separa os tópicos sem material: COBERTOS pela árvore (não somam tempo) ou
+ * ESTIMADOS (somam a mediana). Assunto que agrupa subassuntos é coberto pelos
+ * filhos; subassunto é coberto quando algum assunto acima dele tem texto.
+ */
+function classificar(topicos: TopicoConteudo[]): { medidos: TopicoConteudo[]; cobertos: number; estimados: number } {
+  const porId = new Map(topicos.map((t) => [t.id, t]))
+  const temFilhos = new Set(topicos.map((t) => t.paiId).filter((p): p is string => !!p && porId.has(p)))
+  const acimaTemTexto = (t: TopicoConteudo) => {
+    const vistos = new Set<string>()
+    for (let p = t.paiId; p && porId.has(p) && !vistos.has(p); p = porId.get(p)!.paiId) {
+      vistos.add(p) // dado com ciclo (A pai de B, B pai de A) não trava a conta
+      if (temTexto(porId.get(p)!)) return true
+    }
+    return false
+  }
+  const medidos = topicos.filter(temTexto)
+  const semTexto = topicos.filter((t) => !temTexto(t))
+  const cobertos = semTexto.filter((t) => temFilhos.has(t.id) || acimaTemTexto(t)).length
+  return { medidos, cobertos, estimados: semTexto.length - cobertos }
+}
+
 export function estimarEdital(
   materias: MateriaConteudo[],
   tempoQuestaoGeral: TempoQuestao | null = null,
@@ -127,10 +161,10 @@ export function estimarEdital(
 
   // 1ª passada: matérias com tópicos.
   const calculadas = materias.map((m) => {
-    const medidos = m.topicos.filter(temTexto)
+    const { medidos, cobertos, estimados } = classificar(m.topicos)
     const teoriaMedida = medidos.reduce((s, t) => s + minLeitura(t.palavras!), 0)
     const porTopico = mediana(medidos.map((t) => minLeitura(t.palavras!))) ?? referenciaEdital
-    const teoria = teoriaMedida + (m.topicos.length - medidos.length) * porTopico
+    const teoria = teoriaMedida + estimados * porTopico
 
     let minPorQuestao = MIN_POR_QUESTAO_REFERENCIA
     let fonte: Fonte = 'referencia'
@@ -142,7 +176,7 @@ export function estimarEdital(
       fonte = 'medido_geral'
     }
     const questoes = Number.isFinite(m.questoes) ? Math.max(0, Math.floor(m.questoes)) : 0
-    return { m, medidos, teoriaMedida, teoria, questoes, minPorQuestao, fonte }
+    return { m, medidos, cobertos, estimados, teoriaMedida, teoria, questoes, minPorQuestao, fonte }
   })
 
   // 2ª passada: matéria sem tópico nenhum herda a mediana da teoria das outras.
@@ -163,6 +197,8 @@ export function estimarEdital(
       totalMin: arred(teoria + questoesMin + revisao),
       topicos: c.m.topicos.length,
       topicosMedidos: c.medidos.length,
+      topicosCobertos: c.cobertos,
+      topicosEstimados: c.estimados,
       topicosPublicados: c.m.topicos.filter((t) => t.publicado).length,
       palavras: c.medidos.reduce((s, t) => s + t.palavras!, 0),
       questoes: c.questoes,
@@ -183,6 +219,8 @@ export function estimarEdital(
     percentualMedido: totalMin > 0 ? Math.round((soma((m) => m.medidoMin) / totalMin) * 1000) / 1000 : 0,
     topicos: soma((m) => m.topicos),
     topicosMedidos: soma((m) => m.topicosMedidos),
+    topicosCobertos: soma((m) => m.topicosCobertos),
+    topicosEstimados: soma((m) => m.topicosEstimados),
     topicosPublicados: soma((m) => m.topicosPublicados),
     questoes: soma((m) => m.questoes),
     materiasSemConteudo: estimadas.filter((m) => m.semConteudo).map((m) => m.nome),

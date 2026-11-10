@@ -275,6 +275,10 @@ await prisma.topic.create({ data: { id: 'ens-top-arq', subjectId: 'ens-penal', n
 await prisma.topic.create({ data: { id: 'ens-top-crase', subjectId: 'ens-port', name: 'Crase' } })
 await prisma.topic.create({ data: { id: 'ens-top-conc', subjectId: 'ens-port', name: 'Concordância' } })
 await prisma.topic.create({ data: { id: 'ens-top-vazio', subjectId: 'ens-port', name: 'Só marcação' } })
+// Árvore: subassunto sem texto sob assunto com texto (coberto); assunto que só agrupa (coberto pelo filho).
+await prisma.topic.create({ data: { id: 'ens-top-tent-filho', subjectId: 'ens-penal', name: 'Tentativa inidônea', parentId: 'ens-top-tent' } })
+await prisma.topic.create({ data: { id: 'ens-top-pai', subjectId: 'ens-port', name: 'Pontuação' } })
+await prisma.topic.create({ data: { id: 'ens-top-filho', subjectId: 'ens-port', name: 'Vírgula', parentId: 'ens-top-pai' } })
 const mat = (id: string, topicId: string, subjectId: string, content: string, extra: Record<string, unknown> = {}) =>
   prisma.material.create({ data: { id, title: id, topicId, subjectId, content, type: 'TEXTO', status: 'PUBLISHED', active: true, ...extra } })
 await mat('ens-m-tent', 'ens-top-tent', 'ens-penal', markdown11 + palavras(1189))          // 1200 palavras = 10 min
@@ -306,7 +310,8 @@ await caso('conta palavras no SQL ignorando marcação, e escolhe o material cer
   const [penal, port] = porEdital.get('e')!
   const tent = penal.topicos.find((t: any) => t.id === 'ens-top-tent')
   exigir(tent?.palavras === 1200 && tent?.publicado === true, `Tentativa: ${JSON.stringify(tent)} (publicado de 1200 palavras, não o rascunho nem o resumo)`)
-  exigir(penal.topicos.length === 2, `tópico arquivado entrou: ${penal.topicos.map((t: any) => t.id)}`)
+  exigir(penal.topicos.length === 3, `tópico arquivado entrou: ${penal.topicos.map((t: any) => t.id)}`)
+  exigir(penal.topicos.find((t: any) => t.id === 'ens-top-tent-filho')?.paiId === 'ens-top-tent', 'a árvore não veio do banco')
   exigir(penal.topicos.find((t: any) => t.id === 'ens-top-presc')?.palavras === null, 'rejeitado/inativo foi medido')
   const vazio = port.topicos.find((t: any) => t.id === 'ens-top-vazio')
   exigir(vazio?.palavras === null && vazio?.publicado === false, `só marcação contou como conteúdo: ${JSON.stringify(vazio)}`)
@@ -318,13 +323,17 @@ await caso('estimativa do edital confere número a número', async () => {
   const e: any = await estimativaDoEdital('ens-edital')
   const penal = e.materias.find((m: any) => m.id === 'ens-penal')
   const port = e.materias.find((m: any) => m.id === 'ens-port')
-  // Penal: Tentativa medida (10 min) + Prescrição herdando a mediana da matéria (10) = 20; 2 questões × 1 min reais.
+  // Penal: Tentativa medida (10 min) + Prescrição herdando a mediana da matéria (10) = 20; o subassunto
+  // da Tentativa está coberto pelo texto dela e não soma. 2 questões × 1 min reais.
   exigir(penal.teoriaMin === 20 && penal.topicosMedidos === 1 && penal.topicosPublicados === 1, JSON.stringify(penal))
+  exigir(penal.topicosCobertos === 1 && penal.topicosEstimados === 1, JSON.stringify(penal))
   exigir(penal.fonteTempoQuestao === 'medido' && penal.questoesMin === 2, JSON.stringify(penal))
-  // Português: Crase 20 min (rascunho mede) + 2 tópicos estimados pela mediana = 60; 3 tentativas são poucas → mediana da plataforma.
-  exigir(port.teoriaMin === 60 && port.topicosPublicados === 0, JSON.stringify(port))
+  // Português: Crase 20 min (rascunho mede) + Concordância, Só marcação e Vírgula estimados pela mediana (20 cada) = 80;
+  // "Pontuação" só agrupa a Vírgula e não soma. 3 tentativas são poucas → mediana da plataforma.
+  exigir(port.teoriaMin === 80 && port.topicosPublicados === 0, JSON.stringify(port))
+  exigir(port.topicosCobertos === 1 && port.topicosEstimados === 3, JSON.stringify(port))
   exigir(port.fonteTempoQuestao === 'medido_geral' && port.minPorQuestao === 1, JSON.stringify(port))
-  const esperado = 20 + 2 + 20 * REVISAO_FRACAO + 60 + 1 + 60 * REVISAO_FRACAO
+  const esperado = 20 + 2 + 20 * REVISAO_FRACAO + 80 + 1 + 80 * REVISAO_FRACAO
   exigir(Math.abs(e.totalMin - esperado) < 0.2, `total ${e.totalMin} ≠ ${esperado.toFixed(1)}`)
 })
 await caso('lista pública: só curso ativo com edital ativo, e sem dado de aluno', async () => {
