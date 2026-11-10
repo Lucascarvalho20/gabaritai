@@ -2,8 +2,14 @@
 
 Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **166 endpoints de API**, banco PostgreSQL de **45 modelos** e orquestração de múltiplos provedores de LLM.
 
-> ⚠️ **Preencher antes de publicar:** a URL de produção. O domínio `gabaritai.app`
-> pertence a outra empresa — não usar.
+**No ar:** [gabaritai-red.vercel.app](https://gabaritai-red.vercel.app)
+
+**Para ler em 2 minutos** — os pontos com mais engenharia:
+
+- **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
+- **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
+- **Testes onde o erro custa caro.** 104 unitários e 19 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
+- **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
 
 ---
 
@@ -11,7 +17,7 @@ Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14
 
 Quem estuda para concurso de alta concorrência enfrenta três coisas que nenhuma planilha resolve: não saber **o que** estudar (editais com pesos diferentes por banca), não saber **quando revisar** (a curva do esquecimento não espera), e não ter **diagnóstico real** do próprio desempenho por matéria.
 
-O GabaritAI ataca os três com algoritmos determinísticos — não com prompt de IA pedindo "monte um cronograma", que alucina datas e não tem rigor matemático.
+O GabaritAI ataca os três com uma divisão de trabalho deliberada: **algoritmo determinístico onde é preciso rigor** — cronograma, repetição espaçada, prioridade de estudo —, porque um prompt pedindo "monte um cronograma" alucina datas e não dá a mesma resposta duas vezes; e **IA onde é preciso linguagem** — tirar dúvida e montar o diagnóstico —, sempre presa ao material do curso e aos dados do aluno.
 
 ---
 
@@ -178,15 +184,35 @@ Formato OpenAI de *tool calling*, que Groq e Gemini também aceitam; como a API 
 
 ## Rodando localmente
 
+Requer Node 24 e Docker.
+
 ```bash
 npm install
-cp .env.example .env     # preencha as variáveis
-npx prisma migrate dev
-npx prisma db seed
-npm run dev              # http://localhost:3000
+cp .env.example .env          # para subir local bastam DATABASE_URL e JWT_SECRET
+
+# PostgreSQL com pgvector (a busca semântica precisa da extensão)
+docker run -d --name gabaritai-db -p 5432:5432 \
+  -e POSTGRES_USER=gabaritai -e POSTGRES_PASSWORD=gabaritai123 -e POSTGRES_DB=gabaritai \
+  pgvector/pgvector:pg16
+docker exec gabaritai-db psql -U gabaritai -d gabaritai -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+
+npx prisma db push            # cria as tabelas a partir do schema
+docker exec -i gabaritai-db psql -U gabaritai -d gabaritai \
+  < prisma/sql/2026-11-09-cronograma-adaptativo-e-rag.sql   # índice vetorial (o Prisma não representa)
+npm run seed                  # planos de assinatura
+npm run dev                   # http://localhost:3000
 ```
 
-Nenhum segredo é versionado. Todo `.env` está no `.gitignore`; o `.env.example` traz só os nomes das variáveis e valores de exemplo.
+Testes:
+
+```bash
+npm run verificar             # tipos + lint + 104 testes unitários
+npm run test:integracao       # 19 cenários num Postgres + pgvector descartável (Docker)
+```
+
+Servidor MCP para o admin: `npm run --silent mcp` — ver [`mcp/README.md`](mcp/README.md).
+
+Nenhum segredo é versionado. Todo `.env` está no `.gitignore`; o `.env.example` traz só os nomes das variáveis, separados entre obrigatórios e opcionais.
 
 ---
 
