@@ -9,7 +9,7 @@ Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14
 - **Quanto tempo o edital pede, medido no banco.** Escolha o concurso e as suas horas: o tempo sai do conteúdo cadastrado — palavras de cada material, questões ativas, a mediana real do tempo dos alunos por questão — e a resposta diz quanto dela é dado medido. A mesma conta vale na home e no cronograma. → [seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)
 - **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
 - **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
-- **Testes onde o erro custa caro.** 159 unitários e 30 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
+- **Testes onde o erro custa caro.** 167 unitários e 30 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
 - **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
 
 ---
@@ -177,9 +177,10 @@ A pergunta que mais pesa na decisão do aluno — *dá tempo de estudar o edital
 | Questões | questões ativas × mediana do tempo por questão | tentativas reais dos alunos, entre 5 s e 15 min |
 | Revisão | a fração da teoria que o cronograma reserva | a mesma constante do cronograma |
 
-- **Medido ou estimado, sempre dito.** Tópico ainda sem material herda a mediana dos tópicos medidos da matéria; matéria com poucas tentativas usa a mediana da plataforma. A resposta traz `percentualMedido` — quanto do total é dado real — para a estimativa não parecer mais certa do que é. Mediana, e não média, porque uma questão esquecida aberta por 14 minutos não pode puxar o tempo de todo mundo.
+- **A árvore de tópicos conta uma vez.** Os tópicos são assunto → subassuntos. Assunto que só agrupa não ganha tempo próprio, e subassunto cujo assunto já tem texto está coberto pela leitura do pai. A primeira versão contava a lista plana; os números de produção mostraram o erro — no PF Agente, 54 dos 589 tópicos eram contados em dobro.
+- **Medido ou estimado, sempre dito.** Tópico ainda sem material (e sem cobertura) herda a mediana dos tópicos medidos da matéria; matéria com poucas tentativas usa a mediana da plataforma. A resposta traz `percentualMedido` — quanto do total é dado real — para a estimativa não parecer mais certa do que é. Mediana, e não média, porque uma questão esquecida aberta por 14 minutos não pode puxar o tempo de todo mundo.
 - **Uma régua só.** A calculadora pública e o "vai dar tempo?" do cronograma usam a mesma função e o mesmo modelo de sessões de 50 min. Unificar expôs um bug antigo: o cronograma ignorava o edital ativo e montava o plano com a lista de matérias do curso.
-- **Barato de servir.** Quatro consultas agregadas calculam todos os concursos de uma vez, sem uma consulta por edital; a CDN guarda a resposta por 1 hora; a conta com as horas do aluno roda no navegador.
+- **Barato de servir.** Quatro consultas agregadas calculam todos os concursos de uma vez, sem uma consulta por edital; a CDN guarda a resposta por 1 hora e a função por 10 minutos (quem fura o cache da CDN com `?x=` recebe a mesma resposta, sem o banco recalcular); a conta com as horas do aluno roda no navegador — elas nem chegam ao servidor.
 
 Os testes cobrem propriedades — mais palavras nunca reduz o tempo; as horas sugeridas sempre bastam e meia hora a menos nunca basta — e, contra um Postgres real, tudo o que engana a contagem: markdown, rascunho mais novo que o publicado, resumo, material rejeitado, tópico arquivado, questão anulada, tempo absurdo.
 
@@ -226,7 +227,7 @@ npm run dev                   # http://localhost:3000
 Testes:
 
 ```bash
-npm run verificar             # tipos + lint + 159 testes unitários
+npm run verificar             # tipos + lint + 167 testes unitários
 npm run test:integracao       # 30 cenários num Postgres + pgvector descartável (Docker)
 ```
 
@@ -252,7 +253,7 @@ flowchart LR
 
 | Etapa | O que roda | O que pega |
 |---|---|---|
-| Pull request | `typecheck`, `lint`, `test` (159 testes unitários) | Erro de tipo, regressão nas funções puras |
+| Pull request | `typecheck`, `lint`, `test` (167 testes unitários) | Erro de tipo, regressão nas funções puras |
 | Pull request | `test:integracao` — 30 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
 | `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
 | `main` | Deploy de produção | — |
@@ -269,7 +270,7 @@ O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves 
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura ampla de teste.** 159 testes unitários e 30 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Cobertura ampla de teste.** 167 testes unitários e 30 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
 - **Tempo pelo programa oficial do edital.** Hoje o tamanho do edital é o conteúdo cadastrado na plataforma. O próximo passo é contar os itens do programa oficial (`EditalSubject.programa`) e mostrar quanto dele já tem material. E a teoria ainda é "palavras ÷ velocidade": o cronômetro de estudo existe, mas a página de material não registra o tópico — quando registrar, a teoria passa a usar o tempo real dos alunos, como as questões já usam.
 - **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
