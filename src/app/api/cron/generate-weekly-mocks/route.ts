@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getOrCreateWeeklyMockExam, getWeekStart, type ScheduledDay } from '@/lib/mock-exam-scheduler'
 import { exigirTokenCron } from '@/lib/cron-auth'
+import { monitorarCron } from '@/lib/vigia'
 
 export const maxDuration = 300 // 5min
 
@@ -73,5 +74,6 @@ async function handler(req: NextRequest) {
   })
 }
 
-export const GET = handler
-export const POST = handler
+const monitorado = monitorarCron('generate-weekly-mocks', handler)
+export const GET = monitorado
+export const POST = monitorado

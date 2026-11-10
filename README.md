@@ -253,7 +253,7 @@ Sendo honesto sobre o estado do projeto:
 - **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
 - **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.
-- **Observabilidade.** Logs da Vercel apenas. Sem métricas, sem tracing, sem alerta.
+- **Observabilidade completa.** Só há um alerta: as tarefas agendadas avisam o Healthchecks.io ao terminar, e a **ausência** do aviso dispara e-mail ([`vigia.ts`](src/lib/vigia.ts) — um *dead man's switch*, criado depois de descobrir que os crons tinham ficado meses sem rodar sem erro nenhum). Fora isso, logs da Vercel: sem métricas, sem tracing.
 - **Cache.** O Redis está previsto no desenho mas ainda não entrou — hoje todo rate limit e leitura quente vai direto ao Postgres. O rate limit é um `Map` em memória, então na prática limita por instância, não globalmente.
 
 ---

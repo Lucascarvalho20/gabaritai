@@ -3,6 +3,7 @@ import { syncConcursosFromApi, PRIORITY_UFS } from '@/lib/concursos-api'
 import { prisma } from '@/lib/prisma'
 import { detectAndPersistChanges } from '@/lib/edital-diff'
 import { exigirTokenCron } from '@/lib/cron-auth'
+import { monitorarCron } from '@/lib/vigia'
 
 export const maxDuration = 300 // 5min — sincronizar pode demorar
 
@@ -15,7 +16,7 @@ export const maxDuration = 300 // 5min — sincronizar pode demorar
  * Configurar no Vercel: crons em vercel.json + CRON_TOKEN no env
  * Ou usar cron-job.org gratuito pra chamar este endpoint
  */
-export async function GET(req: NextRequest) {
+async function executar(req: NextRequest) {
   const negado = exigirTokenCron(req)
   if (negado) return negado
 
@@ -56,4 +57,5 @@ export async function GET(req: NextRequest) {
 }
 
 // Vercel Cron usa GET por padrão, mas POST também funciona
+export const GET = monitorarCron('sync', executar)
 export const POST = GET

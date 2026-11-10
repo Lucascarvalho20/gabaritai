@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { exigirTokenCron } from '@/lib/cron-auth'
+import { monitorarCron } from '@/lib/vigia'
 
 export const maxDuration = 300
 
@@ -114,5 +115,6 @@ async function handler(req: NextRequest) {
   })
 }
 
-export const GET = handler
-export const POST = handler
+const monitorado = monitorarCron('cleanup', handler)
+export const GET = monitorado
+export const POST = monitorado

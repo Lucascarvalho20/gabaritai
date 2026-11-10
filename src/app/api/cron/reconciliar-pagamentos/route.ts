@@ -3,6 +3,7 @@ import { exigirTokenCron } from '@/lib/cron-auth'
 import { prisma } from '@/lib/prisma'
 import { fetchPayment } from '@/lib/mercadopago'
 import { applyMpPaymentToLocal } from '@/lib/payment-sync'
+import { monitorarCron } from '@/lib/vigia'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -24,7 +25,7 @@ export const maxDuration = 60
 const JANELA_DIAS = 3
 const ORCAMENTO_MS = 45_000
 
-export async function GET(req: NextRequest) {
+async function executar(req: NextRequest) {
   const negado = exigirTokenCron(req)
   if (negado) return negado
 
@@ -58,3 +59,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ pendentes: pendentes.length, ...resultado })
 }
+
+export const GET = monitorarCron('reconciliar-pagamentos', executar)

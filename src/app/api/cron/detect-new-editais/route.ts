@@ -4,6 +4,7 @@ import { syncConcursosFromApi, PRIORITY_UFS, isRelevantOrgao } from '@/lib/concu
 import { telegramNewEditalDraft } from '@/lib/telegram'
 import { EditalStatus } from '@prisma/client'
 import { exigirTokenCron } from '@/lib/cron-auth'
+import { monitorarCron } from '@/lib/vigia'
 
 export const maxDuration = 300
 
@@ -110,5 +111,6 @@ async function handler(req: NextRequest) {
   })
 }
 
-export const GET = handler
-export const POST = handler
+const monitorado = monitorarCron('detect-new-editais', handler)
+export const GET = monitorado
+export const POST = monitorado

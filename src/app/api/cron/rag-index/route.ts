@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exigirTokenCron } from '@/lib/cron-auth'
 import { indexarLote, estadoIndexacao } from '@/lib/rag/indexar'
+import { monitorarCron } from '@/lib/vigia'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -20,7 +21,7 @@ export const maxDuration = 60
  */
 const ORCAMENTO_MS = 45_000
 
-export async function GET(req: NextRequest) {
+async function executar(req: NextRequest) {
   const negado = exigirTokenCron(req)
   if (negado) return negado
 
@@ -52,3 +53,5 @@ export async function GET(req: NextRequest) {
     estado: await estadoIndexacao(),
   })
 }
+
+export const GET = monitorarCron('rag-index', executar)

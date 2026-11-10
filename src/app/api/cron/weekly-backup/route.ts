@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runBackupAndEmail } from '@/lib/backup-export'
 import { exigirTokenCron } from '@/lib/cron-auth'
+import { monitorarCron } from '@/lib/vigia'
 
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
  * Proteção: header `x-cron-token` deve bater com CRON_TOKEN.
  * No plano Hobby do Vercel, cron roda 1x/dia automático.
  */
-export async function GET(req: NextRequest) {
+async function executar(req: NextRequest) {
   const negado = exigirTokenCron(req)
   if (negado) return negado
 
@@ -28,3 +29,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: 'Backup falhou — confira logs' }, { status: 500 })
   }
 }
+
+export const GET = monitorarCron('weekly-backup', executar)
