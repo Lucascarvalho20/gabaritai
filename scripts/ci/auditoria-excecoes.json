@@ -1,0 +1,20 @@
+{
+  "_leia": "Avisos de segurança ALTOS/CRÍTICOS já analisados. Cada exceção diz por que não se aplica ou por que o risco foi aceito, e vence: depois da data o CI volta a falhar. A saída de verdade para os avisos do Next é migrar para Next 15.5+ (o 14 chegou ao fim do suporte) — é o que estes prazos cobram.",
+  "excecoes": [
+    { "id": "GHSA-2xp9-vwfh-vxw4", "pacote": "next", "vence": "2027-01-31", "motivo": "RCE no otimizador de imagens com AVIF. Otimizador desligado (images.unoptimized) e nenhuma tela usa next/image; o teste de fumaça confere que /_next/image não serve imagem externa." },
+    { "id": "GHSA-2464-fhr4-w9xw", "pacote": "next", "vence": "2027-01-31", "motivo": "RCE no otimizador de imagens com SVG. Mesmo motivo do anterior: otimizador desligado e conferido pela fumaça." },
+    { "id": "GHSA-p293-qw3h-jr36", "pacote": "next", "vence": "2027-01-31", "motivo": "Só servidores Windows; a Vercel roda Linux." },
+    { "id": "GHSA-36qx-fr4f-26g5", "pacote": "next", "vence": "2027-01-31", "motivo": "Exige Pages Router com i18n e middleware; o app usa App Router, sem i18n e sem middleware." },
+    { "id": "GHSA-p9j2-gv94-2wf4", "pacote": "next", "vence": "2027-01-31", "motivo": "SSRF em rewrites; o next.config não tem rewrites." },
+    { "id": "GHSA-89xv-2m56-2m9x", "pacote": "next", "vence": "2027-01-31", "motivo": "SSRF em Server Actions com servidor customizado; não há servidor customizado nem Server Actions ('use server')." },
+    { "id": "GHSA-c4j6-fc7j-m34r", "pacote": "next", "vence": "2027-01-31", "motivo": "SSRF em upgrade de WebSocket; sem servidor customizado e sem WebSocket na Vercel." },
+    { "id": "GHSA-m99w-x7hq-7vfj", "pacote": "next", "vence": "2027-01-31", "motivo": "DoS via Server Actions; o app não declara nenhuma. Risco residual (só indisponibilidade, sem vazamento) aceito até a migração." },
+    { "id": "GHSA-p3m5-59mp-jv5r", "pacote": "next", "vence": "2027-01-31", "motivo": "DoS via Server Actions; mesmo motivo do anterior." },
+    { "id": "GHSA-h25m-26qc-wcjf", "pacote": "next", "vence": "2027-01-31", "motivo": "DoS na desserialização de Server Components. Aplica-se ao App Router; só indisponibilidade, sem vazamento. Sem correção na linha 14: resolve com Next 15.5+." },
+    { "id": "GHSA-q4gf-8mx6-v5v3", "pacote": "next", "vence": "2027-01-31", "motivo": "DoS com Server Components; mesmo motivo do anterior." },
+    { "id": "GHSA-8h8q-6873-q5fj", "pacote": "next", "vence": "2027-01-31", "motivo": "DoS com Server Components; mesmo motivo do anterior." },
+    { "id": "GHSA-6g55-p6wh-862q", "pacote": "postcss", "vence": "2027-01-31", "motivo": "PostCSS embutido no Next roda só no build, sobre o CSS do próprio projeto; nenhum CSS de usuário passa por ele." },
+    { "id": "GHSA-r28c-9q8g-f849", "pacote": "postcss", "vence": "2027-01-31", "motivo": "Mesmo motivo do anterior (sourceMappingURL em CSS de terceiros, que o projeto não processa)." },
+    { "id": "GHSA-mrhx-c7xc-m3w5", "pacote": "zod", "vence": "2027-01-31", "motivo": "Consumo de memória validando coleções enormes. O corpo de requisição na Vercel é limitado a 4,5 MB; a correção só existe no Zod 4 (versão maior), planejada junto com a migração do Next." }
+  ]
+}

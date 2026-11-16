@@ -1,0 +1,11 @@
+# Achados do gitleaks já revisados um a um (2026-11-16) — nenhum é segredo:
+# .env.example: valores de exemplo ("TROQUE-...", vazios); SQL: "Bearer SEU_SETUP_SECRET" em comentário;
+# admin/conteudo: nomes de campos (depoimento1_...). Achado novo NÃO entra aqui sem revisão.
+988248fe89cc44c76cd5d06e91014d675c01d03a:.env.example:generic-api-key:62
+9723e573718a54f4984ffd340c1167cb51411a5e:prisma/sql/2026-10-29-conta-unica.sql:curl-auth-header:97
+970d8eeb80533a886a3e9d50be7a1f4f7cd0ffe4:.env.example:generic-api-key:13
+970d8eeb80533a886a3e9d50be7a1f4f7cd0ffe4:.env.example:generic-api-key:14
+970d8eeb80533a886a3e9d50be7a1f4f7cd0ffe4:.env.example:generic-api-key:64
+8dc0e64adeebed917f3db675a3d91603d159489b:src/app/(admin)/admin/conteudo/page.tsx:generic-api-key:55
+8dc0e64adeebed917f3db675a3d91603d159489b:src/app/(admin)/admin/conteudo/page.tsx:generic-api-key:58
+8dc0e64adeebed917f3db675a3d91603d159489b:src/app/(admin)/admin/conteudo/page.tsx:generic-api-key:61

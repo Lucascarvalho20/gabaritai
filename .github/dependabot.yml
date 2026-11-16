@@ -1,0 +1,34 @@
+# Atualização de dependências: o Dependabot abre um pull request por semana
+# contra homologacao; o CI testa sozinho e, se ficar verde, é só aceitar.
+# Versões maiores de Next/React ficam de fora: a migração para o Next 15+ é
+# um projeto próprio (ver scripts/ci/auditoria-excecoes.json).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: homologacao
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    groups:
+      correcoes-e-melhorias:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: eslint-config-next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+
+  # As ações do GitHub também são dependências (e estão fixadas por commit).
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: homologacao
+    schedule:
+      interval: monthly

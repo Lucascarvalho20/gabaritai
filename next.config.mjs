@@ -23,11 +23,12 @@ const csp = [
 
 const nextConfig = {
   reactStrictMode: true,
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' }
-    ]
-  },
+  // Nenhuma tela usa next/image. Com o otimizador ligado e `hostname: '**'`,
+  // /_next/image buscava e processava imagem de QUALQUER site: proxy aberto,
+  // consumo da cota de imagens da Vercel por terceiros e justamente a porta
+  // das falhas críticas do otimizador que o Next 14 não corrige mais
+  // (GHSA-2xp9-vwfh-vxw4, GHSA-2464-fhr4-w9xw). Desligado, a porta fecha.
+  images: { unoptimized: true },
   async headers() {
     return [
       {
