@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
     'EMAIL_FROM',
     'RESEND_API_KEY',
     'CRON_TOKEN',
+    // A Vercel só manda a senha para as tarefas agendadas com este nome.
+    'CRON_SECRET',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
     'OPENAI_API_KEY',
