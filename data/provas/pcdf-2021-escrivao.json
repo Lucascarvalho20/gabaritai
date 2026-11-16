@@ -51,7 +51,7 @@
   {
    "codigo": "T6",
    "titulo": "Texto-base dos itens 74 a 76",
-   "conteudo": "```linhas\n1|  Odete filmou Januário, empresário famoso, em conversa\n2|com um político. Segundo Odete, no encontro filmado, Januário\n3|estaria oferecendo dinheiro ao político local em troca de\n4|vantagens indevidas em determinado processo licitatório.\n5|Sete dias após o ocorrido, ela veiculou o vídeo em suas mídias\n6|sociais. O vídeo alcançou alta projeção nos noticiários. Diante da\n7|repercussão, o político negou a propina e Januário apresentou-se\n8|espontaneamente em uma delegacia, acompanhado de seu\n9|advogado, para prestar esclarecimentos.\n```",
+   "conteudo": "Odete filmou Januário, empresário famoso, em conversa com um político. Segundo Odete, no encontro filmado, Januário estaria oferecendo dinheiro ao político local em troca de vantagens indevidas em determinado processo licitatório. Sete dias após o ocorrido, ela veiculou o vídeo em suas mídias sociais. O vídeo alcançou alta projeção nos noticiários. Diante da repercussão, o político negou a propina e Januário apresentou-se espontaneamente em uma delegacia, acompanhado de seu advogado, para prestar esclarecimentos.",
    "pagina": 10
   }
  ],
@@ -1482,7 +1482,7 @@
    "numero": 111,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual p de questões da prova objetiva pela função\n\n□(p)=− +1 0 p. Com base nessas informações, julgue os itens que se seguem.",
+   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P)=− +1 0 P. Com base nessas informações, julgue os itens que se seguem.",
    "enunciado": "De acordo com o modelo estabelecido, a quantidade de candidatos que acertará 80% das questões da prova objetiva é igual ao número de vagas oferecidas.",
    "gabarito": null,
    "anulada": true,
@@ -1494,7 +1494,7 @@
    "numero": 112,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual p de questões da prova objetiva pela função\n\n□(p)=− +1 0 p. Com base nessas informações, julgue os itens que se seguem.",
+   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P)=− +1 0 P. Com base nessas informações, julgue os itens que se seguem.",
    "enunciado": "Considerando-se apenas os candidatos que compareceram à prova objetiva, verifica-se que a concorrência do concurso foi superior a 20 candidatos por vaga.",
    "gabarito": "E",
    "anulada": false,
@@ -1526,7 +1526,7 @@
    "figura": false,
    "formula": true,
    "pagina": 14,
-   "explicacao": "Justificativa oficial da banca: ERRADO. O valor de cada aposta segue uma PA com a =2 e razão r=2. Logo na décima aposta o jogador apostou a = 2+2×9=R $ 2 0, recebendo R$ 200. Com as 10 apostas, o jogador gastou a soma dos 10 primeiros termos da PA □ ="
+   "explicacao": "Justificativa oficial da banca: ERRADO. O valor de cada aposta segue uma PA com a =2 e razão r=2. Logo na décima aposta o jogador apostou a = 2+2×9=R $ 2 0, recebendo R$ 200. Com as 10 apostas, o jogador gastou a soma dos 10 primeiros termos da PA S ="
   },
   {
    "numero": 115,
@@ -1546,32 +1546,30 @@
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
    "comando": "= R$ 110. Logo, o ganho líquido foi de R$ 90. Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
-   "enunciado": "A proposição [p ∧ q] → [p V (~q)], em que (~q) denota a negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa.",
+   "enunciado": "A proposição [p ∧ q] → [p V (~q)], em que (~q) denota a",
    "gabarito": "E",
    "anulada": false,
    "figura": false,
    "formula": false,
-   "pagina": 14,
-   "explicacao": "Justificativa oficial da banca: ERRADO. A tabela verdade a seguir mostra que, independentemente do valor das proposições, o resultado será sempre verdadeiro."
+   "pagina": 14
   },
   {
    "numero": 117,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "= R$ 110. Logo, o ganho líquido foi de R$ 90. Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
-   "enunciado": "A negação da proposição “Todos são iguais perante a lei” é “Todos são diferentes perante a lei”.",
+   "comando": "negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa. JUSTIFICATIVA - ERRADO. A tabela verdade a seguir mostra que, independentemente do valor das proposições, o resultado será sempre verdadeiro.",
+   "enunciado": "A negação da proposição “Todos são iguais perante a lei” é",
    "gabarito": "E",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": false,
-   "pagina": 14,
-   "explicacao": "Justificativa oficial da banca: ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”."
+   "pagina": 14
   },
   {
    "numero": 118,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "Seis pessoas devem se reunir em uma mesa redonda, mas duas delas não podem se sentar uma ao lado da outra. Nessa situação, a quantidade de maneiras distintas de essas seis pessoas sentarem em torno dessa mesa é superior a 400.",
    "gabarito": "C",
    "anulada": false,
@@ -1584,7 +1582,7 @@
    "numero": 119,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "No processo de investigação de um crime, os suspeitos foram separados em três grupos, conforme mostra a tabela a seguir. Os grupos A e C têm elemento em comum e todos os indivíduos do grupo B também estão no grupo C. Nessa situação, é correto concluir que A e B têm algum elemento em comum.",
    "gabarito": "E",
    "anulada": false,
@@ -1597,7 +1595,7 @@
    "numero": 120,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "Um foragido da justiça, que gostava de se exibir perante seus comparsas e conhecia um pouco de matemática, ligou para a polícia e passou as seguintes informações: “em 30 minutos, eu estarei na rua Alfa, em uma casa, do lado direito da rua, cujo número tem as seguintes características: é inferior a 1.000, o algarismo das centenas é igual ao número de diagonais de um retângulo e, além disso, a parte do número formada só pelos algarismos das dezenas e das unidades é múltiplo de 7”. Uma viatura foi deslocada para o intervalo de casas da rua Alfa correspondente ao algarismo das centenas revelado. Lá chegando, os policiais verificaram que, nesse trecho da rua Alfa, os números das casas tinham as seguintes características: os algarismos das dezenas e das unidades começavam de 01 e de uma casa para a próxima eram acrescentadas 8 unidades. Nessa situação, o número da casa informado pelo foragido é inferior a 250.",
    "gabarito": "C",
    "anulada": false,

@@ -840,7 +840,7 @@
    "enunciado": "O control flow flattening implementado no firmware pode ser eficientemente revertido por meio de técnicas de análise estática de descompiladores que utilizam algoritmos de reconhecimento de padrões baseados em grafos de fluxo de controle, restaurando o fluxo de execução original sem a necessidade de taint analysis ou execução simbólica.",
    "gabarito": "E",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": false,
    "pagina": 1
   },
@@ -852,7 +852,7 @@
    "enunciado": "A utilização de uma ISA extension customizada requer que o descompilador possua um processador específico (ou uma extensão) que compreenda as novas instruções; desse modo, deve-se criar ou adaptar o processador do descompilador, para evitar que a descompilação resulte em pseudocódigo incoerente ou em erros na interpretação de blocos inteiros.",
    "gabarito": "C",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": false,
    "pagina": 1
   },
@@ -1233,7 +1233,7 @@
    "materia": "Informática Forense",
    "texto": null,
    "comando": "No que diz respeito ao sistema operacional Linux, julgue os seguintes itens.",
-   "enunciado": "Considere que a sequência de comandos a seguir tenha sido executada no Linux por certo usuário com permissão de root no arquivo em comento. touch testepf chmod 664 testepf chmod o+x testepf Nesse caso, é correto afirmar que o arquivo testepf terá as permissões -rwx-rw-r-- se o comando ls –la testepf for executado.",
+   "enunciado": "Considere que a sequência de comandos a seguir tenha sido executada no Linux por certo usuário com permissão de root no arquivo em comento. touch testepf chmod 664 testepf chmod o+x testepf Nesse caso, é correto afirmar que o arquivo testepf terá as permissões-rwx-rw-r-- se o comando ls –la testepf for executado.",
    "gabarito": "E",
    "anulada": false,
    "figura": false,

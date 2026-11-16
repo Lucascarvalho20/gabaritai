@@ -580,7 +580,7 @@
    "enunciado": "A correlação linear de Pearson entre a variável resposta Y e a variável regressora X é igual a 0,75.",
    "gabarito": "C",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": false,
    "pagina": 4
   },
@@ -592,7 +592,7 @@
    "enunciado": "A estimativa da variância σ é superior a 0,5.",
    "gabarito": "E",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": true,
    "pagina": 4
   },
@@ -604,7 +604,7 @@
    "enunciado": "A estimativa do coeficiente angular b, pelo método de mínimos quadrados ordinários, é igual a 0,25.",
    "gabarito": "C",
    "anulada": false,
-   "figura": false,
+   "figura": true,
    "formula": false,
    "pagina": 4
   },
