@@ -20,7 +20,7 @@
  "textos": [
   {
    "codigo": "T1",
-   "titulo": "Texto 1",
+   "titulo": "Texto-base dos itens 1 a 5",
    "conteudo": "```linhas\n1|  Popularmente conhecidos como seios aéreos faciais,\n2|os seios paranasais começam a se desenvolver precocemente na\n3|vida fetal. As funções desses seios não são totalmente\n4|compreendidas, mas a grande maioria da literatura anatômica\n5|sugere que eles aliviam o crânio e adicionam ressonância à voz.\n6|  Entre os principais seios do crânio humano\n7|destacam-se os seios maxilar, frontal, esfenoidal e etmoidal.\n8|Um considerável interesse na identificação forense de\n9|indivíduos tem-se voltado para o estudo do seio frontal.\n10|O estudo comparativo de imagens do seio frontal tem valor\n11|significativo para o estabelecimento da identificação do\n12|indivíduo sob exame.\n13|  Como as impressões digitais, os padrões dos seios\n14|frontais são únicos para uma pessoa. A identificação\n15|comparativa de radiografias do seio frontal é muito segura\n16|porque não há duas pessoas com a mesma configuração de seio\n17|frontal. Além das radiografias de projeção tradicional normal,\n18|a tomografia computadorizada do seio frontal também tem sido\n19|usada para essa identificação.\n20|  À semelhança do que ocorre com a identificação de\n21|indivíduos por meio de suas impressões digitais, a identificação\n22|a partir do estudo dos seios frontais pode inviabilizar-se em\n23|algumas situações. Há casos, por exemplo, de indivíduos\n24|adultos em que essas cavidades não se formam. Além disso, os\n25|seios frontais podem ser afetados por traumas e por patologias\n26|agudas ou crônicas, como inflamações, displasias endócrinas\n27|e osteíte.\n```",
    "pagina": 1
   },
@@ -32,7 +32,7 @@
   },
   {
    "codigo": "T2",
-   "titulo": "Texto 2",
+   "titulo": "Texto-base dos itens 44 a 47",
    "conteudo": "O intervalo de tempo entre a morte de uma vítima até que ela seja encontrada (y em horas) denomina-se intervalo post mortem. Um grupo de pesquisadores mostrou que esse tempo se relaciona com a concentração molar de potássio encontrada na vítima (x, em mmol/dm ). Esses pesquisadores consideraram um modelo de regressão linear simples na forma y = ax + b + ε, em que a representa o coeficiente angular, b denomina-se intercepto, e ε denota um erro aleatório que segue distribuição normal com média zero e desvio padrão igual a 4. As estimativas dos coeficientes a e b, obtidas pelo método dos mínimos quadrados ordinários foram, respectivamente, iguais a 2,5 e 10. O tamanho da amostra para a obtenção desses resultados foi n = 101. A média amostral e o desvio padrão amostral da variável x for am , respectivamente, iguais a 9 mmol/dm e 1,6 mmol/dm e o desvio",
    "pagina": 4
   }

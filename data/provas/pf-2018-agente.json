@@ -20,7 +20,7 @@
  "textos": [
   {
    "codigo": "T1",
-   "titulo": "Texto 1",
+   "titulo": "Texto-base dos itens 1 a 8",
    "conteudo": "```linhas\n1|  Imagine uma operação de busca na selva. Sem mapas,\n2|binóculos ou apoio logístico; somente com um facão. Assim\n3|eram feitas as operações de combate à pornografia infantil\n4|pela Polícia Federal até o dia em que peritos criminais\n5|federais desenvolveram, no estado de Mato Grosso do Sul,\n6|o Nudetective.\n7|  O programa executa em minutos uma busca que\n8|poderia levar meses, encontrando todo o conteúdo\n9|pornográfico de pedofilia em computadores, pendrives,\n10|smartphones e demais mídias de armazenamento.\n11|  Para ajudar o trabalho dos peritos, existem programas\n12|que buscam os arquivos de imagem e vídeo através de sua hash\n13|ou sua assinatura digital. Logo nos primeiros testes, a detecção\n14|de imagens apresentou mais de 90% de acerto.\n15|  Para o teste, pegaram um HD com conteúdo já\n16|periciado e rodaram o programa. Conseguiram 95% de acerto\n17|em 12 minutos. Seu diferencial era não só buscar pela\n18|assinatura digital ou nomes conhecidos, mas também por novos\n19|arquivos por intermédio da leitura dos pixels presentes\n20|na imagem calibrados a uma paleta de tons de pele.\n21|Começava a revolução em termos de investigação criminal\n22|de pornografia infantil.\n23|  Além da detecção de imagens e vídeos, todo o\n24|processo de busca e obtenção de resultados é simultâneo, o que\n25|economiza tempo e dinheiro.\n26|  A licença de uso do software, que é programado em\n27|Java, é gratuita e só é disponibilizada para forças da lei e\n28|pesquisas acadêmicas. Segundo seus desenvolvedores, nunca\n29|houve o intuito de venda, pois não enxergam sentido em lucrar\n30|com algo que seja para salvar crianças. Mas, então, por que não\n31|deixá-lo disponível para todos? Somente para que não possa\n32|ser utilizado para criar formas de burlá-lo, explicam.\n33|  Desde seu lançamento, o Nudetective já foi\n34|compartilhado com Argentina, Paraguai, Suécia, Áustria,\n35|Noruega, Nova Zelândia e Portugal. Ganhou reconhecimento\n36|e premiações em congressos forenses no Brasil e no mundo.\n```",
    "pagina": 1
   },
@@ -32,13 +32,13 @@
   },
   {
    "codigo": "T2",
-   "titulo": "Texto 2",
+   "titulo": "Texto-base dos itens 45 a 47",
    "conteudo": "Um pesquisador estudou a relação entre a taxa de criminalidade (Y) e a taxa de desocupação da população economicamente ativa (X) em determinada região do país. Esse pesquisador aplicou um modelo de regressão linear simples na forma Y = bX + a + ε, em que b representa o coeficiente angular, a é o intercepto do modelo e ε denota o erro aleatório com média zero e variância σ . A tabela a seguir representa a análise de variância (ANOVA) proporcionada por esse modelo. fonte de variação graus de liberdade soma de quadrados modelo 1 225 erro 899 175 total 900 400",
    "pagina": 4
   },
   {
    "codigo": "T3",
-   "titulo": "Texto 3",
+   "titulo": "Texto-base dos itens 115 a 117",
    "conteudo": "Considere os dados da tabela a seguir, retidos da contabilidade de determinada sociedade empresarial, com valores em reais (R$). caixa e equivalentes 10.000 duplicatas a receber 80.000 estoques 50.000 máquinas 100.000 terrenos 160.000 marcas e patentes 100.000 fornecedores 200.000 duplicatas descontadas 40.000 salários e encargos a pagar 200.000 capital social 150.000 vendas de mercadorias 1.000.000 custo das mercadorias vendidas 600.000 despesas administrativas 90.000 despesas comerciais 160.000 despesas financeiras 33.000 outras despesas 41.000 IR e CSLL 26.000",
    "pagina": 9
   }
@@ -565,7 +565,7 @@
    "materia": "Estatística",
    "texto": null,
    "comando": "Determinado órgão governamental estimou que a probabilidade p de um ex-condenado voltar a ser condenado por algum crime no prazo de 5 anos, contados a partir da data da libertação, seja igual a 0,25. Essa estimativa foi obtida com base em um levantamento por amostragem aleatória simples de 1.875 processos judiciais, aplicando-se o método da máxima verossimilhança a partir da distribuição de Bernoulli. Sabendo que P(Z < 2) = 0,975, em que Z representa a distribuição normal padrão, julgue os itens que se seguem, em relação a essa situação hipotética.",
-   "enunciado": "Se X seguir uma distribuição binomial com parâmetros\n```\nn = 1.000 e probabilidade de sucesso p, a estimativa de\n```\nmáxima verossimilhança da média de X será superior a 300.",
+   "enunciado": "Se X seguir uma distribuição binomial com parâmetros n = 1.000 e probabilidade de sucesso p, a estimativa de máxima verossimilhança da média de X será superior a 300.",
    "gabarito": "E",
    "anulada": false,
    "figura": false,

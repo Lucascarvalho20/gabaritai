@@ -57,4 +57,26 @@ describe('problemasDaProva', () => {
     p.fonte.aviso = ''
     assert.match(problemasDaProva(p).join(), /fonte/)
   })
+
+  test('múltipla escolha exige as alternativas certas, com texto; certo/errado não tem', () => {
+    const p = base()
+    p.formato = 'ME_5'
+    p.itens[0].gabarito = 'B'
+    p.itens[0].alternativas = ['A', 'B', 'C', 'D', 'E'].map((letra) => ({ letra, texto: `opção ${letra}` }))
+    p.itens[1].alternativas = ['A', 'B', 'C', 'D'].map((letra) => ({ letra, texto: 'x' }))
+    assert.match(problemasDaProva(p).join(), /item 2: alternativas ABCD \(esperado ABCDE\)/)
+    p.itens[1].alternativas = ['A', 'B', 'C', 'D', 'E'].map((letra) => ({ letra, texto: letra === 'C' ? ' ' : 'x' }))
+    assert.match(problemasDaProva(p).join(), /item 2: alternativa sem texto/)
+    const ce = base()
+    ce.itens[0].alternativas = [{ letra: 'C', texto: 'Certo' }]
+    assert.match(problemasDaProva(ce).join(), /certo\/errado não tem alternativas/)
+  })
+
+  test('slug de matéria precisa ser um slug', () => {
+    const p = base()
+    p.materiasSlug = { M: 'Legislação de Trânsito' }
+    assert.match(problemasDaProva(p).join(), /materiasSlug inválido/)
+    p.materiasSlug = { M: 'legislacao-transito' }
+    assert.deepEqual(problemasDaProva(p), [])
+  })
 })

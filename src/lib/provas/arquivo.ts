@@ -20,6 +20,12 @@ export type ProvaArquivo = {
   incluiaDiscursiva: boolean
   aplicadaEm: string | null
   fonte: { pagina: string; caderno: string; gabarito: string; aviso: string }
+  /**
+   * Matéria do arquivo -> slug da matéria do curso no banco, quando o nome não
+   * bate ("Legislação de Trânsito" é `legislacao-transito` na PRF). Sem isso o
+   * item cairia numa matéria nova, fora do banco de questões do aluno do curso.
+   */
+  materiasSlug?: Record<string, string>
   textos: Array<{ codigo: string; titulo: string; conteudo: string; pagina?: number }>
   itens: Array<{
     numero: number
@@ -32,6 +38,8 @@ export type ProvaArquivo = {
     figura: boolean
     formula: boolean
     pagina: number | null
+    /** Só na múltipla escolha: o texto de cada alternativa. */
+    alternativas?: Array<{ letra: string; texto: string }>
   }>
 }
 
@@ -53,8 +61,13 @@ export function problemasDaProva(p: ProvaArquivo): string[] {
   if (!p.fonte?.caderno || !p.fonte?.gabarito || !p.fonte?.aviso) erros.push('fonte incompleta: a banca exige citar a fonte')
   if (!Array.isArray(p.itens) || p.itens.length === 0) return [...erros, 'sem itens']
 
+  for (const [nome, slug] of Object.entries(p.materiasSlug ?? {})) {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) erros.push(`materiasSlug inválido para ${nome}: ${slug}`)
+  }
+
   const codigos = new Set((p.textos ?? []).map((t) => t.codigo))
   const validas = RESPOSTAS[p.formato] ?? []
+  const multipla = p.formato !== 'CE'
   p.itens.forEach((i, idx) => {
     if (i.numero !== idx + 1) erros.push(`numeração quebrada: posição ${idx + 1} tem o item ${i.numero}`)
     if (!i.materia) erros.push(`item ${i.numero} sem matéria`)
@@ -62,6 +75,13 @@ export function problemasDaProva(p: ProvaArquivo): string[] {
     if (i.anulada && i.gabarito) erros.push(`item ${i.numero} anulado com gabarito`)
     if (!i.anulada && !validas.includes(i.gabarito ?? '')) erros.push(`item ${i.numero} com gabarito inválido: ${i.gabarito}`)
     if (i.texto && !codigos.has(i.texto)) erros.push(`item ${i.numero} cita texto ${i.texto}, que não existe`)
+    if (multipla) {
+      const letras = (i.alternativas ?? []).map((a) => a.letra).join('')
+      if (letras !== validas.join('')) erros.push(`item ${i.numero}: alternativas ${letras || 'ausentes'} (esperado ${validas.join('')})`)
+      else if (i.alternativas!.some((a) => !a.texto?.trim())) erros.push(`item ${i.numero}: alternativa sem texto`)
+    } else if (i.alternativas) {
+      erros.push(`item ${i.numero}: certo/errado não tem alternativas`)
+    }
   })
   return erros
 }

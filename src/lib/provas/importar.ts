@@ -38,19 +38,23 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
   const banca = await prisma.banca.findUnique({ where: { slug: arq.banca }, select: { id: true } })
 
   // Matérias pelo nome; a que não existir é criada (ex.: Química, na prova de Papiloscopista).
+  // O slug indicado no arquivo (materiasSlug) vence: é a matéria do curso.
   const nomes = [...new Set(arq.itens.map((i) => i.materia))]
+  const slugDe = (nome: string) => arq.materiasSlug?.[nome] ?? null
   const achadas = await prisma.subject.findMany({
-    where: { OR: [{ name: { in: nomes } }, { slug: { in: nomes.map(slugify) } }] },
+    where: { OR: [{ name: { in: nomes } }, { slug: { in: nomes.map((n) => slugDe(n) ?? slugify(n)) } }] },
     select: { id: true, name: true, slug: true },
   })
   const materiaId = new Map<string, string>()
   for (const nome of nomes) {
-    const s = achadas.find((x) => x.name === nome) ?? achadas.find((x) => x.slug === slugify(nome))
+    const s = slugDe(nome)
+      ? achadas.find((x) => x.slug === slugDe(nome))
+      : achadas.find((x) => x.name === nome) ?? achadas.find((x) => x.slug === slugify(nome))
     if (s) materiaId.set(nome, s.id)
   }
   const criadas: string[] = []
   for (const nome of nomes.filter((n) => !materiaId.has(n))) {
-    const s = await prisma.subject.create({ data: { name: nome, slug: slugify(nome) } })
+    const s = await prisma.subject.create({ data: { name: nome, slug: slugDe(nome) ?? slugify(nome) } })
     materiaId.set(nome, s.id)
     criadas.push(nome)
   }
@@ -89,11 +93,11 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
   }
   await prisma.provaTexto.deleteMany({ where: { provaId: prova.id, codigo: { notIn: arq.textos.map((t) => t.codigo) } } })
 
-  const alternativas = JSON.stringify(alternativasDoFormato(arq.formato))
+  const padrao = alternativasDoFormato(arq.formato)
   const ids = arq.itens.map((i) => idDoItem(arq.slug, i.numero))
   const linhas = arq.itens.map((i, k) => Prisma.sql`(
     ${ids[k]}, ${prova.id}, ${materiaId.get(i.materia)!}, ${arq.banca}, ${arq.orgao}, ${arq.ano}, ${i.numero},
-    'MEDIUM'::"Difficulty", 'OFFICIAL'::"QuestionSource", ${i.enunciado}, ${alternativas}::jsonb,
+    'MEDIUM'::"Difficulty", 'OFFICIAL'::"QuestionSource", ${i.enunciado}, ${JSON.stringify(i.alternativas ?? padrao)}::jsonb,
     ${i.gabarito ?? ''}, ${i.gabarito}, ${i.anulada}, '', ${[`prova:${arq.slug}`]}::text[], true,
     ${i.comando}, ${i.texto ? textoId.get(i.texto) ?? null : null}, ${i.figura}, ${i.formula}, ${i.pagina}
   )`)

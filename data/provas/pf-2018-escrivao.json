@@ -20,7 +20,7 @@
  "textos": [
   {
    "codigo": "T1",
-   "titulo": "Texto 1",
+   "titulo": "Texto-base dos itens 1 a 12",
    "conteudo": "```linhas\n1|  Como se pode imaginar, não foi o latim clássico,\n2|dos grandes escritores romanos e latinos e falado pelas\n3|classes romanas mais abastadas, que penetrou na Península\n4|Ibérica e nos demais espaços conquistados pelo Império\n5|Romano. Foi o latim popular, falado pelas tropas invasoras,\n6|que fez esse papel. Essa variante vulgar sobrepôs-se\n7|às línguas dos povos dominados e com elas caldeou-se, dando\n8|origem aos dialetos que viriam a se chamar genericamente\n9|de romanços ou romances (do latim romanice, isto é,\n10|à moda dos romanos).\n11|  No século Vd.C., o Império Romano ruiu e os\n12|romanços passaram a diferenciar-se cada vez mais,\n13|dando origem às chamadas línguas neolatinas ou românicas:\n14|francês, provençal, espanhol, português, catalão, romeno,\n15|rético, sardo etc.\n16|  Séculos mais tarde, Portugal fundou-se como nação,\n17|ao mesmo tempo em que o português ganhou seu estatuto\n18|de língua, da seguinte forma: enquanto Portugal estabelecia\n19|as suas fronteiras no século XIII, o galego-português\n20|patenteava-se em forma literária.\n21|  Cerca de três séculos depois, Portugal lançou-se\n22|em uma expansão de conquistas que, à imagem do que\n23|Roma fizera, levou a língua portuguesa a remotas regiões:\n24|Guiné-Bissau, Angola, Moçambique, Cingapura, Índia\n25|e Brasil, para citar uns poucos exemplos em três continentes.\n26|  Muito mais tarde, essas colônias tornaram-se\n27|independentes — o Brasil no século XIX, as demais\n28|no século XX —, mas a língua de comunicação foi mantida\n29|e é hoje oficial em oito nações independentes: Brasil,\n30|Portugal, Angola, Moçambique, Cabo Verde, Guiné-Bissau,\n31|São Tomé e Príncipe e Timor-Leste.\n```",
    "pagina": 1
   },
@@ -32,7 +32,7 @@
   },
   {
    "codigo": "T2",
-   "titulo": "Texto 2",
+   "titulo": "Texto-base dos itens 41 a 44",
    "conteudo": "Uma pesquisa realizada com passageiros estrangeiros que se encontravam em determinado aeroporto durante um grande evento esportivo no país teve como finalidade investigar a sensação de segurança nos voos internacionais. Foram entrevistados 1.000 passageiros, alocando-se a amostra de acordo com o continente de origem de cada um — África, América do Norte (AN), América do Sul (AS), Ásia/Oceania (A/O) ou Europa. Na tabela seguinte, N é o tamanho populacional de passageiros em voos internacionais no período de interesse da pesquisa; né o tamanho da amostra por origem; P é o percentual dos passageiros entrevistados que se manifestaram satisfeitos no que se refere à sensação de segurança. origem NnP África 100.000 100 80 AN 300.000 300 70 AS 100.000 100 90 A/O 300.000 300 80 Europa 200.000 200 80 total 1.000.000 1.000 P Em cada grupo de origem, os passageiros entrevistados foram selecionados por amostragem aleatória simples. A última linha da tabela mostra o total populacional no período da pesquisa, o tamanho total da amostra e P representa o percentual",
    "pagina": 4
   }
