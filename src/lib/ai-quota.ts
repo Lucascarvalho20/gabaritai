@@ -10,6 +10,7 @@
  *   - resumo_ia:     20 / dia
  *   - mentor_chat:   50 mensagens / dia
  *   - mapa_mental:   5 / dia
+ *   - explicacao_ia: 30 / dia (só conta quando gera; explicação em cache é grátis)
  *
  * Aluno hasFullAccess + admin: limites 10x maiores (testes).
  */
@@ -25,6 +26,7 @@ export type QuotaKind =
   | 'resumo_ia'
   | 'mentor_chat'
   | 'mapa_mental'
+  | 'explicacao_ia'
 
 const DEFAULT_LIMITS: Record<QuotaKind, { value: number; period: 'day' | 'week' }> = {
   simulado_ia:   { value: 5,  period: 'day' },
@@ -35,6 +37,7 @@ const DEFAULT_LIMITS: Record<QuotaKind, { value: number; period: 'day' | 'week' 
   resumo_ia:     { value: 20, period: 'day' },
   mentor_chat:   { value: 50, period: 'day' },
   mapa_mental:   { value: 5,  period: 'day' },
+  explicacao_ia: { value: 30, period: 'day' },
 }
 
 function getLimit(kind: QuotaKind, hasFullAccess: boolean): { value: number; period: 'day' | 'week' } {
@@ -108,6 +111,24 @@ export async function incrementQuota(opts: {
     update: { count: { increment: 1 } },
     create: { userId: opts.userId, date: today, kind: opts.kind, count: 1 },
   })
+}
+
+/**
+ * Só confere: lança o mesmo erro 429 do consumeQuota, sem gastar a cota. Para
+ * quando o gasto só deve contar se a geração der certo.
+ */
+export async function garantirCota(opts: { userId: string; kind: QuotaKind; hasFullAccess?: boolean }) {
+  const check = await checkQuota(opts)
+  if (!check.allowed) {
+    const err: any = new Error(
+      `Limite ${check.period === 'day' ? 'diário' : 'semanal'} atingido (${check.used}/${check.limit}). Reseta em ${check.resetsAt.toLocaleString('pt-BR')}.`,
+    )
+    err.code = 'QUOTA_EXCEEDED'
+    err.status = 429
+    err.quota = check
+    throw err
+  }
+  return check
 }
 
 /**

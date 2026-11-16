@@ -143,6 +143,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout } = useAuthStore()
+  // O usuário vem do localStorage, que o servidor não enxerga. Mostrar o bloco
+  // do usuário já na 1ª renderização fazia o HTML do servidor e o do navegador
+  // diferirem: a hidratação falhava e o React redesenhava a página inteira a
+  // cada carregamento do painel. Agora ele aparece logo depois de montar.
+  const [montado, setMontado] = useState(false)
+  useEffect(() => setMontado(true), [])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifs, setNotifs] = useState<Notif[]>([])
@@ -209,7 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Logo size="md" />
       </div>
 
-      {user && (
+      {montado && user && (
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0">

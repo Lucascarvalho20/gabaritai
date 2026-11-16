@@ -1,6 +1,9 @@
 {
   "version": 2,
   "framework": "nextjs",
+  "regions": [
+    "pdx1"
+  ],
   "crons": [
     {
       "path": "/api/cron/sync",

@@ -1,105 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { lerCursor, montarCursor, type Situacao } from '@/lib/questoes-lista'
 
-// GET /api/me/questoes
-// Filtros: subjectId, subjectSlug, bancaSlug, ano, source (OFFICIAL|AI_GENERATED), difficulty, courseSlug, q (busca texto)
-// Paginação cursor.
-//
-// Por padrão exclui questões anuladas e inativas.
+export const dynamic = 'force-dynamic'
+
+/**
+ * GET /api/me/questoes
+ *
+ * Filtros: courseSlug, subjectId|subjectSlug, topicId, provaId, bancaSlug, ano,
+ * source, difficulty, q (busca no enunciado) e `situacao`:
+ *  - `nao-feitas`: só as que o aluno nunca respondeu (a aba Questões usa esta);
+ *  - `erradas`: errou e ainda não acertou;
+ *  - `todas` (padrão).
+ *
+ * Paginação por cursor de chave (createdAt, id), não por "pula N": com
+ * `nao-feitas` o conjunto encolhe a cada resposta, e um cursor de posição
+ * pularia questão ainda não vista. Sem curso nem matéria escolhidos, fica nas
+ * matérias dos cursos em que o aluno está matriculado — era o que a opção
+ * "Todos meus cursos" prometia e a rota ignorava.
+ */
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
-  const { searchParams } = new URL(req.url)
-  const subjectId = searchParams.get('subjectId') ?? undefined
-  const subjectSlug = searchParams.get('subjectSlug') ?? undefined
-  const bancaSlug = searchParams.get('bancaSlug') ?? undefined
-  const ano = searchParams.get('ano') ? parseInt(searchParams.get('ano')!, 10) : undefined
-  const source = searchParams.get('source') as 'OFFICIAL' | 'AI_GENERATED' | 'ADAPTED' | null
-  const difficulty = searchParams.get('difficulty') as 'EASY' | 'MEDIUM' | 'HARD' | null
-  const courseSlug = searchParams.get('courseSlug') ?? undefined
-  const q = searchParams.get('q') ?? undefined
-  const onlyUnanswered = searchParams.get('onlyUnanswered') === 'true'
-  const onlyWrong = searchParams.get('onlyWrong') === 'true'
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '30', 10), 100)
-  const cursor = searchParams.get('cursor') ?? undefined
+  const sp = new URL(req.url).searchParams
+  const texto = (k: string) => sp.get(k)?.trim() || undefined
+  const subjectSlug = texto('subjectSlug')
+  const courseSlug = texto('courseSlug')
+  const topicId = texto('topicId')
+  const provaId = texto('provaId')
+  const bancaSlug = texto('bancaSlug')
+  const q = texto('q')
+  const ano = Number.parseInt(sp.get('ano') ?? '', 10) || undefined
+  const source = ['OFFICIAL', 'AI_GENERATED', 'ADAPTED'].includes(sp.get('source') ?? '') ? (sp.get('source') as 'OFFICIAL' | 'AI_GENERATED' | 'ADAPTED') : undefined
+  const difficulty = ['EASY', 'MEDIUM', 'HARD'].includes(sp.get('difficulty') ?? '') ? (sp.get('difficulty') as 'EASY' | 'MEDIUM' | 'HARD') : undefined
+  // Os nomes antigos (onlyUnanswered/onlyWrong) continuam valendo.
+  const situacao: Situacao =
+    sp.get('situacao') === 'nao-feitas' || sp.get('onlyUnanswered') === 'true' ? 'nao-feitas'
+      : sp.get('situacao') === 'erradas' || sp.get('onlyWrong') === 'true' ? 'erradas'
+        : 'todas'
+  const limit = Math.min(Math.max(Number.parseInt(sp.get('limit') ?? '30', 10) || 30, 1), 100)
+  const cursor = lerCursor(sp.get('cursor'))
 
-  let resolvedSubjectId = subjectId
-  if (!resolvedSubjectId && subjectSlug) {
-    const s = await prisma.subject.findUnique({ where: { slug: subjectSlug }, select: { id: true } })
-    resolvedSubjectId = s?.id
+  // Escopo de matérias: a escolhida, ou as do curso, ou as dos cursos do aluno.
+  let subjectId = texto('subjectId')
+  if (!subjectId && subjectSlug) {
+    subjectId = (await prisma.subject.findUnique({ where: { slug: subjectSlug }, select: { id: true } }))?.id ?? '__nenhuma__'
   }
-
-  // Se courseSlug informado, limita às matérias do curso
-  let subjectIdsFromCourse: string[] | undefined
-  if (courseSlug) {
-    const cs = await prisma.courseSubject.findMany({
-      where: { course: { slug: courseSlug } },
+  let materiasDoEscopo: string[] | undefined
+  if (!subjectId && !provaId) {
+    const vinculos = await prisma.courseSubject.findMany({
+      where: courseSlug
+        ? { course: { slug: courseSlug } }
+        : { course: { enrollments: { some: { userId: user.id, isActive: true } } } },
       select: { subjectId: true },
+      distinct: ['subjectId'],
     })
-    subjectIdsFromCourse = cs.map((c) => c.subjectId)
+    // Aluno sem matrícula vê o banco todo; curso pedido sem matéria não vê nada.
+    if (vinculos.length > 0 || courseSlug) materiasDoEscopo = vinculos.map((v) => v.subjectId)
   }
 
-  // Filtro de quais já respondi (pra onlyUnanswered/onlyWrong)
-  let answeredQuestionIds: string[] = []
-  let wrongQuestionIds: string[] = []
-  if (onlyUnanswered || onlyWrong) {
-    const attempts = await prisma.questionAttempt.findMany({
-      where: { userId: user.id },
-      select: { questionId: true, correct: true },
-      distinct: ['questionId'],
-    })
-    answeredQuestionIds = attempts.map((a) => a.questionId)
-    wrongQuestionIds = attempts.filter((a) => !a.correct).map((a) => a.questionId)
-  }
-
-  const where: any = {
+  const filtro: any = {
     active: true,
     anulada: false,
-    ...(resolvedSubjectId && { subjectId: resolvedSubjectId }),
-    ...(subjectIdsFromCourse && !resolvedSubjectId && { subjectId: { in: subjectIdsFromCourse } }),
+    ...(subjectId ? { subjectId } : materiasDoEscopo ? { subjectId: { in: materiasDoEscopo } } : {}),
+    ...(topicId && { topicId }),
+    ...(provaId && { provaId }),
     ...(bancaSlug && { bancaSlug }),
     ...(ano && { ano }),
     ...(source && { source }),
     ...(difficulty && { difficulty }),
-    ...(q && {
-      OR: [
-        { enunciado: { contains: q, mode: 'insensitive' } },
-        { tags: { has: q.toLowerCase() } },
-      ],
-    }),
-    ...(onlyUnanswered && answeredQuestionIds.length > 0 && { id: { notIn: answeredQuestionIds } }),
-    ...(onlyWrong && wrongQuestionIds.length > 0 && { id: { in: wrongQuestionIds } }),
   }
+  // Condições compostas vão num AND: o cursor da página usa o OR de cima.
+  const e: any[] = []
+  if (q) e.push({ OR: [{ enunciado: { contains: q, mode: 'insensitive' } }, { tags: { has: q.toLowerCase() } }] })
+  // Viram NOT EXISTS / EXISTS no SQL: nada de carregar o histórico inteiro do
+  // aluno para montar um `id NOT IN (...)` com milhares de ids.
+  if (situacao === 'nao-feitas') e.push({ attempts: { none: { userId: user.id } } })
+  if (situacao === 'erradas') {
+    e.push({ attempts: { some: { userId: user.id, correct: false } } }, { attempts: { none: { userId: user.id, correct: true } } })
+  }
+  if (e.length > 0) filtro.AND = e
 
-  const questions = await prisma.question.findMany({
-    where,
-    select: {
-      id: true,
-      enunciado: true,
-      alternativas: true,
-      gabarito: true,
-      explicacao: true,
-      bancaSlug: true,
-      ano: true,
-      orgao: true,
-      difficulty: true,
-      source: true,
-      tags: true,
-      subject: { select: { id: true, slug: true, name: true } },
-    },
-    take: limit + 1,
-    ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-    orderBy: { createdAt: 'desc' },
+  const pagina = cursor
+    ? { ...filtro, OR: [{ createdAt: { lt: cursor.em } }, { createdAt: cursor.em, id: { gt: cursor.id } }] }
+    : filtro
+
+  // Lista e total não dependem um do outro.
+  const [questions, total] = await Promise.all([
+    prisma.question.findMany({
+      where: pagina,
+      select: {
+        // Gabarito e explicação NÃO vão na lista: chegam só depois de responder
+        // (rota /attempt). Antes iam aqui e ficavam visíveis na aba de rede.
+        id: true,
+        enunciado: true,
+        alternativas: true,
+        bancaSlug: true,
+        ano: true,
+        orgao: true,
+        difficulty: true,
+        source: true,
+        createdAt: true,
+        subject: { select: { id: true, slug: true, name: true } },
+        topic: { select: { id: true, name: true } },
+        prova: { select: { id: true, titulo: true, pdfUrl: true } },
+      },
+      // createdAt empata em lote importado; o id desempata e mantém os itens
+      // de uma mesma prova na ordem da prova.
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: limit + 1,
+    }),
+    prisma.question.count({ where: filtro }),
+  ])
+
+  const temMais = questions.length > limit
+  const dados = temMais ? questions.slice(0, limit) : questions
+  const ultima = dados[dados.length - 1]
+
+  return NextResponse.json({
+    questions: dados.map(({ createdAt, ...resto }) => resto),
+    nextCursor: temMais && ultima ? montarCursor(ultima.createdAt, ultima.id) : null,
+    total,
+    situacao,
   })
-
-  const hasMore = questions.length > limit
-  const data = hasMore ? questions.slice(0, limit) : questions
-  const nextCursor = hasMore ? data[data.length - 1].id : null
-
-  // Total disponível (sem paginação) — cap em 1000 pra não pesar
-  const total = await prisma.question.count({ where })
-
-  return NextResponse.json({ questions: data, nextCursor, total })
 }

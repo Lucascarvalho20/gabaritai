@@ -7,11 +7,15 @@ import { offlineList, syncPending } from '@/lib/offline-cache'
 import toast from 'react-hot-toast'
 
 export function OfflineIndicator() {
-  const [online, setOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  // Começa "online" e lê o estado real depois de montar. Ler navigator.onLine
+  // aqui quebrava a hidratação: desde o Node 21, `navigator` existe também no
+  // servidor, mas sem `onLine` — o servidor desenhava "offline" e o navegador não.
+  const [online, setOnline] = useState(true)
   const [pendingCount, setPendingCount] = useState(0)
   const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
+    setOnline(navigator.onLine)
     const handleOnline = () => {
       setOnline(true)
       // Auto-sync ao reconectar

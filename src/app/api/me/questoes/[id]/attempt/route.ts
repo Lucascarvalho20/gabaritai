@@ -3,6 +3,8 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { canAttemptQuestion } from '@/lib/plan-access'
 import { autoCreateFlashcardFromWrongAnswer } from '@/lib/auto-flashcard'
+import { somarAoDominio } from '@/lib/dominio'
+import { depoisDaResposta } from '@/lib/depois-da-resposta'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,11 @@ export const dynamic = 'force-dynamic'
  * Retorna: { correct: boolean, gabarito: string, attemptId, masteryDelta }
  *  - gabarito só é revelado APÓS persistir (pra impedir cheating no client)
  *  - atualiza UserSubjectMastery automaticamente
+ *
+ * É a rota do clique em "Responder": o aluno espera por ela. Por isso as
+ * consultas independentes vão em paralelo e o domínio por matéria é um único
+ * UPSERT atômico (soma no próprio banco). Antes eram ~11 idas ao banco em
+ * fila; cada uma custava ~65 ms com a função em Washington e o banco no Oregon.
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getUserFromRequest(req)
@@ -29,8 +36,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ message: 'Resposta selecionada é obrigatória' }, { status: 400 })
   }
 
-  // Limite diário do trial (30 questões/dia). Pagantes não têm limite.
-  const limitCheck = await canAttemptQuestion(user.id)
+  // Limite do plano e a questão não dependem um do outro: em paralelo.
+  const [limitCheck, question] = await Promise.all([
+    canAttemptQuestion(user.id), // trial: 30 questões/dia; pagantes sem limite
+    prisma.question.findUnique({
+      where: { id: params.id },
+      select: { id: true, gabarito: true, subjectId: true, active: true, anulada: true, explicacao: true },
+    }),
+  ])
   if (!limitCheck.ok) {
     return NextResponse.json(
       {
@@ -40,14 +53,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       { status: 429 },
     )
   }
-
-  const question = await prisma.question.findUnique({
-    where: { id: params.id },
-    select: {
-      id: true, gabarito: true, subjectId: true, active: true, anulada: true,
-      explicacao: true,
-    },
-  })
   if (!question || !question.active) {
     return NextResponse.json({ message: 'Questão não disponível' }, { status: 404 })
   }
@@ -60,85 +65,41 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const selectedNorm = selected.toUpperCase()
   const correct = gabaritoNorm.length > 0 && selectedNorm === gabaritoNorm
 
-  const attempt = await prisma.questionAttempt.create({
-    data: {
-      userId: user.id,
-      questionId: question.id,
-      selected: selectedNorm,
-      correct,
-      timeMs: timeMs ?? null,
-    },
-    select: { id: true, createdAt: true },
-  })
+  const [attempt, enrollment] = await Promise.all([
+    prisma.questionAttempt.create({
+      data: { userId: user.id, questionId: question.id, selected: selectedNorm, correct, timeMs: timeMs ?? null },
+      select: { id: true },
+    }),
+    // Curso "atual" do aluno que tem a matéria — o domínio é por curso.
+    question.subjectId
+      ? prisma.userCourseEnrollment.findFirst({
+          where: { userId: user.id, isActive: true, course: { courseSubjects: { some: { subjectId: question.subjectId } } } },
+          select: { courseId: true },
+        })
+      : null,
+  ])
 
-  // Atualiza mastery por matéria (somente se a questão tem subjectId)
   let masteryDelta: { old: number; novo: number } | null = null
-  if (question.subjectId) {
-    // Pega curso "atual" do user (qualquer enrollment com a matéria) — pra mastery por curso
-    const enrollment = await prisma.userCourseEnrollment.findFirst({
-      where: {
-        userId: user.id,
-        isActive: true,
-        course: { courseSubjects: { some: { subjectId: question.subjectId } } },
-      },
-      select: { courseId: true },
-    })
-    if (enrollment) {
-      const existing = await prisma.userSubjectMastery.findUnique({
-        where: {
-          userId_courseId_subjectId: {
-            userId: user.id, courseId: enrollment.courseId, subjectId: question.subjectId,
-          },
-        },
-      }).catch(() => null)
-
-      const oldScore = existing?.masteryScore ?? 0
-      const newTotal = (existing?.totalAttempts ?? 0) + 1
-      const newCorrect = (existing?.correctAttempts ?? 0) + (correct ? 1 : 0)
-      const newScore = Math.round((newCorrect / newTotal) * 100)
-
-      await prisma.userSubjectMastery.upsert({
-        where: {
-          userId_courseId_subjectId: {
-            userId: user.id, courseId: enrollment.courseId, subjectId: question.subjectId,
-          },
-        },
-        update: {
-          totalAttempts: newTotal,
-          correctAttempts: newCorrect,
-          masteryScore: newScore,
-          lastAttemptAt: new Date(),
-        },
-        create: {
-          userId: user.id,
-          courseId: enrollment.courseId,
-          subjectId: question.subjectId,
-          totalAttempts: newTotal,
-          correctAttempts: newCorrect,
-          masteryScore: newScore,
-          lastAttemptAt: new Date(),
-        },
-      })
-      masteryDelta = { old: oldScore, novo: newScore }
-
-      // Atualiza lastStudyAt do enrollment
-      await prisma.userCourseEnrollment.updateMany({
+  if (question.subjectId && enrollment) {
+    const [d] = await Promise.all([
+      somarAoDominio({ userId: user.id, courseId: enrollment.courseId, subjectId: question.subjectId, acertou: correct, idNovo: `usm_${attempt.id}` }),
+      prisma.userCourseEnrollment.updateMany({
         where: { userId: user.id, courseId: enrollment.courseId },
         data: { lastStudyAt: new Date() },
-      })
-    }
+      }),
+    ])
+    masteryDelta = { old: d.antes, novo: d.novo }
   }
 
-  // Auto-flashcard ao errar (fire-and-forget — não bloqueia resposta)
-  // Decisão João 2026-05-30: erro = flashcard automático sem perguntar
+  // Auto-flashcard ao errar: chama IA, então roda depois da resposta — o aluno
+  // não espera por ele. Decisão João 2026-05-30: erro = flashcard automático.
   if (!correct) {
-    autoCreateFlashcardFromWrongAnswer({ userId: user.id, questionId: question.id })
-      .then((res) => {
-        if (res.ok && res.created) {
-          console.log(`[auto-flashcard] gerado pra user=${user.id} q=${question.id}`)
-        }
-      })
-      .catch((err) => console.warn('[auto-flashcard] falhou:', err))
+    depoisDaResposta(
+      autoCreateFlashcardFromWrongAnswer({ userId: user.id, questionId: question.id }).then((res) => {
+        if (res.ok && res.created) console.log(`[auto-flashcard] gerado pra user=${user.id} q=${question.id}`)
+      }),
+      'auto-flashcard',
+    )
   }
 
   return NextResponse.json({

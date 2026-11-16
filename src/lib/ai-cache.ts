@@ -47,6 +47,8 @@ export async function generateOrFetchCached<T = any>(opts: {
   maxTokens?: number
   temperature?: number
   parser?: (raw: string) => T
+  /** Roda só quando vai gerar (cache vazio) — ex.: descontar a cota do aluno. */
+  antesDeGerar?: () => Promise<unknown>
 }): Promise<{ content: T; cached: boolean; cacheKey: string }> {
   const cacheKey = buildCacheKey(opts)
 
@@ -63,6 +65,8 @@ export async function generateOrFetchCached<T = any>(opts: {
   }
 
   // Não tem — gera com IA
+  if (opts.antesDeGerar) await opts.antesDeGerar()
+
   const raw = await callAI(opts.prompt, {
     task: opts.aiTask ?? 'generate',
     maxTokens: opts.maxTokens ?? 4000,
