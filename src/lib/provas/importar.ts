@@ -58,6 +58,14 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
     materiaId.set(nome, s.id)
     criadas.push(nome)
   }
+  // Matéria da prova que o curso ainda não tinha (Biologia de Papiloscopista,
+  // Informática Forense de Perito) entra no curso: sem isso os itens ficam fora
+  // do banco de questões e do filtro de matéria do aluno. No fim da lista, e
+  // sem efeito no cronograma, que usa as matérias do edital.
+  await prisma.courseSubject.createMany({
+    data: [...new Set(materiaId.values())].map((subjectId) => ({ courseId: curso.id, subjectId, order: 999 })),
+    skipDuplicates: true,
+  })
 
   const dadosProva = {
     courseId: curso.id,

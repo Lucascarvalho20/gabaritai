@@ -22,6 +22,8 @@ export type ItemTela = {
   formula: boolean
   pagina: number | null
   anulada: boolean
+  /** Caderno do item, quando a prova tem mais de um (senão vale o da prova). */
+  caderno?: string | null
 }
 
 export type TextoTela = { id: string; codigo: string; titulo: string; conteudo: string }
@@ -100,7 +102,8 @@ export function TextoBase({ texto, abertoInicial }: { texto: TextoTela; abertoIn
 }
 
 /** Item com figura ou fórmula: a extração do PDF não reproduz bem — aponta a página oficial. */
-export function AvisoOriginal({ item, caderno }: { item: ItemTela; caderno: string | null }) {
+export function AvisoOriginal({ item, caderno: daProva }: { item: ItemTela; caderno: string | null }) {
+  const caderno = item.caderno ?? daProva
   if (!(item.figura || item.formula) || !caderno) return null
   const href = item.pagina ? `${caderno}#page=${item.pagina}` : caderno
   return (

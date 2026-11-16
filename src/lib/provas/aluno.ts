@@ -14,6 +14,7 @@
 import { prisma } from '../prisma'
 import { hasAccessToCourse } from '../plan-access'
 import { corrigir, materiasEmBranco, normalizarResposta, prioridadesDeRevisao, type DesempenhoMateria } from './correcao'
+import { cadernoDoItem } from './cadernos'
 
 export const TOLERANCIA_MS = 2 * 60_000
 
@@ -54,7 +55,7 @@ const ITEM_SELECT = {
   paginaProva: true, anulada: true, provaTextoId: true, subject: { select: { name: true } },
 } as const
 
-async function itensETextos(provaId: string) {
+async function itensETextos(provaId: string, fonte: unknown) {
   const [itens, textos] = await Promise.all([
     prisma.question.findMany({ where: { provaId, active: true }, orderBy: { numeroQuestao: 'asc' }, select: ITEM_SELECT }),
     prisma.provaTexto.findMany({ where: { provaId }, orderBy: { ordem: 'asc' }, select: { id: true, codigo: true, titulo: true, conteudo: true } }),
@@ -64,7 +65,7 @@ async function itensETextos(provaId: string) {
     itens: itens.map((q) => ({
       id: q.id, numero: q.numeroQuestao, materia: q.subject?.name ?? null, comando: q.comando, enunciado: q.enunciado,
       alternativas: q.alternativas, textoId: q.provaTextoId, figura: q.temFigura, formula: q.temFormula, pagina: q.paginaProva,
-      anulada: q.anulada,
+      anulada: q.anulada, caderno: cadernoDoItem(fonte, q.numeroQuestao),
     })),
   }
 }
@@ -106,7 +107,7 @@ export async function provasDoCurso(userId: string, courseSlug: string) {
 /** Modo leitura: a prova inteira com o gabarito oficial. */
 export async function gabaritoDaProva(userId: string, provaId: string) {
   const prova = await provaComAcesso(userId, provaId)
-  const { textos, itens } = await itensETextos(provaId)
+  const { textos, itens } = await itensETextos(provaId, prova.fonte)
   const oficiais = await prisma.question.findMany({
     where: { provaId, active: true }, select: { id: true, gabaritoOficial: true, gabarito: true, explicacao: true },
   })
@@ -147,7 +148,7 @@ export async function iniciarTentativa(userId: string, provaId: string) {
     })
     return { tentativa: criada, nova: true }
   })
-  const { textos, itens } = await itensETextos(provaId)
+  const { textos, itens } = await itensETextos(provaId, prova.fonte)
   return {
     agora: new Date().toISOString(),
     retomada: !nova,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { lerCursor, montarCursor, type Situacao } from '@/lib/questoes-lista'
+import { cadernoDoItem } from '@/lib/provas/cadernos'
 
 export const dynamic = 'force-dynamic'
 
@@ -105,7 +106,8 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         subject: { select: { id: true, slug: true, name: true } },
         topic: { select: { id: true, name: true } },
-        prova: { select: { id: true, titulo: true, pdfUrl: true } },
+        prova: { select: { id: true, titulo: true, pdfUrl: true, fonte: true } },
+        numeroQuestao: true,
         // Item de prova oficial: sem o comando e o texto-base ele não se responde.
         comando: true,
         temFigura: true,
@@ -126,7 +128,11 @@ export async function GET(req: NextRequest) {
   const ultima = dados[dados.length - 1]
 
   return NextResponse.json({
-    questions: dados.map(({ createdAt, ...resto }) => resto),
+    // A fonte inteira não viaja com cada questão: só o caderno do item.
+    questions: dados.map(({ createdAt, numeroQuestao, prova, ...resto }) => ({
+      ...resto,
+      prova: prova ? { id: prova.id, titulo: prova.titulo, pdfUrl: cadernoDoItem(prova.fonte, numeroQuestao) ?? prova.pdfUrl } : null,
+    })),
     nextCursor: temMais && ultima ? montarCursor(ultima.createdAt, ultima.id) : null,
     total,
     situacao,

@@ -19,7 +19,11 @@ export type ProvaArquivo = {
   duracaoMin: number
   incluiaDiscursiva: boolean
   aplicadaEm: string | null
-  fonte: { pagina: string; caderno: string; gabarito: string; aviso: string }
+  fonte: {
+    pagina: string; caderno: string; gabarito: string; aviso: string
+    /** Prova em mais de um caderno: a faixa de itens de cada um (o "caderno" acima é o primeiro). */
+    cadernos?: Array<{ de: number; ate: number; url: string; rotulo?: string }>
+  }
   /**
    * Matéria do arquivo -> slug da matéria do curso no banco, quando o nome não
    * bate ("Legislação de Trânsito" é `legislacao-transito` na PRF). Sem isso o
@@ -63,6 +67,11 @@ export function problemasDaProva(p: ProvaArquivo): string[] {
   if (!p.fonte?.caderno || !p.fonte?.gabarito || !p.fonte?.aviso) erros.push('fonte incompleta: a banca exige citar a fonte')
   if (!Array.isArray(p.itens) || p.itens.length === 0) return [...erros, 'sem itens']
 
+  const faixas = p.fonte?.cadernos ?? []
+  if (faixas.length) {
+    const fora = (p.itens ?? []).filter((i) => faixas.filter((f) => i.numero >= f.de && i.numero <= f.ate).length !== 1)
+    if (fora.length) erros.push(`cadernos: itens fora de uma faixa (ou em duas): ${fora.slice(0, 5).map((i) => i.numero).join(', ')}`)
+  }
   for (const [nome, slug] of Object.entries(p.materiasSlug ?? {})) {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) erros.push(`materiasSlug inválido para ${nome}: ${slug}`)
   }

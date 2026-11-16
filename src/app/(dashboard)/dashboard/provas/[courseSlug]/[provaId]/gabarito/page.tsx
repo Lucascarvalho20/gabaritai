@@ -13,7 +13,7 @@ type ItemGabarito = ItemTela & { gabarito: string | null; explicacao: string | n
 type Gabarito = {
   prova: {
     titulo: string; banca: string | null; duracaoMin: number | null; formato: string | null; caderno: string | null
-    fonte: { pagina?: string; caderno?: string; gabarito?: string; aviso?: string } | null
+    fonte: { pagina?: string; caderno?: string; gabarito?: string; aviso?: string; cadernos?: Array<{ de: number; ate: number; url: string; rotulo?: string }> } | null
   }
   textos: TextoTela[]
   itens: ItemGabarito[]
@@ -63,7 +63,13 @@ export default function GabaritoProvaPage() {
         <div className="rounded-xl bg-muted/40 p-4 text-xs text-muted-foreground space-y-1.5">
           <p>{fonte.aviso}</p>
           <p className="flex flex-wrap gap-x-4 gap-y-1">
-            {fonte.caderno && <a href={fonte.caderno} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Caderno oficial (PDF) <ExternalLink className="w-3 h-3" /></a>}
+            {fonte.cadernos?.length
+              ? fonte.cadernos.map((c) => (
+                <a key={c.url} href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">
+                  {c.rotulo ?? `Caderno — itens ${c.de} a ${c.ate}`} (PDF) <ExternalLink className="w-3 h-3" />
+                </a>
+              ))
+              : fonte.caderno && <a href={fonte.caderno} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Caderno oficial (PDF) <ExternalLink className="w-3 h-3" /></a>}
             {fonte.gabarito && <a href={fonte.gabarito} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Gabarito definitivo (PDF) <ExternalLink className="w-3 h-3" /></a>}
           </p>
         </div>

@@ -398,6 +398,11 @@ await caso('importa a prova real: 120 itens, textos-base ligados, anulados conti
   exigir(q1.provaTexto?.codigo === '2A1-I' && q1.subject?.name === 'Língua Portuguesa' && q1.gabaritoOficial === 'E', JSON.stringify({ t: q1.provaTexto?.codigo, s: q1.subject?.name, g: q1.gabaritoOficial }))
   const q28: any = await prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', 28) } })
   exigir(q28.anulada && q28.active && q28.gabarito === '', JSON.stringify(q28))
+  // Toda matéria da prova fica no curso: senão os itens somem do banco de questões do aluno.
+  const doCurso = await prisma.courseSubject.findMany({ where: { course: { slug: arqPf.curso } }, select: { subject: { select: { name: true } } } })
+  const nomes = new Set(doCurso.map((c) => c.subject.name))
+  const faltando = [...new Set(arqPf.itens.map((i: any) => i.materia))].filter((m) => !nomes.has(m))
+  exigir(faltando.length === 0, `matérias da prova fora do curso: ${faltando}`)
 })
 await caso('reimportar não duplica e não apaga o comentário escrito para o item', async () => {
   await prisma.question.update({ where: { id: idDoItem('pf-2021-agente', 2) }, data: { explicacao: 'Comentário do professor.' } })
