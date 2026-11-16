@@ -10,7 +10,7 @@ Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14
 - **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
 - **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
 - **CI/CD com trava de banco.** Todo push passa por tipos, lint, 210 testes unitários, 44 cenários contra Postgres real, build sem segredo, caça a chaves vazadas e auditoria de dependências. A promoção para produção é automática, mas espera o SQL da versão estar aplicado e termina com teste de fumaça contra o site no ar. → [CI/CD](#cicd-do-commit-à-produção)
-- **Provas oficiais refeitas com o tempo do edital.** PF 2021 completa (480 itens extraídos dos PDFs da banca), cronômetro com o prazo guardado no servidor, correção com a regra da Cebraspe e histórico de cada tentativa. → [seção 10](#10-provas-oficiais-anteriores-refeitas-com-o-tempo-do-edital)
+- **Provas oficiais refeitas com o tempo do edital.** 16 provas (1.920 itens) da PF, PRF e PCDF extraídas dos PDFs da banca e conferidas contra o gabarito definitivo, cronômetro com o prazo guardado no servidor, correção com a regra da Cebraspe e histórico de cada tentativa. → [seção 10](#10-provas-oficiais-anteriores-refeitas-com-o-tempo-do-edital)
 - **Banco de questões que não espera.** Função na mesma região do banco, paginação por cursor de chave, pré-busca e explicação da IA gerada uma vez para todos. → [seção 9](#9-banco-de-questões-que-responde-sem-esperar)
 - **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
 
@@ -202,7 +202,14 @@ Duas reclamações reais: "demora para mostrar a resposta" e "as questões se re
 
 [`src/lib/provas/`](src/lib/provas) · [`data/provas/`](data/provas)
 
-As provas da PF 2021 (Agente, Escrivão, Papiloscopista e Delegado, 480 itens) foram extraídas dos cadernos oficiais em PDF por um parser próprio — posição e fonte de cada trecho, recuo das linhas, correção de palavras partidas com o corretor ortográfico do sistema —, conferidas contra o gabarito definitivo e guardadas como JSON versionado. O import é idempotente e nunca sobrescreve uma explicação já escrita.
+16 provas oficiais, 1.920 itens: PF 2018, 2021 e 2025 (Agente, Escrivão, Papiloscopista e Delegado, e Perito de Informática em 2025), PRF 2019 e 2021 e PCDF Escrivão 2021. Os cadernos em PDF foram encontrados pela API pública da banca e extraídos por um parser próprio — posição e fonte de cada trecho, recuo das linhas, correção de palavras partidas com o corretor ortográfico do sistema —, conferidos contra o gabarito definitivo e guardados como JSON versionado, com a duração lida no edital de cada ano. O import é idempotente e nunca sobrescreve uma explicação já escrita.
+
+O que cada ano de caderno ensinou ao parser, porque PDF não guarda "questão" nem "texto", só pedaços de texto com posição:
+
+- **Numeração de linha.** As questões citam a linha ("ℓ.13"), então o texto mantém cada linha do caderno com o número. Um conferidor checa toda citação: a palavra entre aspas tem de estar na linha citada. Foi ele que pegou o rótulo decorativo "TEXTO" virando a linha 1 e deslocando a numeração inteira de uma prova.
+- **Fontes que mentem.** Nos cadernos antigos (WordPerfect), o código do caractere não é o símbolo: "R" é ℓ, "6" é →, "w" é ∨. O mapa foi conferido contra o próprio gabarito — o item que afirma uma tautologia só fecha com aquelas setas. Na Cambria Math sem tabela de caracteres, os glifos seguem sequências (A–Z, a–z, dígitos), deduzidas das contas dos itens.
+- **Justificativa oficial da banca.** A Cebraspe publicou o caderno da PCDF "com justificativa": cada item vem com o porquê do gabarito, e ele vira o comentário do item. Mas a justificativa é a do gabarito *preliminar* — então só fica a que concorda com o definitivo; a de item anulado ou com gabarito trocado ensinaria errado e é descartada.
+- **Prova em vários cadernos.** A PF 2025 tem até três cadernos por cargo; o aviso "ver na prova original, página N" abre o caderno daquele item.
 
 - **Dois modos.** Gabarito comentado, item por item com a resposta oficial e a fonte; e a prova de verdade: cronômetro com a duração do edital daquele ano, folha de respostas e entrega automática quando o tempo acaba.
 - **O prazo é do servidor.** O relógio da tela é só exibição: o servidor grava o prazo ao iniciar, aceita 2 minutos de tolerância de rede e, fora disso, corrige com o que já tinha salvo. As respostas vão para o `localStorage` na hora e para o servidor a cada poucos segundos — fechar a aba não perde nada.
