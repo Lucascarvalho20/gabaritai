@@ -98,7 +98,7 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
   const linhas = arq.itens.map((i, k) => Prisma.sql`(
     ${ids[k]}, ${prova.id}, ${materiaId.get(i.materia)!}, ${arq.banca}, ${arq.orgao}, ${arq.ano}, ${i.numero},
     'MEDIUM'::"Difficulty", 'OFFICIAL'::"QuestionSource", ${i.enunciado}, ${JSON.stringify(i.alternativas ?? padrao)}::jsonb,
-    ${i.gabarito ?? ''}, ${i.gabarito}, ${i.anulada}, '', ${[`prova:${arq.slug}`]}::text[], true,
+    ${i.gabarito ?? ''}, ${i.gabarito}, ${i.anulada}, ${i.explicacao ?? ''}, ${[`prova:${arq.slug}`]}::text[], true,
     ${i.comando}, ${i.texto ? textoId.get(i.texto) ?? null : null}, ${i.figura}, ${i.formula}, ${i.pagina}
   )`)
   await prisma.$executeRaw`
@@ -112,6 +112,8 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
       source = EXCLUDED.source, enunciado = EXCLUDED.enunciado, alternativas = EXCLUDED.alternativas,
       gabarito = EXCLUDED.gabarito, "gabaritoOficial" = EXCLUDED."gabaritoOficial", anulada = EXCLUDED.anulada,
       tags = EXCLUDED.tags, active = true, comando = EXCLUDED.comando, "provaTextoId" = EXCLUDED."provaTextoId",
+      -- Explicação escrita depois (professor, revisão) nunca é sobrescrita; só preenche a vazia.
+      explicacao = CASE WHEN questions.explicacao = '' THEN EXCLUDED.explicacao ELSE questions.explicacao END,
       "temFigura" = EXCLUDED."temFigura", "temFormula" = EXCLUDED."temFormula", "paginaProva" = EXCLUDED."paginaProva"`
   await prisma.question.updateMany({ where: { provaId: prova.id, id: { notIn: ids } }, data: { active: false } })
 

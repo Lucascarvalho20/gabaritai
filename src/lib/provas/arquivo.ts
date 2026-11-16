@@ -40,6 +40,8 @@ export type ProvaArquivo = {
     pagina: number | null
     /** Só na múltipla escolha: o texto de cada alternativa. */
     alternativas?: Array<{ letra: string; texto: string }>
+    /** Justificativa oficial da banca, quando o caderno publicado traz (PCDF/Cebraspe). */
+    explicacao?: string
   }>
 }
 
