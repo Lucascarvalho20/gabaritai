@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
       anulada: Boolean(q.anulada),
       explicacao: q.explicacao ?? '',
       tags: [],
-      active: !q.anulada,
+      // Anulada continua na prova: o ponto vai para todos (regra do edital).
+      active: true,
     }))
 
   if (questionData.length === 0) {

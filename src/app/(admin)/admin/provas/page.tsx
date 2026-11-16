@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { ProvasOficiaisProntas } from '@/components/ProvasOficiaisProntas'
 
 type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null }
 type Edital = { id: string; titulo: string; ano: number; courseId: string; banca?: { slug: string } | null }
@@ -149,6 +150,8 @@ export default function AdminProvasUploadPage() {
           cruza com o gabarito quando disponível.
         </p>
       </div>
+
+      <ProvasOficiaisProntas />
 
       {/* ── Metadados ───────────────────────────────────────────── */}
       <div className="card p-5 space-y-3">

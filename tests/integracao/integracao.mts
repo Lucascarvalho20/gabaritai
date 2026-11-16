@@ -67,6 +67,11 @@ const { carregarConteudo, estimativaDoEdital, estimativasDosConcursos } = await 
 const { REVISAO_FRACAO } = await import(W + 'tempo-estudo.ts')
 const rotaTempo = await import(new URL('../../src/app/api/tempo/concursos/route.ts', import.meta.url).href)
 const { monitorarCron, avisarAtrasos, situacaoDasTarefas, vigiaNaoInstalado } = await import(W + 'vigia.ts')
+const { importarProva, idDoItem } = await import(W + 'provas/importar.ts')
+const { lerArquivoDeProva } = await import(W + 'provas/arquivo.ts')
+const provasAluno = await import(W + 'provas/aluno.ts')
+const { somarAoDominio } = await import(W + 'dominio.ts')
+const { migracoesAplicadas } = await import(W + 'migracoes.ts')
 
 let falhas = 0
 async function caso(nome: string, fn: () => Promise<void>) {
@@ -375,6 +380,132 @@ await caso('cronograma sem editalId usa o edital do curso e o tempo medido', asy
   exigir(Math.abs(salvo!.totalHoursNeeded * 60 - e!.totalMin) < 0.5, `horas gravadas: ${salvo?.totalHoursNeeded}`)
 })
 
+console.log('\nPROVAS ANTERIORES (PF 2021 de verdade)')
+await prisma.course.create({ data: { id: 'ens-pf-agente', slug: 'pf-agente', name: 'PF — Agente (ensaio)' } })
+await prisma.banca.create({ data: { slug: 'cebraspe', name: 'Cebraspe' } })
+await prisma.user.create({ data: { id: 'ens-aluno-pf', name: 'Aluno PF', password: 'x', email: 'aluno-pf@teste.local', hasFullAccess: true } })
+await prisma.user.create({ data: { id: 'ens-sem-plano', name: 'Sem Plano', password: 'x', email: 'sem-plano@teste.local' } })
+const arqPf = lerArquivoDeProva('pf-2021-agente')
+let provaPf = ''
+
+await caso('importa a prova real: 120 itens, textos-base ligados, anulados continuam na prova', async () => {
+  const r: any = await importarProva(arqPf)
+  provaPf = r.provaId
+  exigir(r.itens === 120 && r.anulados === 5 && r.textos === 2, JSON.stringify(r))
+  const ativos = await prisma.question.count({ where: { provaId: provaPf, active: true } })
+  exigir(ativos === 120, `ativos=${ativos} (anulado não pode sumir da prova)`)
+  const q1: any = await prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', 1) }, include: { provaTexto: true, subject: true } })
+  exigir(q1.provaTexto?.codigo === '2A1-I' && q1.subject?.name === 'Língua Portuguesa' && q1.gabaritoOficial === 'E', JSON.stringify({ t: q1.provaTexto?.codigo, s: q1.subject?.name, g: q1.gabaritoOficial }))
+  const q28: any = await prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', 28) } })
+  exigir(q28.anulada && q28.active && q28.gabarito === '', JSON.stringify(q28))
+})
+await caso('reimportar não duplica e não apaga o comentário escrito para o item', async () => {
+  await prisma.question.update({ where: { id: idDoItem('pf-2021-agente', 2) }, data: { explicacao: 'Comentário do professor.' } })
+  await importarProva(arqPf)
+  exigir((await prisma.question.count({ where: { provaId: provaPf } })) === 120, 'duplicou itens')
+  exigir((await prisma.provaTexto.count({ where: { provaId: provaPf } })) === 2, 'duplicou textos')
+  const q2 = await prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', 2) } })
+  exigir(q2?.explicacao === 'Comentário do professor.', `explicação perdida: ${q2?.explicacao}`)
+})
+await caso('sem o curso: lista com cadeado, e prova e gabarito recusados', async () => {
+  const lista: any = await provasAluno.provasDoCurso('ens-sem-plano', 'pf-agente')
+  exigir(lista.acesso === false && lista.provas.length === 1, JSON.stringify({ acesso: lista.acesso, n: lista.provas.length }))
+  for (const f of [() => provasAluno.iniciarTentativa('ens-sem-plano', provaPf), () => provasAluno.gabaritoDaProva('ens-sem-plano', provaPf)]) {
+    let status = 0
+    try { await f() } catch (e: any) { status = e.status }
+    exigir(status === 403, `status ${status}`)
+  }
+})
+let tentativa1 = ''
+await caso('iniciar: 4h30 do edital, textos e itens SEM gabarito; abrir de novo retoma a mesma', async () => {
+  const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  tentativa1 = r.tentativa.id
+  exigir(r.itens.length === 120 && r.textos.length === 2, `itens ${r.itens.length}`)
+  exigir(r.tentativa.duracaoMin === 270, `duração ${r.tentativa.duracaoMin}`)
+  const vazou = JSON.stringify(r.itens).match(/"gabarito"|gabaritoOficial|explicacao/)
+  exigir(!vazou, `gabarito vazou para o navegador: ${vazou}`)
+  const deNovo: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  exigir(deNovo.retomada && deNovo.tentativa.id === tentativa1, 'não retomou a tentativa aberta')
+})
+await caso('abrir a prova 3 vezes ao mesmo tempo cria UMA tentativa só', async () => {
+  await prisma.provaTentativa.deleteMany({ where: { userId: 'ens-aluno-pf', provaId: provaPf, status: 'EM_ANDAMENTO', id: { not: tentativa1 } } })
+  const rs: any[] = await Promise.all([1, 2, 3].map(() => provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)))
+  exigir(new Set(rs.map((r) => r.tentativa.id)).size === 1, `ids: ${rs.map((r) => r.tentativa.id)}`)
+  const abertas = await prisma.provaTentativa.count({ where: { userId: 'ens-aluno-pf', provaId: provaPf, status: 'EM_ANDAMENTO' } })
+  exigir(abertas === 1, `${abertas} tentativas abertas`)
+})
+await caso('salvar respostas: guarda só alternativa válida de item desta prova', async () => {
+  const ids = arqPf.itens.map((i: any) => idDoItem('pf-2021-agente', i.numero))
+  const r: any = await provasAluno.salvarRespostas('ens-aluno-pf', tentativa1, { [ids[0]]: 'e', [ids[1]]: 'Z', 'item-de-outra-prova': 'C' })
+  exigir(r.salvas === 1, JSON.stringify(r))
+  const t: any = await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } })
+  exigir(t.respostas[ids[0]] === 'E' && Object.keys(t.respostas).length === 1, JSON.stringify(t.respostas))
+})
+await caso('entregar com o gabarito inteiro certo: 120 de 120 (115 + 5 anulados)', async () => {
+  const respostas = Object.fromEntries(arqPf.itens.filter((i: any) => !i.anulada).map((i: any) => [idDoItem('pf-2021-agente', i.numero), i.gabarito]))
+  await provasAluno.entregarTentativa('ens-aluno-pf', tentativa1, { respostas })
+  const t: any = await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } })
+  exigir(t.status === 'ENTREGUE' && t.pontos === 120 && t.acertos === 115 && t.anuladas === 5, JSON.stringify({ s: t.status, p: t.pontos, a: t.acertos }))
+  const historico = await prisma.questionAttempt.count({ where: { userId: 'ens-aluno-pf' } })
+  exigir(historico === 115, `tentativas de questão gravadas: ${historico}`)
+  const dominio = await prisma.userSubjectMastery.count({ where: { userId: 'ens-aluno-pf', courseId: 'ens-pf-agente' } })
+  exigir(dominio === 10, `matérias no domínio: ${dominio}`)
+})
+await caso('refazer guarda as DUAS tentativas: o histórico não se apaga', async () => {
+  const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  exigir(r.tentativa.id !== tentativa1 && !r.retomada, 'reaproveitou a tentativa entregue')
+  // Erra os 24 de Português (marca o contrário) e deixa o resto em branco.
+  const lp = arqPf.itens.filter((i: any) => i.materia === 'Língua Portuguesa' && !i.anulada)
+  const respostas = Object.fromEntries(lp.map((i: any) => [idDoItem('pf-2021-agente', i.numero), i.gabarito === 'C' ? 'E' : 'C']))
+  await provasAluno.entregarTentativa('ens-aluno-pf', r.tentativa.id, { respostas })
+  const lista: any = await provasAluno.provasDoCurso('ens-aluno-pf', 'pf-agente')
+  const p = lista.provas[0]
+  exigir(p.tentativas.length === 2 && p.melhor === 120, JSON.stringify({ n: p.tentativas.length, melhor: p.melhor }))
+  const res: any = await provasAluno.resultadoDaTentativa('ens-aluno-pf', r.tentativa.id)
+  exigir(res.tentativa.pontos === -24 + 5, `pontos ${res.tentativa.pontos} (24 erros − 24, + 5 anulados)`)
+  exigir(res.tentativa.revisar[0]?.materia === 'Língua Portuguesa', JSON.stringify(res.tentativa.revisar.slice(0, 2)))
+  exigir(res.anterior?.pontos === 120, `comparação com a anterior: ${JSON.stringify(res.anterior)}`)
+  exigir(res.itens.find((i: any) => i.numero === 1).situacao === 'errado' && res.itens.find((i: any) => i.numero === 61).situacao === 'branco', 'situação por item errada')
+})
+await caso('tempo esgotado: não salva mais, e a entrega usa só o que já estava salvo', async () => {
+  const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  const id1 = idDoItem('pf-2021-agente', 1)
+  await provasAluno.salvarRespostas('ens-aluno-pf', r.tentativa.id, { [id1]: 'E' })
+  await prisma.provaTentativa.update({ where: { id: r.tentativa.id }, data: { expiraEm: new Date(Date.now() - 10 * 60_000) } })
+  let status = 0
+  try { await provasAluno.salvarRespostas('ens-aluno-pf', r.tentativa.id, { [id1]: 'C' }) } catch (e: any) { status = e.status }
+  exigir(status === 409, `salvou depois do tempo (status ${status})`)
+  const tudoCerto = Object.fromEntries(arqPf.itens.filter((i: any) => !i.anulada).map((i: any) => [idDoItem('pf-2021-agente', i.numero), i.gabarito]))
+  await provasAluno.entregarTentativa('ens-aluno-pf', r.tentativa.id, { respostas: tudoCerto })
+  const t: any = await prisma.provaTentativa.findUnique({ where: { id: r.tentativa.id } })
+  exigir(t.status === 'EXPIRADA' && t.pontos === 1 + 5, `status ${t.status}, pontos ${t.pontos} (só o item salvo + anulados)`)
+})
+await caso('duas abas entregando ao mesmo tempo: corrige uma vez só', async () => {
+  const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  const antes = await prisma.questionAttempt.count({ where: { userId: 'ens-aluno-pf' } })
+  const respostas = { [idDoItem('pf-2021-agente', 1)]: 'E', [idDoItem('pf-2021-agente', 2)]: 'C' }
+  const rs: any[] = await Promise.all([1, 2, 3].map(() => provasAluno.entregarTentativa('ens-aluno-pf', r.tentativa.id, { respostas })))
+  exigir(rs.filter((x) => !x.jaEntregue).length === 1, JSON.stringify(rs))
+  const depois = await prisma.questionAttempt.count({ where: { userId: 'ens-aluno-pf' } })
+  exigir(depois - antes === 2, `gravou ${depois - antes} respostas (deveriam ser 2)`)
+})
+await caso('desempenho somado nas provas: aponta a matéria a revisar', async () => {
+  const d: any = await provasAluno.desempenhoEmProvas('ens-aluno-pf', 'pf-agente')
+  exigir(d.tentativas.length === 4, `tentativas ${d.tentativas.length}`)
+  exigir(d.revisar.some((m: any) => m.materia === 'Língua Portuguesa'), JSON.stringify(d.revisar.map((m: any) => m.materia)))
+})
+
+console.log('\nRESPOSTA DE QUESTÃO (rota rápida)')
+await caso('domínio por matéria: 10 respostas simultâneas somam 10, sem perder nenhuma', async () => {
+  const base = { userId: 'ens-outro', courseId: 'ens-curso', subjectId: 'ens-port' }
+  await prisma.userSubjectMastery.deleteMany({ where: base })
+  await Promise.all(Array.from({ length: 10 }, (_, i) => somarAoDominio({ ...base, acertou: i < 7, idNovo: `usm-ensaio-${i}` })))
+  const m = await prisma.userSubjectMastery.findUnique({ where: { userId_courseId_subjectId: base } })
+  exigir(m?.totalAttempts === 10 && m?.correctAttempts === 7 && m?.masteryScore === 70, JSON.stringify(m))
+  const r = await somarAoDominio({ ...base, acertou: false, idNovo: 'usm-ensaio-x' })
+  exigir(r.antes === 70 && r.novo === 64 && r.total === 11, JSON.stringify(r))
+})
+
 console.log('\nVIGIA DOS CRONS')
 process.env.TELEGRAM_BOT_TOKEN = 'token-falso-do-ensaio'
 process.env.TELEGRAM_CHAT_ID = '1'
@@ -437,6 +568,22 @@ await caso('antes do SQL do vigia rodar em produção: nada quebra, a falha aind
   const ruim = await monitorarCron('sync', async () => Response.json({ erro: 'x' }, { status: 500 }))(pedidoCron())
   exigir(ruim.status === 500, 'a resposta da tarefa mudou')
   exigir(telegram.slice(antes).some((t) => t.includes('Tarefa falhou')), 'sem tabela, a falha deixou de avisar')
+})
+
+console.log('\nREGISTRO DE MIGRAÇÕES (trava do deploy)')
+await caso('o SQL das provas se registra; as antigas são reconhecidas pela tabela', async () => {
+  const { aplicadas, registro } = await migracoesAplicadas()
+  exigir(registro, 'tabela schema_migracoes não existe')
+  exigir(aplicadas.includes('2026-11-14-provas-anteriores'), `faltou a das provas: ${aplicadas}`)
+  exigir(aplicadas.includes('2026-11-09-cronograma-adaptativo-e-rag'), `faltou a do RAG (sonda material_chunks): ${aplicadas}`)
+  // O vigia derrubou cron_execucoes no cenário acima: a sonda tem de perceber.
+  exigir(!aplicadas.includes('2026-11-10-vigia-crons'), `acusou o vigia sem a tabela: ${aplicadas}`)
+})
+await caso('produção antes do SQL (sem o registro): responde, não quebra', async () => {
+  await prisma.$executeRawUnsafe('DROP TABLE schema_migracoes')
+  const { aplicadas, registro } = await migracoesAplicadas()
+  exigir(!registro, 'disse que o registro existe')
+  exigir(aplicadas.join() === '2026-11-09-cronograma-adaptativo-e-rag', `lista errada: ${aplicadas}`)
 })
 
 await prisma.$disconnect()

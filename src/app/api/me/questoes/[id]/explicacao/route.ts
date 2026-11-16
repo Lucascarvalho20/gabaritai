@@ -31,6 +31,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       bancaSlug: true, orgao: true, ano: true, subjectId: true,
       subject: { select: { name: true } },
       prova: { select: { courseId: true } },
+      comando: true,
+      provaTexto: { select: { titulo: true, conteudo: true } },
     },
   })
   if (!questao || !questao.active) return NextResponse.json({ message: 'Questão não disponível' }, { status: 404 })
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       bancaSlug: questao.bancaSlug,
       // O gabarito entra na chave: se a banca trocar o gabarito, a explicação velha não volta.
       extra: `questao:${questao.id}:${questao.gabarito.trim().toUpperCase()}:v1`,
-      prompt: promptDeExplicacao({ ...questao, materia: questao.subject?.name ?? null }),
+      prompt: promptDeExplicacao({ ...questao, materia: questao.subject?.name ?? null, textoBase: questao.provaTexto }),
       aiTask: 'generate',
       maxTokens: 900,
       temperature: 0.3,

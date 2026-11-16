@@ -1,6 +1,7 @@
 {
   "_leia": "Migrações de banco que o código desta versão PRECISA em produção. O pipeline (promover.yml) só leva a versão para main quando todas aparecem em /api/health/migracoes. Migração nova: o SQL termina gravando o próprio nome em schema_migracoes, e o nome entra aqui. As anteriores ao registro estão em src/lib/migracoes-anteriores.ts.",
   "necessarias": [
-    "2026-11-09-cronograma-adaptativo-e-rag"
+    "2026-11-09-cronograma-adaptativo-e-rag",
+    "2026-11-14-provas-anteriores"
   ]
 }

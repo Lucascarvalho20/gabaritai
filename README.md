@@ -1,6 +1,6 @@
 # GabaritAI
 
-Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **168 endpoints de API**, banco PostgreSQL de **47 modelos** e orquestração de múltiplos provedores de LLM.
+Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14 fullstack em produção, com **173 endpoints de API**, banco PostgreSQL de **50 modelos** e orquestração de múltiplos provedores de LLM.
 
 **No ar:** [gabaritai-red.vercel.app](https://gabaritai-red.vercel.app)
 
@@ -9,7 +9,9 @@ Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14
 - **Quanto tempo o edital pede, medido no banco.** Escolha o concurso e as suas horas: o tempo sai do conteúdo cadastrado — palavras de cada material, questões ativas, a mediana real do tempo dos alunos por questão — e a resposta diz quanto dela é dado medido. A mesma conta vale na home e no cronograma. → [seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)
 - **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
 - **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
-- **Testes onde o erro custa caro.** 167 unitários e 30 cenários de integração num Postgres + pgvector descartável, incluindo concorrência. → [Ambientes e promoção](#ambientes-e-promoção)
+- **CI/CD com trava de banco.** Todo push passa por tipos, lint, 210 testes unitários, 44 cenários contra Postgres real, build sem segredo, caça a chaves vazadas e auditoria de dependências. A promoção para produção é automática, mas espera o SQL da versão estar aplicado e termina com teste de fumaça contra o site no ar. → [CI/CD](#cicd-do-commit-à-produção)
+- **Provas oficiais refeitas com o tempo do edital.** PF 2021 completa (480 itens extraídos dos PDFs da banca), cronômetro com o prazo guardado no servidor, correção com a regra da Cebraspe e histórico de cada tentativa. → [seção 10](#10-provas-oficiais-anteriores-refeitas-com-o-tempo-do-edital)
+- **Banco de questões que não espera.** Função na mesma região do banco, paginação por cursor de chave, pré-busca e explicação da IA gerada uma vez para todos. → [seção 9](#9-banco-de-questões-que-responde-sem-esperar)
 - **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
 
 ---
@@ -184,6 +186,31 @@ A pergunta que mais pesa na decisão do aluno — *dá tempo de estudar o edital
 
 Os testes cobrem propriedades — mais palavras nunca reduz o tempo; as horas sugeridas sempre bastam e meia hora a menos nunca basta — e, contra um Postgres real, tudo o que engana a contagem: markdown, rascunho mais novo que o publicado, resumo, material rejeitado, tópico arquivado, questão anulada, tempo absurdo.
 
+### 9. Banco de questões que responde sem esperar
+
+[`src/app/api/me/questoes/route.ts`](src/app/api/me/questoes/route.ts) · [`src/lib/questoes-lista.ts`](src/lib/questoes-lista.ts) · [`src/app/api/me/questoes/[id]/explicacao/route.ts`](src/app/api/me/questoes/[id]/explicacao/route.ts)
+
+Duas reclamações reais: "demora para mostrar a resposta" e "as questões se repetem". As causas, medidas, e o que mudou:
+
+- **A função estava longe do banco.** A Vercel rodava as funções em Washington (`iad1`) e o banco fica no Oregon (`us-west-2`): cada consulta cruzava o país (~65 ms ida e volta) e responder uma questão fazia 11 consultas em fila. Agora a função roda em `pdx1`, na região do banco, e a rota de resposta faz as consultas independentes em paralelo, com o domínio por matéria num único `UPSERT` atômico (dez respostas simultâneas somam dez — testado contra Postgres real).
+- **A lista voltava ao começo.** No fim de cada lote de 30, a página pedia a lista de novo sem posição e recebia as mesmas 30. A paginação agora é por **cursor de chave** `(createdAt, id)`, não por posição: com o filtro "não feitas" o conjunto encolhe a cada resposta, e pular N linhas — ou o cursor do Prisma, que pula a própria linha do cursor — passaria por cima de questão nunca vista. A página seguinte é buscada em segundo plano quando faltam 5, então "Próxima" nunca espera.
+- **Filtro que o banco resolve.** "Não feitas" e "que errei" viram `NOT EXISTS`/`EXISTS` no SQL; antes, o histórico inteiro do aluno vinha para a memória para montar um `NOT IN` com milhares de ids. Filtros novos por prova de origem e por assunto, cada opção com a contagem.
+- **Explicação gerada uma vez.** O "Por que?" gera a explicação com IA a partir do gabarito oficial e guarda no cache compartilhado: o aluno seguinte recebe em milissegundos, sem gastar cota — e a cota só é descontada se a geração der certo. Só sai depois de responder, porque a explicação entrega o gabarito.
+- **Teclado.** C/E (ou A–E) marca, Enter confirma e avança, X abre a explicação.
+
+### 10. Provas oficiais anteriores, refeitas com o tempo do edital
+
+[`src/lib/provas/`](src/lib/provas) · [`data/provas/`](data/provas)
+
+As provas da PF 2021 (Agente, Escrivão, Papiloscopista e Delegado, 480 itens) foram extraídas dos cadernos oficiais em PDF por um parser próprio — posição e fonte de cada trecho, recuo das linhas, correção de palavras partidas com o corretor ortográfico do sistema —, conferidas contra o gabarito definitivo e guardadas como JSON versionado. O import é idempotente e nunca sobrescreve uma explicação já escrita.
+
+- **Dois modos.** Gabarito comentado, item por item com a resposta oficial e a fonte; e a prova de verdade: cronômetro com a duração do edital daquele ano, folha de respostas e entrega automática quando o tempo acaba.
+- **O prazo é do servidor.** O relógio da tela é só exibição: o servidor grava o prazo ao iniciar, aceita 2 minutos de tolerância de rede e, fora disso, corrige com o que já tinha salvo. As respostas vão para o `localStorage` na hora e para o servidor a cada poucos segundos — fechar a aba não perde nada.
+- **Corrigir como a banca.** Na Cebraspe, errada anula certa, item anulado vale ponto para todos e branco vale zero. A correção é uma função pura, com um teste por regra.
+- **Concorrência.** Dois cliques em "Iniciar" criavam duas tentativas: um `pg_advisory_xact_lock` por aluno e prova serializa o início, e a entrega é idempotente (`UPDATE … WHERE status = 'EM_ANDAMENTO'`).
+- **Histórico e onde revisar.** Cada tentativa guarda nota, tempo e desempenho por matéria; o resultado compara com a anterior e lista as matérias abaixo de 60%, com um mínimo de itens para um erro em dois não virar "matéria fraca". Matéria deixada toda em branco aparece à parte: não é evidência de nada.
+- **Acesso e fonte.** Só quem comprou o curso vê as provas dele, e a fonte oficial é sempre citada — o caderno da banca permite a reprodução para fins didáticos desde que citada a fonte.
+
 ---
 
 ## Stack
@@ -199,7 +226,8 @@ Os testes cobrem propriedades — mais palavras nunca reduz o tempo; as horas su
 | UI | Tailwind · Framer Motion · Recharts · KaTeX |
 | IA | Groq · Google Gemini · Anthropic Claude · OpenAI |
 | Pagamento | Mercado Pago (PIX transparente, Checkout Pro) |
-| Deploy | Vercel |
+| Deploy | Vercel (função em `pdx1`, na região do banco) |
+| CI/CD | GitHub Actions · gitleaks · Dependabot · teste de fumaça próprio |
 
 ---
 
@@ -227,8 +255,10 @@ npm run dev                   # http://localhost:3000
 Testes:
 
 ```bash
-npm run verificar             # tipos + lint + 167 testes unitários
-npm run test:integracao       # 30 cenários num Postgres + pgvector descartável (Docker)
+npm run verificar             # tipos + lint + 210 testes unitários
+npm run test:integracao       # 44 cenários num Postgres + pgvector descartável (Docker)
+npm run ci:fumaca -- --site https://gabaritai-red.vercel.app   # o teste de fumaça contra qualquer endereço
+npm run ci:auditoria          # vulnerabilidades das dependências de produção
 ```
 
 Servidor MCP para o admin: `npm run --silent mcp` — ver [`mcp/README.md`](mcp/README.md).
@@ -237,32 +267,50 @@ Nenhum segredo é versionado. Todo `.env` está no `.gitignore`; o `.env.example
 
 ---
 
-## Ambientes e promoção
+## CI/CD: do commit à produção
 
-Mudança nenhuma vai direto para quem está pagando. O caminho é sempre o mesmo, e cada etapa só existe porque a anterior pode deixar passar algo:
+Nenhuma mudança vai direto para quem está pagando, e ninguém precisa mexer em git para publicar: quem desenvolve empurra para `homologacao` e o resto é automático.
 
 ```mermaid
 flowchart LR
-    F["branch de trabalho"] -->|pull request| CI{"Verificar<br/>tipos · lint · testes"}
-    CI -->|falhou| F
-    CI -->|passou| H["homologacao<br/>deploy de preview"]
-    H -->|teste manual<br/>no preview| CI2{"Verificar<br/>de novo"}
-    CI2 -->|passou| M["main<br/>produção"]
-    M --> V["gabaritai-red.vercel.app"]
+    P["push em<br/>homologacao"] --> CI
+    subgraph CI["CI — ci.yml, em paralelo"]
+        Q["tipos · lint<br/>210 testes"]
+        I["44 cenários<br/>Postgres + pgvector"]
+        B["build de produção<br/>sem segredo"]
+        S["gitleaks · auditoria<br/>de dependências"]
+    end
+    CI -->|tudo verde| G{"o banco de produção<br/>tem as migrações<br/>desta versão?"}
+    G -->|falta SQL| A["issue: rode X no Supabase<br/>nova tentativa a cada hora"]
+    A -.-> G
+    G -->|sim| M["fast-forward<br/>de main"]
+    M --> V["Vercel publica"]
+    V --> F{"teste de fumaça<br/>no site no ar"}
+    F -->|ok| OK["fecha a issue"]
+    F -->|falhou| RB["issue com o<br/>caminho do rollback"]
 ```
 
-| Etapa | O que roda | O que pega |
+| Etapa | Onde | O que pega |
 |---|---|---|
-| Pull request | `typecheck`, `lint`, `test` (167 testes unitários) | Erro de tipo, regressão nas funções puras |
-| Pull request | `test:integracao` — 30 cenários contra PostgreSQL + pgvector descartável | SQL escrito à mão, filtros do Prisma, **concorrência** |
-| `homologacao` | Deploy de preview da Vercel, URL própria | Erro que só aparece com build real e banco |
-| `main` | Deploy de produção | — |
+| Tipos, lint, testes | [`ci.yml`](.github/workflows/ci.yml) → `qualidade` | erro de tipo, regressão nas funções puras |
+| Integração | `ci.yml` → `integracao` | SQL escrito à mão, filtros do Prisma, concorrência — é o mesmo `npm run test:integracao` da máquina local |
+| Build | `ci.yml` → `build` | o site precisa compilar **sem segredo nenhum**: o banco aponta para um endereço que não existe |
+| Segurança | `ci.yml` → `seguranca` | chave vazada em qualquer commit do histórico ([gitleaks](https://github.com/gitleaks/gitleaks)); vulnerabilidade alta ou crítica nova em dependência de produção ([`auditoria.ts`](scripts/ci/auditoria.ts)) |
+| Trava de migração | [`promover.yml`](.github/workflows/promover.yml) | versão que precisa de coluna nova não vai ao ar antes do SQL |
+| Fumaça | [`fumaca.ts`](scripts/ci/fumaca.ts) | 13 checagens de fora para dentro: versão certa no ar, páginas, API que lê o banco, rotas protegidas recusando quem não tem login, otimizador de imagem fechado e nenhum segredo no JavaScript público |
+| Vigia diário | [`producao.yml`](.github/workflows/producao.yml) | a mesma fumaça todo dia às 9h: pega o que quebra sem deploy (chave revogada, banco fora) |
+| Dependências | [`dependabot.yml`](.github/dependabot.yml) | um pull request por semana com as atualizações, já testado pelo CI |
 
-As checagens rodam de novo na promoção para `main`, porque entre o teste no preview e o merge o `main` pode ter andado.
+As decisões que valem explicação:
 
-O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves de API, e segredo de produção em runner de CI é risco sem retorno. A Vercel já builda cada branch e falha lá.
+- **Trava de migração.** O SQL roda à mão no Supabase (o schema evolui por SQL idempotente, não por `prisma migrate`). Sem trava, publicar o código que lê `questions.comando` antes de a coluna existir derrubaria a aba Questões. Cada migração termina gravando o próprio nome em `schema_migracoes`; o pipeline compara com [`prisma/migracoes.json`](prisma/migracoes.json), a lista do que a versão precisa, lida pela rota pública [`/api/health/migracoes`](src/app/api/health/migracoes/route.ts). É o padrão *expand/contract*: o banco muda primeiro, de forma compatível com o código antigo, e o código novo vem depois.
+- **Só fast-forward.** A promoção nunca cria commit nem reescreve `main`: o que vai ao ar é exatamente o commit que passou no CI.
+- **Nenhum segredo no CI.** O banco dos testes nasce e morre dentro do job; o build roda sem chave. CI com a senha do banco de produção é vazamento esperando acontecer. O token do GitHub de cada job tem só a permissão de que ele precisa.
+- **Ações fixadas por commit.** Uma tag (`@v7`) pode ser movida por quem invadir o repositório da ação; o hash do commit, não. A imagem do gitleaks é fixada pelo digest. O Dependabot propõe as versões novas.
+- **Exceções com prazo.** O Next 14 chegou ao fim do suporte e tem avisos que a linha 14 não corrige. Cada um tem a análise escrita em [`auditoria-excecoes.json`](scripts/ci/auditoria-excecoes.json) — não se aplica, mitigado ou risco aceito — e vence em 31/01/2027: a migração para o Next 15.5+ é o próximo passo, e o CI vai cobrar. A análise já fechou uma porta real: o otimizador de imagens aceitava buscar imagem de qualquer site (`hostname: '**'`), justamente onde estão as falhas críticas sem correção — e nenhuma tela usava `next/image`. Desligado; a fumaça confere.
+- **Rollback.** Se a fumaça falha depois da publicação, o pipeline abre uma issue com o caminho: Vercel → Deployments → deploy anterior → *Instant Rollback*, que troca o que está no ar em segundos, sem build.
 
-**Reprodutibilidade.** O `package-lock.json` é versionado. Sem ele, dois deploys do mesmo commit podem instalar versões diferentes e produzir sites diferentes — falha que não aparece em nenhum diff.
+**Reprodutibilidade.** O `package-lock.json` é versionado e o CI instala com `npm ci`, exatamente o que está nele. Sem isso, dois deploys do mesmo commit podem instalar versões diferentes e produzir sites diferentes — falha que não aparece em nenhum diff.
 
 ---
 
@@ -270,9 +318,9 @@ O build **não** roda no CI de propósito: ele exige `DATABASE_URL` e as chaves 
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura ampla de teste.** 167 testes unitários e 30 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Cobertura ampla de teste.** 210 testes unitários e 44 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
 - **Tempo pelo programa oficial do edital.** Hoje o tamanho do edital é o conteúdo cadastrado na plataforma. O próximo passo é contar os itens do programa oficial (`EditalSubject.programa`) e mostrar quanto dele já tem material. E a teoria ainda é "palavras ÷ velocidade": o cronômetro de estudo existe, mas a página de material não registra o tópico — quando registrar, a teoria passa a usar o tempo real dos alunos, como as questões já usam.
-- **CI ativo no GitHub.** O workflow está escrito (incluindo o job de integração com pgvector como serviço), mas aguarda um token com escopo `workflow` para ser publicado.
+- **Next 15.** O projeto está no Next 14.2.35, o último da linha 14, que chegou ao fim do suporte. A migração para o 15.5+ (React 19, `params` assíncrono) é o próximo trabalho de plataforma; as exceções da auditoria vencem em 31/01/2027 para ela não ficar para depois.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
 - **Separação de banco por ambiente.** O preview de `homologacao` ainda aponta para o mesmo Postgres da produção. Enquanto for assim, homologação testa o código, não os dados — um `DATABASE_URL` próprio no ambiente de Preview da Vercel resolve.
 - **Observabilidade completa.** Há um vigia das tarefas agendadas feito em casa ([`vigia.ts`](src/lib/vigia.ts)), criado depois de descobrir que os crons tinham ficado meses sem rodar sem erro nenhum: cada cron grava a própria rodada no banco, falha avisa na hora pelo Telegram, e ao fim de cada rodada o cron confere se algum **outro** sumiu — cada sumiço avisa uma vez, com uma chave única como trava. O limite é conhecido: se todos pararem juntos, não sobra quem avise, e o sumiço só aparece no painel do admin. Fora isso, logs da Vercel: sem métricas, sem tracing.
@@ -285,18 +333,22 @@ Sendo honesto sobre o estado do projeto:
 ```
 src/
 ├─ app/
-│  ├─ api/            168 route handlers
-│  │  ├─ admin/       70  gestão de conteúdo, cursos, usuários
-│  │  ├─ me/          35  dados do próprio usuário (flashcards, progresso)
+│  ├─ api/            173 route handlers
+│  │  ├─ admin/       71  gestão de conteúdo, cursos, usuários, provas
+│  │  ├─ me/          38  dados do próprio usuário (questões, provas, flashcards)
 │  │  ├─ auth/        10  login, registro, OAuth, 2FA
 │  │  ├─ simulados/    8  geração e correção
 │  │  ├─ schedule/     7  cronograma
 │  │  ├─ cron/         8  jobs agendados
 │  │  ├─ ai/           4  endpoints de IA
+│  │  ├─ health/       2  saúde, versão no ar e migrações aplicadas
 │  │  └─ tempo/        1  estimativa pública de tempo por concurso
 │  └─ (páginas do App Router)
 ├─ lib/               domínio: algoritmos, segurança, integrações
 └─ components/        UI
+scripts/ci/           teste de fumaça, auditoria, trava de migração
+.github/workflows/    CI, promoção para produção, vigia diário
+data/provas/          provas oficiais extraídas, prontas para importar
 ```
 
 ---

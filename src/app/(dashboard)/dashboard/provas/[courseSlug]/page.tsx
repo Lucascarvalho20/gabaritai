@@ -1,162 +1,145 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, FileText, Loader2, Play, Eye, Trophy, Calendar, Clock } from 'lucide-react'
+import { useParams } from 'next/navigation'
+import { ChevronLeft, Eye, FileText, Loader2, Lock, Play } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import toast from 'react-hot-toast'
+import { fmtDuracao, fmtPct } from '@/components/provas/comum'
+import type { DesempenhoMateria } from '@/lib/provas/correcao'
 
 type Prova = {
-  id: string
-  titulo: string
-  ano: number
-  etapa: string | null
-  cargo: string | null
-  banca: string | null
-  bancaSlug: string | null
-  totalQuestoes: number
-  stats: {
-    tentativas: number
-    ultimaNota: number | null
-    melhorNota: number | null
-    ultimaTentativaEm: string | null
-  }
+  id: string; titulo: string; ano: number; cargo: string | null; banca: string | null; itens: number
+  duracaoMin: number | null; incluiaDiscursiva: boolean; formato: string | null; emAndamento: string | null
+  tentativas: Array<{ id: string; pontos: number; pontosMax: number; entregueEm: string }>
+  melhor: number | null
+}
+type Dados = {
+  curso: { slug: string; name: string }
+  acesso: boolean
+  provas: Prova[]
+  desempenho: { tentativas: unknown[]; materias: DesempenhoMateria[]; revisar: DesempenhoMateria[] } | null
 }
 
-type Data = {
-  course: { id: string; name: string; slug: string; cargo: string | null; orgao: string | null }
-  provasPorAno: Array<{ ano: number; provas: Prova[] }>
-  message?: string
-}
+const fmtNum = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+const fmtData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
 
 export default function ProvasDoCursoPage() {
-  const router = useRouter()
-  const params = useParams<{ courseSlug: string }>()
-  const [data, setData] = useState<Data | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [starting, setStarting] = useState<string | null>(null)
+  const { courseSlug } = useParams<{ courseSlug: string }>()
+  const [d, setD] = useState<Dados | null>(null)
+  const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get(`/me/provas/curso/${params.courseSlug}`)
-      .then(({ data }) => setData(data))
-      .catch((err) => toast.error(err.response?.data?.message ?? 'Erro ao carregar provas'))
-      .finally(() => setLoading(false))
-  }, [params.courseSlug])
+    api.get(`/me/provas/curso/${courseSlug}`)
+      .then(({ data }) => setD(data))
+      .catch((e) => setErro(e.response?.data?.message ?? 'Não foi possível carregar as provas.'))
+  }, [courseSlug])
 
-  async function fazerProva(provaId: string) {
-    setStarting(provaId)
-    try {
-      const { data } = await api.post(`/me/provas/${provaId}/start`)
-      if (data.durationNote) {
-        toast(data.durationNote, { duration: 6000, icon: 'ℹ️' })
-      }
-      router.push(`/dashboard/simulados/${data.mockExamId}/fazer`)
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? 'Erro ao iniciar prova')
-      setStarting(null)
-    }
-  }
+  if (erro) return <div className="max-w-xl mx-auto card p-6 text-sm">{erro}</div>
+  if (!d) return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
 
-  if (loading) {
-    return <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
-  }
-  if (!data) return null
+  const anos = [...new Set(d.provas.map((p) => p.ano))]
+  const feitas = d.desempenho?.tentativas.length ?? 0
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 animate-fade-in">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2">
-          <ChevronLeft className="w-3 h-3" /> Dashboard
+        <Link href="/dashboard/provas" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2">
+          <ChevronLeft className="w-3 h-3" /> Cursos
         </Link>
-        <h1 className="text-2xl font-black inline-flex items-center gap-2">
-          <FileText className="w-6 h-6 text-brand-500" /> Provas anteriores
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {data.course.name}{data.course.cargo ? ` · ${data.course.cargo}` : ''}{data.course.orgao ? ` · ${data.course.orgao}` : ''}
-        </p>
+        <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="w-6 h-6 text-brand-500" /> Provas anteriores</h1>
+        <p className="text-sm text-muted-foreground mt-1">{d.curso.name} — provas oficiais, com o tempo do edital de cada ano e o gabarito definitivo.</p>
       </div>
 
-      {data.message && (
-        <div className="card p-6 bg-yellow-50/40 dark:bg-yellow-900/15 border-yellow-200 dark:border-yellow-800/40 text-sm">
-          {data.message}
+      {!d.acesso && (
+        <div className="card p-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm inline-flex items-center gap-2"><Lock className="w-4 h-4 text-muted-foreground" /> As provas anteriores fazem parte do curso. Assine para fazer e ver os gabaritos.</p>
+          <Link href="/planos" className="btn-primary btn-sm">Ver planos</Link>
         </div>
       )}
 
-      {data.provasPorAno.length === 0 && !data.message && (
-        <div className="card p-8 text-center text-muted-foreground text-sm">
-          Nenhuma prova cadastrada ainda.
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {data.provasPorAno.map(({ ano, provas }) => (
-          <div key={ano}>
-            <h2 className="text-sm font-bold mb-2 inline-flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-brand-500" /> {ano}
-              <span className="text-xs text-muted-foreground font-normal">({provas.length} prova{provas.length === 1 ? '' : 's'})</span>
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {provas.map((p) => (
-                <div key={p.id} className="card p-4 space-y-3">
-                  <div>
-                    <h3 className="font-bold text-sm leading-tight">{p.titulo}</h3>
-                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2">
-                      {p.banca && <span>{p.banca}</span>}
-                      {p.etapa && <><span>·</span><span>{p.etapa}</span></>}
-                      <span>·</span>
-                      <span>{p.totalQuestoes} questões</span>
-                    </div>
-                  </div>
-
-                  {p.stats.tentativas > 0 && (
-                    <div className="rounded-lg bg-muted/30 p-2.5 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground inline-flex items-center gap-1">
-                          <Trophy className="w-3 h-3" /> Melhor nota
-                        </span>
-                        <span className="font-bold tabular-nums">{p.stats.melhorNota?.toFixed(1)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Tentativas
-                        </span>
-                        <span className="font-bold tabular-nums">{p.stats.tentativas}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => fazerProva(p.id)}
-                      disabled={starting === p.id || p.totalQuestoes === 0}
-                      className="flex-1 rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                    >
-                      {starting === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                      {p.stats.tentativas > 0 ? 'Refazer' : 'Fazer prova'}
-                    </button>
-                    <Link
-                      href={`/dashboard/provas/${params.courseSlug}/${p.id}/gabarito`}
-                      className={cn(
-                        'flex-1 rounded-lg border border-border bg-card hover:bg-muted px-3 py-2 text-xs font-semibold inline-flex items-center justify-center gap-1.5',
-                        p.totalQuestoes === 0 && 'opacity-60 pointer-events-none',
-                      )}
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Ver com gabarito
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {d.acesso && feitas > 0 && d.desempenho && (
+        <div className="card p-5 space-y-3">
+          <div>
+            <h2 className="font-bold text-sm">Seu desempenho nas provas</h2>
+            <p className="text-xs text-muted-foreground">Somando as {feitas} tentativa{feitas === 1 ? '' : 's'}: onde você vai mal de forma consistente, não num dia ruim.</p>
           </div>
-        ))}
-      </div>
+          {d.desempenho.revisar.length > 0 ? (
+            <div className="text-sm">
+              <p className="font-semibold mb-1.5">Revise primeiro</p>
+              <ul className="space-y-1">
+                {d.desempenho.revisar.slice(0, 4).map((m) => (
+                  <li key={m.materia} className="flex justify-between gap-3">
+                    <span>{m.materia}</span>
+                    <span className="tabular-nums text-muted-foreground">{fmtPct(m.percentual)} em {m.total} itens</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-sm text-success-600">Nenhuma matéria abaixo de 60% nas suas provas.</p>
+          )}
+        </div>
+      )}
 
-      <div className="card p-4 text-xs text-muted-foreground">
-        <strong className="text-foreground">Como funciona:</strong> "Fazer prova" abre simulado cronometrado com a duração oficial do edital, regra de errada-anula-certa se aplicável, e calcula sua nota no final.
-        "Ver com gabarito" mostra todas as questões com resposta correta + comentário Gabaritai. Você pode refazer ilimitado e todo histórico fica salvo.
-      </div>
+      {d.provas.length === 0 && <p className="card p-6 text-sm text-muted-foreground">Ainda não há provas oficiais deste curso.</p>}
+
+      {anos.map((ano) => (
+        <section key={ano} className="space-y-3">
+          <h2 className="text-sm font-bold text-muted-foreground">{ano}</h2>
+          {d.provas.filter((p) => p.ano === ano).map((p) => (
+            <div key={p.id} className="card p-5 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-bold">{p.titulo}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {[p.banca, `${p.itens} itens`, p.duracaoMin ? fmtDuracao(p.duracaoMin) : null, p.formato === 'CE' ? 'certo ou errado' : p.formato ? 'múltipla escolha' : null].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                {p.emAndamento && <span className="text-xs font-semibold text-warning-600">Em andamento</span>}
+              </div>
+
+              {p.tentativas.length > 0 && (
+                <div className="text-sm space-y-1.5">
+                  <p className="text-muted-foreground">
+                    {p.tentativas.length} tentativa{p.tentativas.length === 1 ? '' : 's'} · melhor <strong className="text-foreground tabular-nums">{fmtNum(p.melhor ?? 0)}</strong> de {p.tentativas[0].pontosMax}
+                  </p>
+                  <ul className="flex flex-wrap gap-2">
+                    {p.tentativas.slice(0, 6).map((t, i) => (
+                      <li key={t.id}>
+                        <Link href={`/dashboard/provas/${courseSlug}/${p.id}/resultado/${t.id}`}
+                          className={cn('inline-flex gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs hover:bg-muted tabular-nums', i === 0 && 'border-brand-500/40')}>
+                          <span className="text-muted-foreground">{fmtData(t.entregueEm)}</span>
+                          <strong>{fmtNum(t.pontos)}</strong>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {d.acesso ? (
+                  <>
+                    <Link href={`/dashboard/provas/${courseSlug}/${p.id}/fazer`} className="btn-primary btn-sm">
+                      <Play className="w-3.5 h-3.5" /> {p.emAndamento ? 'Continuar a prova' : p.tentativas.length ? 'Refazer a prova' : 'Fazer a prova'}
+                    </Link>
+                    <Link href={`/dashboard/provas/${courseSlug}/${p.id}/gabarito`} className="btn-ghost btn-sm"><Eye className="w-3.5 h-3.5" /> Ver com gabarito</Link>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><Lock className="w-3 h-3" /> Disponível no plano do curso</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+      ))}
+
+      <p className="text-xs text-muted-foreground">
+        O cronômetro usa o tempo do edital daquele ano. Na Cebraspe, cada item errado anula um certo, e o item anulado vale ponto para todos.
+        Cada tentativa fica guardada, para você ver a evolução. As provas e os gabaritos são os oficiais, publicados pela banca e pelo órgão, com a fonte citada.
+      </p>
     </div>
   )
 }

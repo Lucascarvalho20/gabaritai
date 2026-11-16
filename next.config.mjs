@@ -23,6 +23,13 @@ const csp = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // As provas oficiais prontas para importar (data/provas/*.json) são lidas do
+  // disco pela rota do admin. Sem isto, a Vercel não leva a pasta no deploy.
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/admin/provas/importar': ['./data/provas/**/*.json'],
+    },
+  },
   // Nenhuma tela usa next/image. Com o otimizador ligado e `hostname: '**'`,
   // /_next/image buscava e processava imagem de QUALQUER site: proxy aberto,
   // consumo da cota de imagens da Vercel por terceiros e justamente a porta

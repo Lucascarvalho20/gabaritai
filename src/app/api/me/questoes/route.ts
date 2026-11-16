@@ -106,6 +106,12 @@ export async function GET(req: NextRequest) {
         subject: { select: { id: true, slug: true, name: true } },
         topic: { select: { id: true, name: true } },
         prova: { select: { id: true, titulo: true, pdfUrl: true } },
+        // Item de prova oficial: sem o comando e o texto-base ele não se responde.
+        comando: true,
+        temFigura: true,
+        temFormula: true,
+        paginaProva: true,
+        provaTexto: { select: { titulo: true, conteudo: true } },
       },
       // createdAt empata em lote importado; o id desempata e mantém os itens
       // de uma mesma prova na ordem da prova.

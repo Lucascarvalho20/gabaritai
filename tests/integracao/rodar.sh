@@ -19,6 +19,9 @@ docker exec "$NOME" psql -U postgres -d teste -qc 'CREATE EXTENSION IF NOT EXIST
 DATABASE_URL="$URL" npx prisma db push --skip-generate --accept-data-loss >/dev/null
 # O índice HNSW não existe no schema do Prisma: vem do SQL, como em produção.
 docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/sql/2026-11-09-cronograma-adaptativo-e-rag.sql >/dev/null
+# O SQL das provas roda por cima do schema do Prisma, como vai rodar no
+# Supabase: prova que ele é idempotente e que grava o registro de migrações.
+docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/sql/2026-11-14-provas-anteriores.sql >/dev/null 2>&1
 
 INTEGRACAO_DATABASE_URL="$URL" node --experimental-transform-types --no-warnings \
   --import ./scripts/alias/registrar.mjs ./tests/integracao/integracao.mts

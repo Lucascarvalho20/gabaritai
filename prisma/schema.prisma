@@ -100,6 +100,7 @@ model User {
   flashcardReviews FlashcardReview[]
   questionAttempts QuestionAttempt[]
   mockExamResults  MockExamResult[]
+  provaTentativas  ProvaTentativa[]
   aiConversations  AiConversation[]
   notifications    Notification[]
   trials           TrialPeriod[]
@@ -628,6 +629,15 @@ model Question {
   active             Boolean        @default(true)
   createdAt          DateTime       @default(now())
 
+  // Itens de prova oficial: o comando ("julgue os itens…"), o texto-base e
+  // avisos de que o item tem figura ou fórmula (aí a tela aponta a página da prova original).
+  comando      String?     @db.Text
+  provaTextoId String?
+  provaTexto   ProvaTexto? @relation(fields: [provaTextoId], references: [id], onDelete: SetNull)
+  temFigura    Boolean     @default(false)
+  temFormula   Boolean     @default(false)
+  paginaProva  Int?
+
   attempts QuestionAttempt[]
 
   @@index([subjectId, ano])
@@ -667,7 +677,60 @@ model Prova {
   questions   Question[]
   createdAt   DateTime @default(now())
 
+  // Provas oficiais importadas de data/provas/ (src/lib/provas/importar.ts).
+  // Colunas criadas por prisma/sql/2026-11-14-provas-anteriores.sql.
+  slug              String?     @unique // identificador estável, para reimportar sem duplicar ("pf-2021-agente")
+  duracaoMin        Int? // tempo oficial daquele ano, do edital daquele ano (não do edital atual do curso)
+  incluiaDiscursiva Boolean     @default(false) // o tempo oficial incluía a redação
+  examFormat        ExamFormat?
+  wrongAnnulsRight  Boolean     @default(false) // Cebraspe: cada erro anula um acerto
+  fonte             Json? // { pagina, caderno, gabarito, aviso } — sempre citada (condição da banca para reproduzir)
+  textos            ProvaTexto[]
+  tentativas        ProvaTentativa[]
+
   @@map("provas")
+}
+
+/// Texto-base de uma prova ("Texto 2A1-I"), compartilhado pelos itens que o citam.
+model ProvaTexto {
+  id        String     @id @default(cuid())
+  provaId   String
+  prova     Prova      @relation(fields: [provaId], references: [id], onDelete: Cascade)
+  codigo    String
+  titulo    String
+  conteudo  String     @db.Text
+  ordem     Int        @default(0)
+  questions Question[]
+
+  @@unique([provaId, codigo])
+  @@map("prova_textos")
+}
+
+/// Cada vez que o aluno faz uma prova oficial. Todas ficam guardadas: é o
+/// histórico que mostra se ele está melhorando e em que matéria.
+model ProvaTentativa {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provaId    String
+  prova      Prova     @relation(fields: [provaId], references: [id], onDelete: Cascade)
+  status     String    @default("EM_ANDAMENTO") // EM_ANDAMENTO | ENTREGUE | EXPIRADA
+  respostas  Json      @default("{}") // { questionId: "C" | "E" | "A".."E" } — salvo enquanto o aluno marca
+  duracaoMin Int
+  iniciadaEm DateTime  @default(now())
+  expiraEm   DateTime
+  entregueEm DateTime?
+  acertos    Int       @default(0)
+  erros      Int       @default(0)
+  brancos    Int       @default(0)
+  anuladas   Int       @default(0)
+  pontos     Float     @default(0) // líquido: acertos − erros (Cebraspe) + anuladas
+  pontosMax  Int       @default(0)
+  porMateria Json? // [{ materia, total, acertos, erros, brancos, anuladas, pontos }]
+  tempoMs    Int?
+
+  @@index([userId, provaId, iniciadaEm])
+  @@map("prova_tentativas")
 }
 
 // ─── FLASHCARDS ──────────────────────────────────────────────────────────────
@@ -1298,4 +1361,14 @@ model CronAlerta {
 
   @@unique([tarefa, referencia])
   @@map("cron_alertas")
+}
+
+/// Registro das migrações SQL aplicadas à mão no Supabase (prisma/sql/*.sql).
+/// Cada SQL grava o próprio nome aqui; o pipeline compara com
+/// prisma/migracoes.json antes de promover uma versão. Ver src/lib/migracoes.ts.
+model SchemaMigracao {
+  nome       String   @id
+  aplicadaEm DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("schema_migracoes")
 }
