@@ -26,20 +26,49 @@ export type ItemTela = {
 
 export type TextoTela = { id: string; codigo: string; titulo: string; conteudo: string }
 
-/** Parágrafos separados por linha em branco; trechos entre ``` viram código com o recuo original. */
+/**
+ * Parágrafos separados por linha em branco; trechos entre ``` viram código com o
+ * recuo original; ```linhas é texto com a numeração de linha do caderno.
+ */
 export function TextoFormatado({ texto, className }: { texto: string; className?: string }) {
   const partes = texto.split(/```\n?/)
   return (
     <div className={cn('space-y-2', className)}>
       {partes.map((p, i) =>
         i % 2 === 1 ? (
-          <pre key={i} className="text-xs bg-muted/60 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed">{p.replace(/\n$/, '')}</pre>
+          p.startsWith('linhas\n') ? (
+            <LinhasNumeradas key={i} texto={p.slice('linhas\n'.length)} />
+          ) : (
+            <pre key={i} className="text-xs bg-muted/60 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed">{p.replace(/\n$/, '')}</pre>
+          )
         ) : (
           p.split(/\n{2,}/).filter((x) => x.trim()).map((par, j) => (
             <p key={`${i}-${j}`} className="whitespace-pre-line">{par.trim()}</p>
           ))
         ),
       )}
+    </div>
+  )
+}
+
+/**
+ * Texto que as questões citam pela linha ("ℓ.13", "ℓ. 25 a 27"): cada linha do
+ * caderno com o número ao lado. Formato de cada linha: "13|texto"; recuo de
+ * parágrafo vem como dois espaços; sem número é a fonte do texto, ao pé.
+ */
+function LinhasNumeradas({ texto }: { texto: string }) {
+  const linhas = texto.replace(/\n$/, '').split('\n').map((l) => {
+    const corte = l.indexOf('|')
+    return { num: l.slice(0, corte), corpo: l.slice(corte + 1) }
+  })
+  return (
+    <div className="leading-relaxed">
+      {linhas.map((l, i) => (
+        <div key={i} className="grid grid-cols-[2rem_1fr] gap-x-2">
+          <span className="text-right text-[0.7rem] tabular-nums text-muted-foreground/70 pt-[0.15rem] select-none">{l.num}</span>
+          <span className={cn(l.corpo.startsWith('  ') && 'pl-5', !l.num && 'pt-1 text-xs text-muted-foreground')}>{l.corpo.trim()}</span>
+        </div>
+      ))}
     </div>
   )
 }
