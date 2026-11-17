@@ -134,7 +134,9 @@ export async function POST(req: NextRequest) {
         message: 'Conta criada! Verifique seu e-mail pra ativar (válido por 48h).',
         emailSent: emailResult.ok,
         emailMode: emailResult.mode, // 'resend' ou 'dev'
-        ...(emailResult.mode === 'dev' && { devVerifyUrl: verifyUrl }), // expõe link em dev
+        // O link só volta fora de produção. Em produção sem Resend, devolvê-lo deixaria
+        // qualquer um confirmar um e-mail que não é dele.
+        ...(emailResult.mode === 'dev' && process.env.NODE_ENV !== 'production' && { devVerifyUrl: verifyUrl }),
         user,
       },
       { status: 201 },

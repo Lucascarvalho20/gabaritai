@@ -542,6 +542,96 @@ await caso('domínio por matéria: 10 respostas simultâneas somam 10, sem perde
   exigir(r.antes === 70 && r.novo === 64 && r.total === 11, JSON.stringify(r))
 })
 
+console.log('\nCADASTRO E LOGIN (quem chega entra; senha e CPF não vazam)')
+{
+  const { NextRequest } = await import('next/server')
+  const rota = (p: string) => import(new URL(`../../src/app/api/${p}/route.ts`, import.meta.url).href)
+  const [rCadastro, rLogin] = await Promise.all([rota('auth/register'), rota('auth/login')])
+  const { decryptCpf } = await import(W + 'cpf.ts')
+  const { getUserContentMode } = await import(W + 'trial-content.ts')
+  const CPF = '12345678909' // dígitos verificadores válidos
+  const post = (modulo: any, caminho: string, corpo: unknown, ip: string) =>
+    modulo.POST(new NextRequest(`http://localhost${caminho}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
+      body: JSON.stringify(corpo),
+    }))
+  // Sem Resend, o e-mail cai no "modo dev" e é impresso no console: silencia.
+  const cadastrar = async (corpo: unknown, ip = '10.0.0.1') => {
+    const log = console.log
+    console.log = () => {}
+    try { return await post(rCadastro, '/api/auth/register', corpo, ip) } finally { console.log = log }
+  }
+  const entrar = (email: string, password: string, ip: string) => post(rLogin, '/api/auth/login', { email, password }, ip)
+
+  await caso('cadastro novo entra: 201, senha só em bcrypt, CPF só em hash e cifrado, 7 dias de teste', async () => {
+    const r = await cadastrar({ name: 'Aluna Nova', email: ' Nova@Teste.Local ', password: 'senha-de-teste-1', cpf: '123.456.789-09' })
+    const texto = await r.text()
+    exigir(r.status === 201, `status ${r.status}: ${texto}`)
+    exigir(!texto.includes('senha-de-teste-1') && !texto.includes(CPF) && !texto.includes('$2'), 'a resposta devolveu senha, CPF ou hash')
+    const u = await prisma.user.findUnique({ where: { email: 'nova@teste.local' }, include: { trials: true } })
+    exigir(!!u, 'conta não gravada com o e-mail normalizado')
+    exigir(u!.password.startsWith('$2') && u!.password !== 'senha-de-teste-1', 'senha fora do bcrypt')
+    exigir(/^[0-9a-f]{64}$/.test(u!.cpfHash ?? ''), `cpfHash ${u!.cpfHash}`)
+    exigir(!u!.cpfEncrypted!.includes(CPF) && decryptCpf(u!.cpfEncrypted!) === CPF, 'CPF cifrado errado')
+    const dias = (u!.trials[0]?.endsAt.getTime() - Date.now()) / 864e5
+    exigir(u!.trials.length === 1 && dias > 6.9 && dias <= 7, `teste de ${dias.toFixed(2)} dias`)
+  })
+  await caso('o mesmo e-mail ou o mesmo CPF não abrem segunda conta: 409', async () => {
+    const mesmoEmail = await cadastrar({ name: 'Outra', email: 'NOVA@teste.local', password: 'outra-senha-1', cpf: '529.982.247-25' })
+    const mesmoCpf = await cadastrar({ name: 'Outra', email: 'outra@teste.local', password: 'outra-senha-1', cpf: CPF })
+    exigir(mesmoEmail.status === 409 && mesmoCpf.status === 409, `e-mail ${mesmoEmail.status}, CPF ${mesmoCpf.status}`)
+    const contas = await prisma.user.count({ where: { email: { in: ['nova@teste.local', 'outra@teste.local'] } } })
+    exigir(contas === 1, `${contas} contas`)
+  })
+  await caso('dado inválido não entra: CPF com dígito errado, senha curta, campo faltando → 400', async () => {
+    const rs = [
+      await cadastrar({ name: 'X', email: 'x1@teste.local', password: 'senha-123', cpf: '123.456.789-00' }, '10.0.0.2'),
+      await cadastrar({ name: 'X', email: 'x2@teste.local', password: '12345', cpf: '529.982.247-25' }, '10.0.0.2'),
+      await cadastrar({ name: 'X', email: 'x3@teste.local', password: 'senha-123' }, '10.0.0.2'),
+    ]
+    exigir(rs.every((r) => r.status === 400), rs.map((r) => r.status).join(', '))
+    const gravadas = await prisma.user.count({ where: { email: { in: ['x1@teste.local', 'x2@teste.local', 'x3@teste.local'] } } })
+    exigir(gravadas === 0, `${gravadas} contas inválidas gravadas`)
+  })
+  await caso('login: senha certa entra com cookie httpOnly; senha errada e e-mail que não existe dão a mesma resposta', async () => {
+    const ok = await entrar('nova@teste.local', 'senha-de-teste-1', '10.0.0.3')
+    const corpo = await ok.json()
+    const cookie = ok.headers.get('set-cookie') ?? ''
+    exigir(ok.status === 200 && typeof corpo.token === 'string', `status ${ok.status}`)
+    exigir(/gabaritai_token=/.test(cookie) && /httponly/i.test(cookie), `cookie: ${cookie}`)
+    exigir(!JSON.stringify(corpo).includes('$2') && !('password' in corpo.user), 'o login devolveu o hash da senha')
+    const errada = await entrar('nova@teste.local', 'senha-errada', '10.0.0.4')
+    const ninguem = await entrar('ninguem@teste.local', 'senha-errada', '10.0.0.4')
+    const [de, dn] = [await errada.json(), await ninguem.json()]
+    exigir(errada.status === 401 && ninguem.status === 401 && de.message === dn.message,
+      `${errada.status} "${de.message}" × ${ninguem.status} "${dn.message}"`)
+  })
+  await caso('passados os 7 dias, a conta continua entrando e organizando, mas o conteúdo fecha', async () => {
+    const u = await prisma.user.findUniqueOrThrow({ where: { email: 'nova@teste.local' } })
+    exigir((await getUserContentMode(u.id)) === 'TRIAL_RESUMOS', 'no teste de 7 dias devia ver conteúdo')
+    await prisma.trialPeriod.updateMany({ where: { userId: u.id }, data: { endsAt: new Date(Date.now() - 864e5) } })
+    const modo = await getUserContentMode(u.id)
+    exigir(modo === 'FREE_PLANNER', `depois do teste: ${modo}`)
+    const login = await entrar('nova@teste.local', 'senha-de-teste-1', '10.0.0.5')
+    exigir(login.status === 200, `login depois do teste: ${login.status}`)
+  })
+  await caso('em produção, o cadastro nunca devolve o link de confirmar e-mail', async () => {
+    const antes = { NODE_ENV: process.env.NODE_ENV, CPF_SALT: process.env.CPF_SALT, CPF_ENCRYPTION_KEY: process.env.CPF_ENCRYPTION_KEY }
+    Object.assign(process.env, { NODE_ENV: 'production', CPF_SALT: 'sal-do-ensaio', CPF_ENCRYPTION_KEY: 'chave-do-ensaio-com-32-bytes-ok!' })
+    try {
+      const r = await cadastrar({ name: 'Prod', email: 'prod@teste.local', password: 'senha-de-teste-2', cpf: '529.982.247-25' }, '10.0.0.6')
+      const d = await r.json()
+      exigir(r.status === 201 && d.emailMode === 'dev' && !('devVerifyUrl' in d), `status ${r.status}, link ${'devVerifyUrl' in d ? 'na resposta' : 'ausente'}`)
+    } finally {
+      for (const [k, v] of Object.entries(antes)) {
+        if (v === undefined) delete process.env[k]
+        else process.env[k] = v
+      }
+    }
+  })
+}
+
 console.log('\nPAYWALL (conta gratuita organiza; conteúdo é do plano pago)')
 {
   const { NextRequest } = await import('next/server')
