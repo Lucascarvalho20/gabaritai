@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ChevronLeft, ExternalLink, Loader2, Play } from 'lucide-react'
 import { api } from '@/lib/api'
-import { agrupar, AvisoOriginal, TextoBase, TextoFormatado, fmtDuracao, type ItemTela, type TextoTela } from '@/components/provas/comum'
+import { agrupar, AvisoOriginal, ListaAlternativas, TextoBase, TextoFormatado, fmtDuracao, type ItemTela, type TextoTela } from '@/components/provas/comum'
 
 /** Modo leitura: a prova inteira, como no caderno, com a resposta oficial de cada item. */
 
@@ -69,8 +69,8 @@ export default function GabaritoProvaPage() {
                   {c.rotulo ?? `Caderno — itens ${c.de} a ${c.ate}`} (PDF) <ExternalLink className="w-3 h-3" />
                 </a>
               ))
-              : fonte.caderno && <a href={fonte.caderno} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Caderno oficial (PDF) <ExternalLink className="w-3 h-3" /></a>}
-            {fonte.gabarito && <a href={fonte.gabarito} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Gabarito definitivo (PDF) <ExternalLink className="w-3 h-3" /></a>}
+              : fonte.caderno && <a href={fonte.caderno} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Caderno oficial{ehPdf(fonte.caderno) ? ' (PDF)' : ''} <ExternalLink className="w-3 h-3" /></a>}
+            {fonte.gabarito && <a href={fonte.gabarito} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:underline">Gabarito definitivo{ehPdf(fonte.gabarito) ? ' (PDF)' : ' no site da banca'} <ExternalLink className="w-3 h-3" /></a>}
           </p>
         </div>
       )}
@@ -88,6 +88,7 @@ export default function GabaritoProvaPage() {
                 <span className="font-bold tabular-nums text-sm pt-0.5 w-7 shrink-0">{i.numero}</span>
                 <div className="flex-1 min-w-0 space-y-2">
                   <TextoFormatado texto={i.enunciado} className="text-sm leading-relaxed" />
+                  {!ce && <ListaAlternativas item={i} gabarito={i.anulada ? null : i.gabarito} />}
                   <AvisoOriginal item={i} caderno={g.prova.caderno} />
                   <p className="text-sm">
                     {i.anulada
@@ -106,4 +107,9 @@ export default function GabaritoProvaPage() {
       <Link href={`/dashboard/provas/${courseSlug}/${provaId}/fazer`} className="btn-primary btn-md"><Play className="w-4 h-4" /> Fazer esta prova</Link>
     </div>
   )
+}
+
+/** O AOCP mostra o gabarito numa página, não num PDF: o rótulo do link diz qual é. */
+function ehPdf(url: string): boolean {
+  return /\.pdf$/i.test(url.split(/[?#]/)[0])
 }

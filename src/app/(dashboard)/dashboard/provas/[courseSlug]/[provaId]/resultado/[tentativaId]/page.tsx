@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { ChevronLeft, Loader2, RotateCcw, TrendingDown, TrendingUp } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { AvisoOriginal, TextoFormatado, fmtDuracao, fmtPct, type ItemTela } from '@/components/provas/comum'
+import { AvisoOriginal, ListaAlternativas, TextoFormatado, fmtDuracao, fmtPct, type ItemTela } from '@/components/provas/comum'
 import type { DesempenhoMateria } from '@/lib/provas/correcao'
 
 type ItemResultado = ItemTela & { gabarito: string | null; explicacao: string | null; resposta: string | null; situacao: 'certo' | 'errado' | 'branco' | 'anulada' }
@@ -150,6 +150,7 @@ export default function ResultadoProvaPage() {
               </details>
             )}
             <TextoFormatado texto={i.enunciado} className="text-sm leading-relaxed" />
+            {!ce && <ListaAlternativas item={i} gabarito={i.situacao === 'anulada' ? null : i.gabarito} resposta={i.resposta} />}
             <AvisoOriginal item={i} caderno={r.prova.caderno} />
             {i.situacao === 'anulada' ? (
               <p className="text-sm text-muted-foreground">Anulado pela banca: o ponto vale para todos.</p>

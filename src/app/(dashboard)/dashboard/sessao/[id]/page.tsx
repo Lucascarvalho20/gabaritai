@@ -11,6 +11,7 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type SessionData = {
   session: {
@@ -698,7 +699,7 @@ function QuestoesPanel({ questoes, onAnswer, onWrong, source }: { questoes: any[
         <span>Questão {idx + 1} de {questoes.length}</span>
         <span>{answered.size} respondidas</span>
       </div>
-      <p className="text-sm mb-4 whitespace-pre-wrap">{q.enunciado}</p>
+      <p className="text-sm mb-4 whitespace-pre-wrap"><TextoMarcado texto={q.enunciado} /></p>
       <div className="space-y-1.5">
         {isCE ? ['C', 'E'].map((l) => {
           const gab = (lastResult?.gabarito ?? q.gabarito)
@@ -727,7 +728,7 @@ function QuestoesPanel({ questoes, onAnswer, onWrong, source }: { questoes: any[
                 isWrong ? 'border-red-500 bg-red-50 dark:bg-red-900/20' :
                 selected === alt.letra ? 'border-brand-500' : 'border-border hover:bg-muted',
               )}>
-              <strong>({alt.letra})</strong> {alt.texto}
+              <strong>({alt.letra})</strong> <TextoMarcado texto={alt.texto} />
             </button>
           )
         })}

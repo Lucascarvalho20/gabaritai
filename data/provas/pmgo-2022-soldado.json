@@ -1,0 +1,1741 @@
+{
+ "slug": "pmgo-2022-soldado",
+ "curso": "pmgo-soldado",
+ "titulo": "PMGO 2022 — Soldado de 2ª Classe (Combatente)",
+ "ano": 2022,
+ "banca": "instituto-aocp",
+ "orgao": "Polícia Militar do Estado de Goiás",
+ "cargo": "Soldado de 2ª Classe QPPM (Combatente)",
+ "formato": "ME_5",
+ "erradaAnulaCerta": false,
+ "duracaoMin": 300,
+ "incluiaDiscursiva": true,
+ "aplicadaEm": "2022-07-10",
+ "fonte": {
+  "pagina": "https://goias.gov.br/administracao/edital-002-2022-concurso-pm-go-soldado/",
+  "caderno": "/provas/originais/pmgo-2022-soldado-tipo1.pdf",
+  "gabarito": "https://goias.gov.br/administracao/wp-content/uploads/sites/27/2022/04/120822-Gabarito-28a.pdf",
+  "aviso": "Prova e gabarito oficiais — Instituto AOCP, concurso de Soldado de 2ª Classe da PMGO (Edital nº 002/2022), caderno Tipo 1 do cargo Combatente. O gabarito é o pós-recursos de 12/08/2022, publicado pela Escola de Governo de Goiás. A banca não oferece mais o caderno no site; o PDF aqui é cópia do arquivo original dela. Reproduzidos para fins didáticos, com a fonte citada."
+ },
+ "materiasSlug": {
+  "Língua Portuguesa": "lingua-portuguesa",
+  "Realidade Étnica e Social de Goiás": "realidade-goias",
+  "Direito Penal": "direito-penal",
+  "Direito Constitucional": "direito-constitucional",
+  "Direito Processual Penal": "direito-processual-penal",
+  "Direito Administrativo": "direito-administrativo",
+  "Direito Penal Militar": "direito-penal-militar",
+  "Direito Processual Penal Militar": "direito-processual-penal-militar",
+  "Legislação Especial": "legislacao-especial"
+ },
+ "textos": [
+  {
+   "codigo": "T1",
+   "titulo": "Texto das questões 1 a 9",
+   "conteudo": "<b>PRATOS QUEBRADOS</b>\n\n<i>Vladimir Safatle</i> “Um homem não se recupera desses solavancos, ele se torna uma pessoa diferente e eventualmente a nova pessoa encontra novas preocupações.” Foi isso o que Scott Fitzgerald tinha a dizer depois de seu colapso nervoso. Ele se via como um prato quebrado, “o tipo que nos perguntamos se vale a pena conservar”. Prato que nunca mais será usado para visitas, mas que servirá para guardar biscoitos tarde da noite. De fato, há certos momentos no interior da vida de um sujeito nos quais algo quebra, que não será mais colado. Olhando para trás, é estranho ter a sensação de que andávamos em direção a esse ponto de ruptura, como se fosse impossível evitá-lo caso quiséssemos continuar avançando. Como se houvesse passagens que só poderiam ser vivenciadas como quebra. Talvez isso ocorra porque somos feitos de forma tal que precisamos nos afastar de certas experiências, de certos modos de gozo, para podermos funcionar. Dessa forma, conseguiremos fabricar um prato com nossas vidas, um prato pequeno. A mulher que precisa se afastar da maternidade, o homem que precisa se afastar de uma paixão na qual se misturam coisas que deveriam estar separadas: todos esses são casos de pratos fabricados para não passarem de certo tamanho. No entanto, somos às vezes pegos por situações nas quais acabamos por nos confrontar com aquilo que nos horroriza e fascina. Se quisermos continuar, sabemos que, em dado momento, o prato se quebrará, que ele nunca será recuperado, que talvez não funcionará “melhor”, até porque ele viverá com a consciência clara de que há vários pontos da superfície nos quais sua vulnerabilidade ficará visível. Como disse Fitzgerald, um homem não se recupera desses solavancos. Algo desse sofrimento fica inscrito para sempre. Mas ele também poderá descobrir que, mesmo depois da quebra, ainda é capaz de se colar, de continuar funcionando, um pouco como esses pratos que pintamos de outra forma para disfarçar as rachaduras. Se bem elaborada, tal experiência poderá levar à diminuição do medo daquilo que, um dia, fomos obrigados a excluir. Talvez aprendamos a compor com doses do excluído, já que a necessidade da exclusão não era simplesmente arbitrária, embora ela não precise ser radicalmente hipostasiada. Algo do excluído poderá ser trabalhado e integrado; algo deverá ser irremediavelmente perdido.\n\nUm dia, descobriremos que todos os pratos\n\nda sala de jantar estão quebrados em algum ponto e\n\nque é com pratos quebrados que sempre se\n\nofereceram jantares. Os pratos que não passam por\n\nalguma quebra são pequenos e, por isso, só servem\n\npara a sobremesa. No entanto, ninguém vai ao\n\nbanquete por causa da sobremesa.\n\nAdaptado de: https://revistacult.uol.com.br/home/pratos-quebrados/.\n\nAcesso em: 18 abr. 2022.",
+   "pagina": 2
+  }
+ ],
+ "itens": [
+  {
+   "numero": 1,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Assinale a alternativa em que o “se” é uma conjunção integrante.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 2,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "“[...] o tipo que nos perguntamos se vale a pena conservar”."
+    },
+    {
+     "letra": "B",
+     "texto": "“Se bem elaborada, tal experiência poderá levar [...]”."
+    },
+    {
+     "letra": "C",
+     "texto": "“Um homem não se recupera desses solavancos [...]”."
+    },
+    {
+     "letra": "D",
+     "texto": "“A mulher que precisa se afastar da maternidade [...]”."
+    },
+    {
+     "letra": "E",
+     "texto": "“Se quisermos continuar, sabemos que [...]”."
+    }
+   ]
+  },
+  {
+   "numero": 2,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Sobre os mecanismos de coesão empregados no texto, assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 2,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "No quarto parágrafo, a expressão “tal experiência” retoma a ideia de que a pintura de pratos pode ser uma atividade terapêutica que diminui o medo das pessoas."
+    },
+    {
+     "letra": "B",
+     "texto": "No primeiro parágrafo, os “solavancos” mencionados por Scott Fitzgerald incluem o colapso nervoso sofrido por ele."
+    },
+    {
+     "letra": "C",
+     "texto": "O termo destacado em “Talvez <u>isso</u> ocorra [...]”, no segundo parágrafo, refere-se à ideia de “olhar para trás” e rememorar eventos passados."
+    },
+    {
+     "letra": "D",
+     "texto": "Em “[...] <u>todos esses</u> são casos de pratos fabricados para não passarem de certo tamanho.”, no segundo parágrafo, os itens em destaque são catafóricos, substituindo o termo “pratos”."
+    },
+    {
+     "letra": "E",
+     "texto": "Em “<u>Ele</u> se via como um prato quebrado [...]”, no primeiro parágrafo, o termo destacado evita a repetição da palavra “homem”."
+    }
+   ]
+  },
+  {
+   "numero": 3,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Assinale a alternativa que NÃO contém uma locução verbal.",
+   "gabarito": null,
+   "anulada": true,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "“Algo desse sofrimento fica inscrito para sempre.”."
+    },
+    {
+     "letra": "B",
+     "texto": "“A mulher que precisa se afastar da maternidade [...]”."
+    },
+    {
+     "letra": "C",
+     "texto": "“[...] conseguiremos fabricar um prato com nossas vidas [...]”."
+    },
+    {
+     "letra": "D",
+     "texto": "“[...] ainda é capaz de se colar, de continuar funcionando [...]”."
+    },
+    {
+     "letra": "E",
+     "texto": "“Talvez aprendamos a compor com doses do excluído [...]”."
+    }
+   ]
+  },
+  {
+   "numero": 4,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Sobre a pontuação empregada no texto, assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "As três ocorrências de aspas presentes no texto indicam que o conteúdo abarcado por elas é uma citação direta."
+    },
+    {
+     "letra": "B",
+     "texto": "Em “Olhando para trás, é estranho ter a sensação [...]”, a vírgula isola uma oração que indica uma circunstância."
+    },
+    {
+     "letra": "C",
+     "texto": "Em “Prato que nunca mais será usado para visitas, mas que servirá [...]”, a vírgula é facultativa."
+    },
+    {
+     "letra": "D",
+     "texto": "Em “Como disse Fitzgerald, um homem não se recupera desses solavancos.”, a vírgula isola uma oração comparativa."
+    },
+    {
+     "letra": "E",
+     "texto": "Em “[...] diminuição do medo daquilo que, um dia, fomos obrigados a excluir.”, as vírgulas poderiam ser substituídas por parênteses."
+    }
+   ]
+  },
+  {
+   "numero": 5,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "No quarto parágrafo do texto, qual é a relação sintático-semântica mantida entre “Algo do excluído poderá ser trabalhado e integrado [...]” e “[...] algo deverá ser irremediavelmente perdido.”?",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Condição."
+    },
+    {
+     "letra": "B",
+     "texto": "Conclusão."
+    },
+    {
+     "letra": "C",
+     "texto": "Causa."
+    },
+    {
+     "letra": "D",
+     "texto": "Adversidade."
+    },
+    {
+     "letra": "E",
+     "texto": "Explicação."
+    }
+   ]
+  },
+  {
+   "numero": 6,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Assinale a alternativa em que o pronome átono pode ser posposto ao verbo.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "“[...] é com pratos quebrados que sempre se ofereceram jantares.”."
+    },
+    {
+     "letra": "B",
+     "texto": "“[...] uma paixão na qual se misturam coisas que deveriam estar separadas [...]”."
+    },
+    {
+     "letra": "C",
+     "texto": "“Ele se via como um prato quebrado [...]”."
+    },
+    {
+     "letra": "D",
+     "texto": "“[...] aquilo que nos horroriza e fascina.”."
+    },
+    {
+     "letra": "E",
+     "texto": "“[...] em dado momento, o prato se quebrará [...]”."
+    }
+   ]
+  },
+  {
+   "numero": 7,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Sobre o excerto “[...] é com pratos quebrados que sempre se ofereceram jantares.”, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O excerto poderia ser reescrito como “nunca se ofereceram jantares com pratos inteiros”, sem que isso causasse prejuízo sintático ou semântico ao texto."
+    },
+    {
+     "letra": "B",
+     "texto": "O termo “quebrados” é um adjetivo que exerce a função sintática de predicativo."
+    },
+    {
+     "letra": "C",
+     "texto": "O item “se” sinaliza que o sujeito é indeterminado."
+    },
+    {
+     "letra": "D",
+     "texto": "O verbo “ofereceram” é classificado como transitivo direto, cujo objeto é o termo “jantares”."
+    },
+    {
+     "letra": "E",
+     "texto": "O termo “sempre” é um advérbio de intensidade, que pode ser substituído pela expressão “todas as vezes”."
+    }
+   ]
+  },
+  {
+   "numero": 8,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Assinale a alternativa que apresenta uma reescrita semântica e gramaticalmente adequada para o excerto “No entanto, ninguém vai ao banquete por causa da sobremesa.”.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Porém, os convidados não vão no banquete devido à sobremesa."
+    },
+    {
+     "letra": "B",
+     "texto": "Embora as pessoas não vão nas festas pela sobremesa."
+    },
+    {
+     "letra": "C",
+     "texto": "Porquanto, nenhuma pessoa se dirige à refeição por conta da sobremesa."
+    },
+    {
+     "letra": "D",
+     "texto": "Todavia, não é a sobremesa que faz com que as pessoas vão nos jantares."
+    },
+    {
+     "letra": "E",
+     "texto": "Porém, o motivo pelo qual as pessoas comparecem aos jantares não é a sobremesa."
+    }
+   ]
+  },
+  {
+   "numero": 9,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "A partir da leitura do excerto “[...] a necessidade da exclusão não era simplesmente arbitrária, embora ela não precise ser radicalmente hipostasiada.”, é correto afirmar que",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "apesar de não ser uma ação sem importância, a exclusão não deve ser feita de forma simples."
+    },
+    {
+     "letra": "B",
+     "texto": "a exclusão, ao mesmo tempo em que apresenta fundamentos plausíveis, não necessita ser tomada como algo absoluto, que deve ocorrer de maneira completa."
+    },
+    {
+     "letra": "C",
+     "texto": "embora a exclusão de algo quebrado não seja simples, ela tem de acontecer sempre e de forma radical, definitiva."
+    },
+    {
+     "letra": "D",
+     "texto": "a exclusão é algo que depende única e exclusivamente da vontade do indivíduo, sendo uma ação facultativa e extremamente violenta."
+    },
+    {
+     "letra": "E",
+     "texto": "a necessidade da exclusão é obrigatória e não precisa ter sua importância diminuída."
+    }
+   ]
+  },
+  {
+   "numero": 10,
+   "materia": "Língua Portuguesa",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa que apresenta um atributo que NÃO caracteriza redação oficial.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Objetividade."
+    },
+    {
+     "letra": "B",
+     "texto": "Formalidade."
+    },
+    {
+     "letra": "C",
+     "texto": "Impessoalidade."
+    },
+    {
+     "letra": "D",
+     "texto": "Retórica."
+    },
+    {
+     "letra": "E",
+     "texto": "Concisão."
+    }
+   ]
+  },
+  {
+   "numero": 11,
+   "materia": "Realidade Étnica e Social de Goiás",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Localizada na região centro-sul do Estado de Goiás, pode ser considerada a principal bacia hidrográfica goiana por concentrar, em apenas 4,2% do território do Estado, aproximadamente 40% de sua população, incluindo a Região Metropolitana de Goiânia e importantes municípios, polos industriais e agroindustriais, que utilizam as suas águas para diversas atividades. Adaptado de: https://www.meioambiente.go.gov.br/noticias/1592-bacia_meiaponte.html. Acesso em: 20 abr. 2022. O texto se refere à Bacia Hidrográfica do rio",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Ribeiro."
+    },
+    {
+     "letra": "B",
+     "texto": "Parnaíba."
+    },
+    {
+     "letra": "C",
+     "texto": "Meia Ponte."
+    },
+    {
+     "letra": "D",
+     "texto": "Atlântico Leste."
+    },
+    {
+     "letra": "E",
+     "texto": "Tocantins-Araguaia."
+    }
+   ]
+  },
+  {
+   "numero": 12,
+   "materia": "Realidade Étnica e Social de Goiás",
+   "texto": null,
+   "comando": null,
+   "enunciado": "O advento da mineração imprimiu significativa e profunda mudança no espaço geográfico brasileiro. Foi um período de grandes transformações econômicas e sociais e que teve como consequências a",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "melhoria substancial da qualidade de vida das populações dos arraiais e das comunidades indígenas estabelecidas no entorno dessas localidades."
+    },
+    {
+     "letra": "B",
+     "texto": "concentração do poder político e econômico na região Sudeste, alavancando o desenvolvimento industrial e urbano nessa região do país."
+    },
+    {
+     "letra": "C",
+     "texto": "substancial expansão das capitanias da Bahia, de Pernambuco e de São Vicente, além da ampliação da linha imaginária do Tratado de Tordesilhas até a bacia do rio Prata."
+    },
+    {
+     "letra": "D",
+     "texto": "criação e a estruturação de um empreendimento comum português e flamengo, uma fusão que foi essencial para viabilizar a exportação do ouro brasileiro para a Europa."
+    },
+    {
+     "letra": "E",
+     "texto": "multiplicação dos arraiais, o aumento populacional considerável e a estruturação capitalista em detrimento do primitivismo indígena, à medida que a mineração avançava."
+    }
+   ]
+  },
+  {
+   "numero": 13,
+   "materia": "Realidade Étnica e Social de Goiás",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Leia o fragmento de texto a seguir: Lideradas por José Porfírio e atraídas pela política de expansão da fronteira agrícola do governo Getúlio Vargas, dezenas de famílias de camponeses ocuparam, na década de 1940, uma região a 400 km ao norte de Goiânia. O conflito começou quando, vendo o progresso dos posseiros, fazendeiros locais, sem nenhum direito sobre as terras, passaram a exigir uma parcela da sua produção, o que foi, é claro, negado. A tensão na região se agravou ainda mais com a chegada de grileiros que, forjando títulos de propriedade, tentaram expulsar os camponeses das terras ocupadas. Estes buscaram, por diversas vezes, resolver legalmente a questão, mas sem êxito. Este movimento ganhou força a partir de 1954, quando militantes do Partido Comunista Brasileiro (PCB) chegaram à região com o intuito de estabelecer contato com os camponeses e “ajudar na organização da resistência”, além de ampliar a área de atuação política do partido. Os posseiros se armaram e passaram a se organizar em grupos. Além da recém-fundada Associação dos Lavradores da região, eles criaram os chamados conselhos de córrego, de acordo com o curso d’água onde cada grupo morava. Cada conselho discutia os seus problemas e o encaminhamento da luta, além de defender o local contra ações da polícia e dos pistoleiros. Adaptado de: http://memorialdademocracia.com.br/conflitos/go. Acesso em: 20 abr. 2022. O texto se refere à mobilização de",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Trombas e Formoso."
+    },
+    {
+     "letra": "B",
+     "texto": "Sabinada."
+    },
+    {
+     "letra": "C",
+     "texto": "Canudos."
+    },
+    {
+     "letra": "D",
+     "texto": "Chibata."
+    },
+    {
+     "letra": "E",
+     "texto": "Malês."
+    }
+   ]
+  },
+  {
+   "numero": 14,
+   "materia": "Realidade Étnica e Social de Goiás",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação à escravidão no estado de Goiás, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) A população de Goiás, em princípios do século XIX, era composta, majoritariamente, por negros e pardos que juntos correspondiam a 80% da população goiana. \n( ) O caráter urbano da sociedade mineradora, com uma atividade comercial intensa e variada, trouxe novas modalidades de escravidão, tal como a escravidão de ganho. \n( ) A escravidão nas minas apresentava-se como menos opressiva que nas regiões agrícolas. A fiscalização dos garimpos também era menos intensa, pois acreditava-se na lealdade dos escravos. \n( ) A decadência das minas e a transição para a economia agropastoril iniciaram, em Goiás, a gradativa desagregação do sistema escravista, já que a pecuária, única atividade de caráter comercial ao longo do século XIX em Goiás, empregava pouca ou nenhuma mão de obra escrava.",
+   "gabarito": null,
+   "anulada": true,
+   "figura": false,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "V – F – V – F."
+    },
+    {
+     "letra": "B",
+     "texto": "F – V – F – F."
+    },
+    {
+     "letra": "C",
+     "texto": "V – V – F – V."
+    },
+    {
+     "letra": "D",
+     "texto": "F – V – F – V."
+    },
+    {
+     "letra": "E",
+     "texto": "F – F – V – V."
+    }
+   ]
+  },
+  {
+   "numero": 15,
+   "materia": "Realidade Étnica e Social de Goiás",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A região da Chapada dos Veadeiros está localizada em Goiás e abarca os municípios de Alto Paraíso de Goiás, Cavalcante, Teresina de Goiás e Colinas do Sul, que abrigam o Parque Nacional de mesmo nome. Geomorfologicamente, essa chapada se encontra na região",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "do Planalto Residual Norte-Amazônico e do Planalto dos Guimarães."
+    },
+    {
+     "letra": "B",
+     "texto": "das Chapadas dos Cocais e do Complexo Montanhoso Mangabeiras."
+    },
+    {
+     "letra": "C",
+     "texto": "da Planície da Borborema e da Chapada do Apodi."
+    },
+    {
+     "letra": "D",
+     "texto": "do Planalto Central Goiano e do Complexo Montanhoso Veadeiros-Araí."
+    },
+    {
+     "letra": "E",
+     "texto": "das Chapadas do Araripe e das Chapadas da Bacia do Parnaíba."
+    }
+   ]
+  },
+  {
+   "numero": 16,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Suponha que, em agosto de 2022, o Brasil sedie importante evento internacional esportivo, com duração de um mês e que ocorrerá nas principais cidades do país. A previsão é de que venham ao Brasil para acompanhar o evento mais de 2 milhões de turistas, isso sem considerar o deslocamento de pessoas que ocorrerá por conta do próprio turismo interno brasileiro. À vista disso e temendo o aumento exagerado da ocorrência de alguns delitos, foi publicada lei de conteúdo penal prevendo que, durante o período de 15/06/2022 até 15/10/2022, a pena do crime de estelionato será de reclusão, de três a nove anos, sendo que, ao término do período estipulado em lei, a pena voltará a ser a prevista originariamente, isto é, reclusão, de um a cinco anos. No dia 04/08/2022, José, notável golpista, pratica o crime de estelionato contra Jimmy, turista americano que visitava Goiânia para acompanhar o evento esportivo. Encerrado o inquérito policial, José foi denunciado pelos fatos em 01/11/2022. Considerando o caso narrado, é correto afirmar que",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 6,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "a referida lei é um exemplo clássico de lei penal excepcional, que possui como uma de suas características ser autorrevogável."
+    },
+    {
+     "letra": "B",
+     "texto": "se trata de uma típica lei penal intermediária, dotada de ultratividade, razão pela qual José, em caso de condenação, estará sujeito à pena de reclusão, de três a nove anos."
+    },
+    {
+     "letra": "C",
+     "texto": "José, caso seja condenado, estará sujeito à pena de reclusão, de um a cinco anos, haja vista o princípio da retroatividade da lei penal mais benéfica."
+    },
+    {
+     "letra": "D",
+     "texto": "caso seja condenado, José estará sujeito à pena de reclusão, de três a nove anos, tendo em vista que, na data dos fatos, estava vigente uma típica lei penal temporária."
+    },
+    {
+     "letra": "E",
+     "texto": "em atenção ao princípio da legalidade, José não poderá ser condenado, pois a lei penal que vigorava na data dos fatos não está mais vigente."
+    }
+   ]
+  },
+  {
+   "numero": 17,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca do conflito aparente de normas penais.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 6,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "No conflito aparente, duas ou mais leis penais disputam a aplicação a um mesmo fato típico, contudo somente uma delas pode ser aplicada, pois as outras já não estão mais em vigor."
+    },
+    {
+     "letra": "B",
+     "texto": "Especialidade, subsidiariedade, consunção e alteridade são princípios apontados pela doutrina como solucionadores do conflito aparente."
+    },
+    {
+     "letra": "C",
+     "texto": "Conforme o princípio da especialidade, a lei especial prevalece sobre a lei geral, devendo essa análise ocorrer no plano abstrato."
+    },
+    {
+     "letra": "D",
+     "texto": "O conflito aparente, que pode ser enquadrado no âmbito da interpretação da lei penal, possui três requisitos, quais sejam: (i) pluralidade de fatos; (ii) pluralidade de leis penais; e (iii) vigência simultânea de todas elas."
+    },
+    {
+     "letra": "E",
+     "texto": "O crime progressivo e a progressão criminosa podem ser apontados como hipóteses de aplicação do princípio da subsidiariedade."
+    }
+   ]
+  },
+  {
+   "numero": 18,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre o direito penal, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 6,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A interpretação analógica, método de colmatação do ordenamento jurídico, caso seja desfavorável ao réu, não pode ser admitida no direito penal, em atenção ao princípio da reserva legal."
+    },
+    {
+     "letra": "B",
+     "texto": "A nova lei penal que implique tratamento mais rigoroso à conduta já classificada como infração penal é denominada <i>lex mitior</i>. Como se trata de lei penal mais grave, somente terá aplicação aos fatos posteriores à sua entrada em vigor."
+    },
+    {
+     "letra": "C",
+     "texto": "Segundo o princípio da representação, ficam sujeitos à lei brasileira, embora cometidos no estrangeiro, os crimes praticados contra a administração pública por quem está a seu serviço."
+    },
+    {
+     "letra": "D",
+     "texto": "Configura <i>bis in idem</i> o reconhecimento das qualificadoras de motivo torpe e de feminicídio no crime de homicídio praticado contra mulher em situação de violência doméstica e familiar."
+    },
+    {
+     "letra": "E",
+     "texto": "Não há flagrante quando a entrega de valores ocorre em momento posterior à exigência, pois o crime de concussão é formal e o recebimento se consubstancia em mero exaurimento."
+    }
+   ]
+  },
+  {
+   "numero": 19,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No dia 10 de abril de 2022, na saída de um prestigiado restaurante de Goiânia, Cleópatra foi surpreendida por Calígula, fugitivo do sistema prisional, que, portando uma faca e mediante grave ameaça, subtraiu a sua bolsa, a qual continha em seu interior objetos pessoais e um celular de última geração. Sem demora, Calígula saiu em disparada pela via pública, sendo capturado, a dois quarteirões de distância, por policiais militares que estavam de patrulha e que desconfiaram de seu comportamento. Considerando o caso narrado e o entendimento do Superior Tribunal de Justiça, é correto afirmar que Calígula responderá por",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "roubo simples, na forma consumada."
+    },
+    {
+     "letra": "B",
+     "texto": "roubo majorado, na forma tentada."
+    },
+    {
+     "letra": "C",
+     "texto": "roubo majorado, na forma consumada."
+    },
+    {
+     "letra": "D",
+     "texto": "roubo qualificado, na forma tentada."
+    },
+    {
+     "letra": "E",
+     "texto": "roubo qualificado, na forma consumada."
+    }
+   ]
+  },
+  {
+   "numero": 20,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que diz respeito à Lei Maria da Penha - LMP (Lei Federal nº 11.340/2006), informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) A LMP objetiva proteger a mulher da violência doméstica e familiar que lhe cause morte, lesão, sofrimento físico, sexual ou psicológico, e dano moral ou patrimonial, desde que o crime seja cometido no âmbito da unidade doméstica, da família ou em qualquer relação íntima de afeto. \n( ) A agressão do namorado contra a namorada, mesmo cessado o relacionamento, mas que ocorra em decorrência dele, não pode ser caracterizada mais como relação íntima de afeto, razão pela qual restam afastadas as disposições da LMP. \n( ) Para a configuração da violência doméstica e familiar, exige-se a coabitação entre autor e vítima. \n( ) A violência psicológica, reconhecida expressamente como forma de violência doméstica e familiar contra a mulher, é aquela entendida como qualquer conduta que configure calúnia, difamação ou injúria.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "F – V – F – V."
+    },
+    {
+     "letra": "B",
+     "texto": "F – F – V – V."
+    },
+    {
+     "letra": "C",
+     "texto": "V – V – F – F."
+    },
+    {
+     "letra": "D",
+     "texto": "V – F – V – V."
+    },
+    {
+     "letra": "E",
+     "texto": "V – F – F – F."
+    }
+   ]
+  },
+  {
+   "numero": 21,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Renomada associação privada de âmbito municipal, que atua na área da proteção à infância e à juventude, foi objeto de matéria jornalística veiculada em programa televisivo dominical, na qual se denunciou, com a exibição de evidências robustas, que as atividades institucionais desenvolvidas pela associação estariam ligadas ao tráfico internacional de menores. Considerando o caso narrado e as disposições constitucionais acerca das associações, é correto afirmar que",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "a entidade associativa não poderá ser compulsoriamente dissolvida, em razão do direito constitucional de liberdade de associação."
+    },
+    {
+     "letra": "B",
+     "texto": "a associação somente poderá ter suas atividades suspensas ao final de regular processo administrativo, em que lhe seja assegurada ampla defesa."
+    },
+    {
+     "letra": "C",
+     "texto": "as atividades da associação não poderão ser suspensas, eis que ela não detém caráter paramilitar."
+    },
+    {
+     "letra": "D",
+     "texto": "na esfera administrativa, para que a associação tenha suas atividades suspensas, faz-se imprescindível que o processo judicial que apura o ilícito penal já tenha transitado em julgado."
+    },
+    {
+     "letra": "E",
+     "texto": "as atividades da associação só poderão ser suspensas por decisão judicial, independentemente do trânsito em julgado da ação."
+    }
+   ]
+  },
+  {
+   "numero": 22,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Suponha que a República Federativa do Brasil tenha celebrado tratado internacional sobre direitos humanos, o qual foi aprovado pelo Congresso Nacional pelo procedimento ordinário (CF, art. 47). Nesse caso, segundo o entendimento do Supremo Tribunal Federal, o referido tratado internacional ingressará no ordenamento jurídico brasileiro",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "com status equivalente às emendas constitucionais."
+    },
+    {
+     "letra": "B",
+     "texto": "como norma de natureza supralegal."
+    },
+    {
+     "letra": "C",
+     "texto": "com força de lei ordinária."
+    },
+    {
+     "letra": "D",
+     "texto": "com força de lei complementar."
+    },
+    {
+     "letra": "E",
+     "texto": "como norma de natureza infralegal."
+    }
+   ]
+  },
+  {
+   "numero": 23,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Determinado Deputado Estadual apresentou projeto de lei dispondo sobre o regime jurídico dos militares estaduais, a fim de instituir regulamentação acerca da indenização por morte e invalidez permanente dos militares de Goiás. Como forma de reconhecer e valorizar o excelente serviço prestado pela categoria, a proposta foi aprovada pela Assembleia Legislativa e sancionada pelo Governador do Estado. Considerando o caso narrado e a jurisprudência do Supremo Tribunal Federal, é correto afirmar que a nova lei estadual é",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "incompatível com a Constituição Federal, haja vista que lei de iniciativa parlamentar, por força do princípio da simetria, não pode dispor sobre o regime jurídico dos militares estaduais."
+    },
+    {
+     "letra": "B",
+     "texto": "inconstitucional, porque compete à União legislar sobre direito civil, o que abrange as indenizações por morte e invalidez permanente dos militares estaduais."
+    },
+    {
+     "letra": "C",
+     "texto": "constitucional, pois o regime jurídico dos servidores públicos militares é norma de iniciativa concorrente."
+    },
+    {
+     "letra": "D",
+     "texto": "constitucional, eis que a sanção do Governador do Estado sanou eventual vício de iniciativa."
+    },
+    {
+     "letra": "E",
+     "texto": "compatível com a Constituição Federal, pois as regras de processo legislativo não são normas de reprodução obrigatória pelos Estados-membros."
+    }
+   ]
+  },
+  {
+   "numero": 24,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Suponha que o Presidente da República e o Vice- Presidente viajarão em missão oficial com a finalidade de representar a República Federativa do Brasil em importante reunião internacional, que ocorrerá na sede europeia da ONU (Genebra/Suíça), para discutir questões afetas à segurança mundial. Nesse contexto, conforme a ordem de substituição estabelecida na Constituição Federal, será primeiramente chamado ao exercício da Presidência o",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Presidente da Câmara dos Deputados."
+    },
+    {
+     "letra": "B",
+     "texto": "Presidente do Senado Federal."
+    },
+    {
+     "letra": "C",
+     "texto": "Presidente do Tribunal de Contas da União."
+    },
+    {
+     "letra": "D",
+     "texto": "Presidente do Supremo Tribunal Federal."
+    },
+    {
+     "letra": "E",
+     "texto": "Ministro da Defesa."
+    }
+   ]
+  },
+  {
+   "numero": 25,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que concerne aos princípios fundamentais, à organização do Estado e à Administração Pública, assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A solução pacífica dos conflitos, a defesa da paz e a soberania nacional podem ser apontadas como princípios que regem a República Federativa do Brasil nas suas relações internacionais."
+    },
+    {
+     "letra": "B",
+     "texto": "Os Estados podem incorporar-se entre si, subdividir-se ou desmembrar-se para se anexarem a outros, ou formarem novos Estados ou Territórios Federais, mediante aprovação da população diretamente interessada, através de plebiscito, e do Congresso Nacional, por lei complementar."
+    },
+    {
+     "letra": "C",
+     "texto": "Inexistindo lei federal sobre normas gerais, os Estados exercerão a competência legislativa plena para atender a suas peculiaridades. No entanto a eventual superveniência de lei federal sobre normas gerais revoga a lei estadual no que lhe for contrário."
+    },
+    {
+     "letra": "D",
+     "texto": "Os atos de improbidade administrativa importarão a cassação dos direitos políticos, a perda da função pública, a indisponibilidade dos bens e o ressarcimento ao erário, na forma e gradação previstas em lei, sem prejuízo da ação penal cabível."
+    },
+    {
+     "letra": "E",
+     "texto": "Após a aquisição da estabilidade, o servidor público só perde o cargo em virtude de sentença judicial transitada em julgado ou mediante processo administrativo em que lhe seja assegurada ampla defesa."
+    }
+   ]
+  },
+  {
+   "numero": 26,
+   "materia": "Direito Constitucional",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação à defesa do Estado e das Instituições Democráticas, assinale a alternativa INCORRETA.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Não cabe habeas corpus em relação a punições disciplinares militares."
+    },
+    {
+     "letra": "B",
+     "texto": "Ao militar são proibidas a sindicalização e a greve."
+    },
+    {
+     "letra": "C",
+     "texto": "Decretado o estado de defesa ou sua prorrogação, o Presidente da República, dentro de vinte e quatro horas, submeterá o ato com a respectiva justificação ao Congresso Nacional, que decidirá por maioria absoluta."
+    },
+    {
+     "letra": "D",
+     "texto": "A remuneração dos servidores policiais integrantes dos órgãos da segurança pública é fixada pelo regime de vencimentos."
+    },
+    {
+     "letra": "E",
+     "texto": "As polícias militares e os corpos de bombeiros militares, forças auxiliares e reserva do Exército subordinam-se, juntamente com as polícias civis e as polícias penais estaduais e distrital, aos Governadores dos Estados, do Distrito Federal e dos Territórios."
+    }
+   ]
+  },
+  {
+   "numero": 27,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Por intermédio do seu disque denúncia, a Polícia Militar do Estado de Goiás foi informada que determinada organização criminosa, especializada na prática do crime de tráfico de pessoas, estaria agindo na região do município de Abadiânia. Conforme as informações colhidas, primeiramente, membros da organização criminosa, mediante o emprego de fraude, aliciavam adolescentes em situação de vulnerabilidade, para, posteriormente, transportá-los ao exterior com a finalidade de exploração sexual. Considerando o caso narrado e à luz das disposições do Código de Processo Penal acerca da requisição de informações sobre as estações rádio base, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) Se necessário à prevenção e à repressão dos crimes relacionados ao tráfico de pessoas, o membro do Ministério Público ou o delegado de polícia poderão requisitar, mediante autorização judicial, às empresas prestadoras de serviço de telecomunicações e/ou telemática que disponibilizem imediatamente os meios técnicos adequados – como sinais, informações e outros – que permitam a localização da vítima ou dos suspeitos do delito em curso. \n( ) O sinal deverá ser fornecido pela prestadora de telefonia móvel celular por período não superior a quinze dias, renovável por uma única vez, por igual período. \n( ) O inquérito policial deverá ser instaurado no prazo máximo de quarenta e oito horas, contado do registro da respectiva ocorrência policial. \n( ) Não havendo manifestação judicial no prazo máximo de vinte e quatro horas, a autoridade competente requisitará às empresas prestadoras de serviço de telecomunicações e/ou telemática que disponibilizem imediatamente os meios técnicos adequados \n– como sinais, informações e outros – que permitam a localização da vítima ou dos suspeitos do delito em curso, com imediata comunicação ao juiz.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "V – F – V – V."
+    },
+    {
+     "letra": "B",
+     "texto": "V – V – F – F."
+    },
+    {
+     "letra": "C",
+     "texto": "V – F – F – F."
+    },
+    {
+     "letra": "D",
+     "texto": "F – V – V – F."
+    },
+    {
+     "letra": "E",
+     "texto": "F – F – V – V."
+    }
+   ]
+  },
+  {
+   "numero": 28,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Com base na jurisprudência do Superior Tribunal de Justiça, assinale a alternativa INCORRETA.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Antes da entrada em vigor do Pacote Anticrime, não é ilegal a decretação de prisão preventiva de ofício, ainda que decorrente de conversão da prisão em flagrante, pois as normas de natureza processual sujeitam-se ao princípio <i>tempus regit actum</i> e não retroagem para atingir atos praticados antes da sua vigência."
+    },
+    {
+     "letra": "B",
+     "texto": "Compete ao juiz federal do local da apreensão da droga remetida do exterior pela via postal processar e julgar o crime de tráfico internacional."
+    },
+    {
+     "letra": "C",
+     "texto": "O acordo de não persecução penal (ANPP) aplica-se a fatos ocorridos antes da Lei nº 13.964/2019 (Pacote Anticrime), desde que não recebida a denúncia."
+    },
+    {
+     "letra": "D",
+     "texto": "O prazo de 90 dias previsto para a revisão da prisão preventiva não é peremptório, de modo que eventual atraso na execução do ato não implica reconhecimento automático da ilegalidade da prisão, tampouco a imediata colocação do custodiado cautelar em liberdade."
+    },
+    {
+     "letra": "E",
+     "texto": "Em delitos sexuais, comumente praticados às ocultas, a palavra da vítima possui especial relevância, desde que esteja em consonância com as demais provas acostadas aos autos."
+    }
+   ]
+  },
+  {
+   "numero": 29,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação à liberdade provisória e ao habeas corpus, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A autoridade policial somente poderá conceder fiança nos casos de infração cuja pena privativa de liberdade máxima não seja superior a quatro anos."
+    },
+    {
+     "letra": "B",
+     "texto": "Em caso de prisão civil ou militar, é admitida a concessão de fiança."
+    },
+    {
+     "letra": "C",
+     "texto": "O réu afiançado não poderá, sob pena de quebramento da fiança, mudar de residência, sem prévia permissão da autoridade processante, ou ausentar-se por mais de sete dias de sua residência, sem comunicar àquela autoridade o lugar onde será encontrado."
+    },
+    {
+     "letra": "D",
+     "texto": "A superveniência da sentença condenatória não prejudica o pedido de trancamento da ação penal por falta de justa causa feito em habeas corpus."
+    },
+    {
+     "letra": "E",
+     "texto": "Em atenção ao princípio da inércia da jurisdição, os juízes e os tribunais não têm competência para expedir de ofício ordem de habeas corpus."
+    }
+   ]
+  },
+  {
+   "numero": 30,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com o Código de Processo Penal, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Os processos que apurem a prática de crime hediondo terão prioridade de tramitação em todas as instâncias."
+    },
+    {
+     "letra": "B",
+     "texto": "Na instrução do procedimento ordinário, poderão ser inquiridas até cinco testemunhas arroladas pela acusação e cinco pela defesa."
+    },
+    {
+     "letra": "C",
+     "texto": "No processo e julgamento dos crimes de responsabilidade dos funcionários públicos, quando se tratar de crimes afiançáveis e estando a denúncia ou queixa em devida forma, o juiz mandará autuá-la e ordenará a notificação do acusado, para responder por escrito, dentro do prazo de dez dias."
+    },
+    {
+     "letra": "D",
+     "texto": "Da decisão que não receber a denúncia ou a queixa, caberá apelação."
+    },
+    {
+     "letra": "E",
+     "texto": "É de cinco dias o prazo para interposição de carta testemunhável."
+    }
+   ]
+  },
+  {
+   "numero": 31,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre a prisão temporária (Lei Federal nº 7.960/1989), assinale a alternativa correta.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A prisão temporária, que tem natureza de prisão cautelar, poderá ser decretada, se presentes os demais requisitos, quando imprescindível para a instrução criminal."
+    },
+    {
+     "letra": "B",
+     "texto": "Para a doutrina majoritária, o rol dos crimes que comportam a prisão temporária é exemplificativo."
+    },
+    {
+     "letra": "C",
+     "texto": "Os presos temporários deverão permanecer, obrigatoriamente, separados dos demais detentos, exceto se determinação diferente constar do decreto de prisão."
+    },
+    {
+     "letra": "D",
+     "texto": "A prisão temporária será decretada pelo juiz, em face da representação da autoridade policial ou de requerimento do Ministério Público, e terá o prazo de cinco dias, prorrogável por igual período em caso de extrema e comprovada necessidade."
+    },
+    {
+     "letra": "E",
+     "texto": "Exclui-se o dia do cumprimento do mandado de prisão no cômputo do prazo de prisão temporária."
+    }
+   ]
+  },
+  {
+   "numero": 32,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Hefesto, policial militar do Estado de Goiás, durante patrulhamento de rotina, atropelou Dionísio, causando-lhe ferimentos que o levaram à morte. No decurso da investigação, restou constatado que, no momento do acidente, Hefesto dirigia em velocidade incompatível para o local e que havia avançado o sinal vermelho do semáforo, atropelando a vítima na faixa de pedestre porque se distraiu ao responder mensagens de texto de sua esposa. À luz da sistemática constitucional acerc a da responsabilidade civil do Estado, é correto afirmar que",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "os herdeiros da vítima devem ajuizar ação indenizatória em face da Polícia Militar do Estado de Goiás, com fundamento na responsabilidade civil objetiva do Estado."
+    },
+    {
+     "letra": "B",
+     "texto": "eventual ação indenizatória deverá ser ajuizada diretamente contra Hefesto, diante das evidências que o referido agente público agiu com culpa."
+    },
+    {
+     "letra": "C",
+     "texto": "o Estado de Goiás, com base na teoria do risco administrativo, responde objetivamente pelos danos causados por Hefesto, sendo dispensável a comprovação do elemento subjetivo na conduta deste último."
+    },
+    {
+     "letra": "D",
+     "texto": "Hefesto não poderá ser responsabilizado, ainda que em eventual ação de regresso, pois sua conduta não foi dolosa."
+    },
+    {
+     "letra": "E",
+     "texto": "Hefesto, a Polícia Militar e o Estado de Goiás respondem solidariamente pela morte de Dionísio."
+    }
+   ]
+  },
+  {
+   "numero": 33,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "O Comandante Geral da Polícia Militar do Estado de Goiás, no âmbito de sua competência, deseja publicar ato administrativo em que torne obrigatória a utilização de farda, durante o expediente, para todos os policiais militares que estão lotados em setores administrativos da corporação. Nesse caso, o ato administrativo correto a ser utilizado para veicular tal regramento é o/a",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "instrução normativa."
+    },
+    {
+     "letra": "B",
+     "texto": "memorando."
+    },
+    {
+     "letra": "C",
+     "texto": "ordem de serviço."
+    },
+    {
+     "letra": "D",
+     "texto": "circular."
+    },
+    {
+     "letra": "E",
+     "texto": "portaria."
+    }
+   ]
+  },
+  {
+   "numero": 34,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca do direito administrativo.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Compete privativamente ao Presidente da República dispor, mediante decreto, sobre a extinção de funções ou cargos públicos, quando preenchidos."
+    },
+    {
+     "letra": "B",
+     "texto": "É da competência exclusiva do Poder Judiciário sustar os atos normativos do Poder Executivo que exorbitem do poder regulamentar."
+    },
+    {
+     "letra": "C",
+     "texto": "O entendimento majoritário da doutrina interpreta os atos decorrentes do poder disciplinar como discricionários, inclusive no que tange à opção de sancionar ou não o agente infrator."
+    },
+    {
+     "letra": "D",
+     "texto": "A discricionariedade, a autoexecutoriedade e a coercibilidade são elementos (requisitos) dos atos administrativos."
+    },
+    {
+     "letra": "E",
+     "texto": "Prevalece o entendimento de que a aposentadoria de servidor público caracteriza ato complexo, haja vista depender da manifestação da entidade administrativa a que o agente é subordinado e da aprovação do respectivo Tribunal de Contas."
+    }
+   ]
+  },
+  {
+   "numero": 35,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Referente aos princípios da Administração Pública e à organização administrativa do Estado, assinale a alternativa INCORRETA.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A vedação ao nepotismo e as regras quanto à realização de concurso público para o ingresso na carreira pública podem ser apontadas como corolário do princípio da impessoalidade."
+    },
+    {
+     "letra": "B",
+     "texto": "Segundo o princípio da autotutela, a administração pode anular seus próprios atos, quando eivados de vícios que os tornam ilegais, porque deles não se originam direitos; ou revogá-los, por motivo de conveniência ou oportunidade, respeitados os direitos adquiridos, e ressalvada, em todos os casos, a apreciação judicial."
+    },
+    {
+     "letra": "C",
+     "texto": "Na outorga, também denominada descentralização por colaboração, é transferida a titularidade e a execução do serviço público à pessoa jurídica diversa do Estado."
+    },
+    {
+     "letra": "D",
+     "texto": "As atividades de conteúdo econômico e as passíveis de delegação, quando definidas como objetos de dada fundação, ainda que essa seja instituída ou mantida pelo poder público, podem se submeter ao regime jurídico de direito privado."
+    },
+    {
+     "letra": "E",
+     "texto": "Embora não possuam personalidade jurídica própria, determinados órgãos públicos gozam de capacidade processual ativa, de modo que, em tais casos, terão capacidade postulatória para agirem judicialmente em nome próprio."
+    }
+   ]
+  },
+  {
+   "numero": 36,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que diz respeito aos agentes públicos, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) Os jurados e os mesários podem ser citados como exemplos de agentes honoríficos. \n( ) Hades, servidor efetivo do município de Goiânia, ocupante do cargo de motorista, foi aprovado no concurso da Polícia Militar do Estado de Goiás para o cargo de Soldado Combatente. Nesse caso, ainda que haja compatibilidade de horários, Hades não poderá acumular ambos os cargos públicos. \n( ) As funções de confiança, exercidas exclusivamente por servidores ocupantes de cargo efetivo, destinam-se apenas às atribuições de direção, chefia e assessoramento. \n( ) A falta de defesa técnica por advogado no processo administrativo disciplinar ofende a Constituição.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "V – F – F – V."
+    },
+    {
+     "letra": "B",
+     "texto": "V – V – V – F."
+    },
+    {
+     "letra": "C",
+     "texto": "F – V – F – F."
+    },
+    {
+     "letra": "D",
+     "texto": "F – F – V – V."
+    },
+    {
+     "letra": "E",
+     "texto": "F – V – F – V."
+    }
+   ]
+  },
+  {
+   "numero": 37,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "O Presidente da Comissão de Licitações de determinado município frustrou, em ofensa à imparcialidade, o caráter concorrencial de procedimento licitatório que visava à aquisição de câmeras de segurança para a instalação nas escolas públicas municipais. Ao longo da investigação, restou comprovado que os atos praticados foram motivados para beneficiar certo empresário da cidade, em razão da amizade longínqua entre os dois. Por esse motivo, o referido servidor público foi denunciado por ato de improbidade administrativa. Nesse caso, nos termos da Lei Federal nº 8.429/1992, é correto afirmar que",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "o agente público municipal deverá ser absolvido da referida ação de improbidade, caso já tenha sido condenado no âmbito penal, em respeito à proibição da dupla punição pelo mesmo fato (<i>ne bis in idem</i>)."
+    },
+    {
+     "letra": "B",
+     "texto": "as sanções previstas para o sobredito ato de improbidade administrativa poderão ser executadas provisoriamente, após decisão proferida por órgão colegiado."
+    },
+    {
+     "letra": "C",
+     "texto": "em virtude do ato de improbidade cometido, o servidor, ao final do processo, estará sujeito, entre outras penas, à perda da função pública."
+    },
+    {
+     "letra": "D",
+     "texto": "da decisão que rejeitar questões preliminares suscitadas pelo réu em sua contestação, caberá apelação."
+    },
+    {
+     "letra": "E",
+     "texto": "a conduta do agente público municipal caracterizou ato de improbidade administrativa que atenta contra os princípios da administração pública."
+    }
+   ]
+  },
+  {
+   "numero": 38,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca do Código Penal Militar (CPM).",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Quanto ao tempo do crime, o CPM adotou a teoria da ubiquidade, segundo a qual se considera praticado o crime no momento da ação ou omissão, bem como quando se produziu ou deveria produzir-se o resultado."
+    },
+    {
+     "letra": "B",
+     "texto": "A <i>abolitio criminis</i>, tida como hipótese de descriminalização do fato criminoso, caracteriza causa de extinção da punibilidade."
+    },
+    {
+     "letra": "C",
+     "texto": "A pena cumprida no estrangeiro atenua a pena imposta no Brasil pelo mesmo crime, quando idênticas, ou nela é computada, quando diversas."
+    },
+    {
+     "letra": "D",
+     "texto": "Em tempo de guerra, consideram-se crimes militares somente os previstos nesse Código para o tempo de guerra."
+    },
+    {
+     "letra": "E",
+     "texto": "O defeito do ato de incorporação não exclui a aplicação da lei penal militar, ainda que alegado ou conhecido antes da prática do crime."
+    }
+   ]
+  },
+  {
+   "numero": 39,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que concerne ao Código Penal Militar (CPM), assinale a alternativa INCORRETA.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O resultado de que depende a existência do crime somente é imputável a quem lhe deu causa. Considera-se causa a ação ou omissão sem a qual o resultado não teria ocorrido."
+    },
+    {
+     "letra": "B",
+     "texto": "A preexistência de causa relativamente independente exclui a imputação quando, por si só, produziu o resultado. Os fatos anteriores imputam-se, entretanto, a quem os praticou."
+    },
+    {
+     "letra": "C",
+     "texto": "Não é imputável quem, no momento da ação ou da omissão, não possui a capacidade de entender o caráter ilícito do fato ou de determinar-se de acordo com esse entendimento, em virtude de doença mental, de desenvolvimento mental incompleto ou retardado."
+    },
+    {
+     "letra": "D",
+     "texto": "A pena é agravada em relação ao agente que coage outrem à execução material do crime."
+    },
+    {
+     "letra": "E",
+     "texto": "O ajuste, a determinação ou instigação e o auxílio, salvo disposição em contrário, não são puníveis se o crime não chega, pelo menos, a ser tentado."
+    }
+   ]
+  },
+  {
+   "numero": 40,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Referente ao Código Penal Militar (CPM), analise as assertivas e assinale a alternativa que aponta a(s) correta(s). \nI. Nos casos admitidos, a pena de morte será executada por fuzilamento ou eletrocussão. \nII. As penas de impedimento e reforma são consideradas penas acessórias. \nIII. São efeitos da condenação, dentre outros, a obrigação de reparar o dano resultante do crime e a perda do posto e patente. \nIV. No crime de deserção, embora decorrido o prazo da prescrição, esta só extingue a punibilidade quando o desertor atinge a idade de quarenta e cinco anos, e, se oficial, a de sessenta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Apenas III."
+    },
+    {
+     "letra": "B",
+     "texto": "Apenas IV."
+    },
+    {
+     "letra": "C",
+     "texto": "Apenas I e III."
+    },
+    {
+     "letra": "D",
+     "texto": "Apenas II e IV."
+    },
+    {
+     "letra": "E",
+     "texto": "Apenas I, II e III."
+    }
+   ]
+  },
+  {
+   "numero": 41,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Suponha que determinado grupo de policiais militares se reuniram e, armados, agiram contra a ordem expressa recebida de superior. Nesse caso, de acordo com o Código Penal Militar (CPM), está caracterizado o crime de",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "desobediência."
+    },
+    {
+     "letra": "B",
+     "texto": "insubmissão."
+    },
+    {
+     "letra": "C",
+     "texto": "traição."
+    },
+    {
+     "letra": "D",
+     "texto": "motim."
+    },
+    {
+     "letra": "E",
+     "texto": "revolta."
+    }
+   ]
+  },
+  {
+   "numero": 42,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca do Código de Processo Penal Militar (CPPM).",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Nos casos concretos, se houver divergência entre as normas do CPPM e as de convenção ou tratado de que o Brasil seja signatário, prevalecerão as primeiras."
+    },
+    {
+     "letra": "B",
+     "texto": "A lei de processo penal militar deve ser interpretada no sentido literal de suas expressões, sendo vedada, em qualquer caso, interpretações que venham a restringir ou ampliar o sentido da norma."
+    },
+    {
+     "letra": "C",
+     "texto": "Obedecidas as normas regulamentares de jurisdição, hierarquia e comando, as atribuições de polícia judiciária militar poderão ser delegadas a oficiais da ativa ou da reserva, para fins especificados e por tempo limitado."
+    },
+    {
+     "letra": "D",
+     "texto": "O inquérito policial militar é instaurado por instrumento formal denominado portaria."
+    },
+    {
+     "letra": "E",
+     "texto": "Em se tratando de delegação para instauração de inquérito policial militar, deverá aquela recair em oficial de posto superior ao do indiciado, salvo seja este oficial reformado."
+    }
+   ]
+  },
+  {
+   "numero": 43,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Referente ao Código de Processo Penal Militar (CPPM), assinale a alternativa INCORRETA.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Não obstante o CPPM não trate do assunto, a ação penal privada subsidiária, por ter fundamento constitucional, aplica-se também aos crimes militares."
+    },
+    {
+     "letra": "B",
+     "texto": "Vige, na ação penal militar, o princípio da indisponibilidade, segundo o qual, apresentada a denúncia, o Ministério Público não poderá desistir da ação penal."
+    },
+    {
+     "letra": "C",
+     "texto": "Nos processos em que seu cônjuge for diretamente interessado, o juiz dar-se-á por suspeito e, se o não fizer, poderá ser recusado por qualquer das partes."
+    },
+    {
+     "letra": "D",
+     "texto": "O rol de testemunhas poderá ser dispensado, se o Ministério Público dispuser de prova documental suficiente para oferecer a denúncia."
+    },
+    {
+     "letra": "E",
+     "texto": "Na exceção de litispendência, o juiz ouvirá a parte contrária a respeito da arguição, e decidirá de plano, irrecorrivelmente."
+    }
+   ]
+  },
+  {
+   "numero": 44,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Suponha que Mário, policial militar, durante o serviço de policiamento ostensivo em determinada comunidade, pratique atos que caracterizem o crime de estupro contra uma moradora local. Dias depois, para assegurar a impunidade do referido delito, Mário retorna à comunidade e assassina a irmã da vítima, que havia testemunhado o primeiro crime. De acordo com as regras de competência, é correto afirmar que Mário",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "responderá por ambos os crimes perante a Justiça Militar, pois a competência da Justiça Especial prevalece sobre a competência da Justiça Comum."
+    },
+    {
+     "letra": "B",
+     "texto": "responderá por ambos os crimes perante o Tribunal do Júri, pois a competência para o julgamento dos crimes dolosos contra a vida, como decorre de normas da Constituição Federal, atrai a competência para o julgamento do crime militar."
+    },
+    {
+     "letra": "C",
+     "texto": "responderá por ambos os crimes perante o Tribunal do Júri, pois as ações deverão ser reunidas em razão da conexão existente entre as infrações penais."
+    },
+    {
+     "letra": "D",
+     "texto": "responderá por ambos os crimes perante a Justiça Militar, pois as ações deverão ser reunidas em razão da continência existente entre as infrações penais."
+    },
+    {
+     "letra": "E",
+     "texto": "responderá pelo crime de estupro perante a Justiça Militar, entretanto o homicídio será de competência do Tribunal do Júri."
+    }
+   ]
+  },
+  {
+   "numero": 45,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação aos recursos e à revisão criminal, analise as assertivas e assinale a alternativa que aponta as corretas. \nI. Da decisão que julgar procedente a exceção, salvo de suspeição, caberá apelação. \nII. Os recursos em sentido estrito serão interpostos no prazo de cinco dias, contados da data da intimação da decisão, ou da sua publicação ou leitura em pública audiência. \nIII. Quando cabível a apelação, não poderá ser usado o recurso em sentido estrito, ainda que somente de parte da decisão se recorra. \nIV. A revisão poderá ser requerida a qualquer tempo e, em hipótese alguma, poderá ser agravada a pena imposta pela sentença revista.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Apenas I e II."
+    },
+    {
+     "letra": "B",
+     "texto": "Apenas II e III."
+    },
+    {
+     "letra": "C",
+     "texto": "Apenas III e IV."
+    },
+    {
+     "letra": "D",
+     "texto": "Apenas I, II e IV."
+    },
+    {
+     "letra": "E",
+     "texto": "Apenas II, III e IV."
+    }
+   ]
+  },
+  {
+   "numero": 46,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre o inquérito policial militar, preencha as lacunas e assinale a alternativa correta. Em tempo de guerra, o prazo para a conclusão do inquérito policial militar é de __________ dias, podendo, por motivo excepcional, ser prorrogado por mais __________ dias.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "5 (cinco) / 3 (três)"
+    },
+    {
+     "letra": "B",
+     "texto": "10 (dez) / 5 (cinco)"
+    },
+    {
+     "letra": "C",
+     "texto": "15 (quinze) / 15 (quinze)"
+    },
+    {
+     "letra": "D",
+     "texto": "20 (vinte) / 40 (quarenta)"
+    },
+    {
+     "letra": "E",
+     "texto": "30 (trinta) / 60 (sessenta)"
+    }
+   ]
+  },
+  {
+   "numero": 47,
+   "materia": "Legislação Especial",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Zeus, 27 anos, segurança, foi preso em flagrante por policiais militares, enquanto vendia drogas em determinada praça pública de Anápolis. Concluído o inquérito policial, Zeus foi denunciado pela prática do crime de tráfico de drogas (art. 33, caput, da Lei nº 11.343/2006). Finda instrução criminal, o juiz reconheceu o benefício do tráfico privilegiado (art. 33, §4º), condenando o réu à pena de reclusão de três anos e dois meses. Nesse contexto, de acordo com as disposições do supracitado diploma normativo, assinale a alternativa que NÃO apresenta um dos requisitos cumulativos para o reconhecimento da causa de diminuição de pena do tráfico privilegiado.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Agente primário."
+    },
+    {
+     "letra": "B",
+     "texto": "Apreensão de pequena quantidade de drogas."
+    },
+    {
+     "letra": "C",
+     "texto": "Bons antecedentes."
+    },
+    {
+     "letra": "D",
+     "texto": "Não dedicação a atividades criminosas."
+    },
+    {
+     "letra": "E",
+     "texto": "Não integração de organização criminosa."
+    }
+   ]
+  },
+  {
+   "numero": 48,
+   "materia": "Legislação Especial",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considere os seis crimes listados a seguir: \n1. Tráfico internacional de arma de fogo, acessório ou munição (art. 18 da Lei nº 10.826/2003); \n2. Injúria racial (art. 140, §3º, do Código Penal); \n3. Furto qualificado pelo emprego de explosivo ou de artefato análogo que cause perigo comum (art. 155, §4º-A, do Código Penal); \n4. Infanticídio (art. 123 do Código Penal); \n5. Associação para o tráfico de drogas (art. 35 da Lei nº 11.343/2006); \n6. Tráfico de drogas privilegiado (art. 33, §4º, da Lei nº 11.343/2006). \nConsiderando o rol taxativo constante da Lei Federal nº 8.072/1990, bem como o entendimento dos Tribunais Superiores, são crimes hediondos ou equiparados os delitos indicados apenas em",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "1 e 3."
+    },
+    {
+     "letra": "B",
+     "texto": "1, 4 e 5."
+    },
+    {
+     "letra": "C",
+     "texto": "2, 5 e 6."
+    },
+    {
+     "letra": "D",
+     "texto": "1, 2, 3 e 5."
+    },
+    {
+     "letra": "E",
+     "texto": "2, 3, 4 e 6."
+    }
+   ]
+  },
+  {
+   "numero": 49,
+   "materia": "Legislação Especial",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre os Juizados Especiais Criminais, assinale a alternativa correta.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O Juizado Especial Criminal tem competência para o julgamento das infrações penais de menor potencial ofensivo, considerando-se essas as contravenções penais e os crimes a que a lei comine pena máxima não superior a três anos."
+    },
+    {
+     "letra": "B",
+     "texto": "Os embargos de declaração, que devem ser opostos no prazo de cinco dias, suspendem o prazo para a interposição de recurso."
+    },
+    {
+     "letra": "C",
+     "texto": "A homologação da transação penal faz coisa julgada material, de forma que, descumpridas suas cláusulas, cabe ao Ministério Público a execução judicial do acordo, sendo vedada a continuidade da persecução penal mediante o oferecimento de denúncia."
+    },
+    {
+     "letra": "D",
+     "texto": "Não se admite a suspensão condicional d o processo por crime continuado, se a soma da pena mínima da infração mais grave com o aumento mínimo de um sexto for superior a um ano."
+    },
+    {
+     "letra": "E",
+     "texto": "Expirado o prazo sem revogação da suspensão condicional do processo, o Juiz declarará extinta a culpabilidade."
+    }
+   ]
+  },
+  {
+   "numero": 50,
+   "materia": "Legislação Especial",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Referente ao Código de Trânsito Brasileiro - CTB (Lei Federal nº 9.503/1997), assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Constitui crime a conduta de permitir, confiar ou entregar a direção de veículo automotor a pessoa que não seja habilitada, independentemente da ocorrência de lesão ou de perigo de dano concreto na condução do veículo."
+    },
+    {
+     "letra": "B",
+     "texto": "É inconstitucional o tipo penal que prevê o crime de fuga do local do acidente (art. 305 do CTB), pois viola o princípio da não incriminação."
+    },
+    {
+     "letra": "C",
+     "texto": "A penalidade de suspensão ou de proibição de se obter a permissão ou a habilitação, para dirigir veículo automotor, tem a duração de seis meses a dois anos."
+    },
+    {
+     "letra": "D",
+     "texto": "Aos crimes cometidos na direção de veículos automotores previstos no CTB, independentemente da pena cominada, não se aplicam as disposições da Lei nº 9.099/1995."
+    },
+    {
+     "letra": "E",
+     "texto": "É incompatível com a Constituição Federal a imposição da pena de suspensão de habilitação para dirigir veículo automotor ao motorista profissional condenado por homicídio culposo no trânsito, pois infringe o direito constitucional ao trabalho."
+    }
+   ]
+  }
+ ]
+}

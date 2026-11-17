@@ -7,6 +7,7 @@ import { Trophy, CheckCircle2, XCircle, Loader2, FileText, ArrowLeft, BookOpen, 
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Review = {
   questionId: string
@@ -149,7 +150,7 @@ export default function ResultadoPage() {
                   <div className="text-xs text-muted-foreground mb-1">
                     Questão {data.review.findIndex((rr) => rr.questionId === r.questionId) + 1} · {r.materia}
                   </div>
-                  <p className="text-sm whitespace-pre-wrap">{r.enunciado}</p>
+                  <p className="text-sm whitespace-pre-wrap"><TextoMarcado texto={r.enunciado} /></p>
                 </div>
               </div>
               <div className="ml-9 text-xs space-y-1.5 mt-3">

@@ -6,6 +6,7 @@ import { Clock, Loader2, AlertTriangle, ChevronLeft, ChevronRight, Send, FileTex
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Question = {
   id: string
@@ -237,7 +238,7 @@ export default function FazerSimuladoPage() {
         </div>
 
         <div className="prose dark:prose-invert max-w-none text-sm mb-5">
-          <p className="whitespace-pre-wrap">{q.enunciado}</p>
+          <p className="whitespace-pre-wrap"><TextoMarcado texto={q.enunciado} /></p>
         </div>
 
         <div className="space-y-2">
@@ -265,7 +266,7 @@ export default function FazerSimuladoPage() {
                 )}
               >
                 <span className="font-bold shrink-0">{alt.letra})</span>
-                <span className="text-sm">{alt.texto}</span>
+                <span className="text-sm"><TextoMarcado texto={alt.texto} /></span>
               </button>
             ))
           )}

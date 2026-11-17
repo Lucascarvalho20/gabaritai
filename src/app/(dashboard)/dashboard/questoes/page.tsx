@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import toast from 'react-hot-toast'
 import InlineStudyTimer from '@/components/InlineStudyTimer'
 import { AvisoOriginal, TextoBase, TextoFormatado } from '@/components/provas/comum'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Alt = { letra: string; texto: string }
 
@@ -498,7 +499,7 @@ export default function QuestoesPage() {
                         estado === 'gabarito' && alt.letra === selecionada && alt.letra !== gabarito ? <XCircle className="w-4 h-4" /> :
                           alt.letra}
                     </span>
-                    <span className="text-sm text-foreground leading-relaxed pt-0.5">{alt.texto}</span>
+                    <span className="text-sm text-foreground leading-relaxed pt-0.5"><TextoMarcado texto={alt.texto} /></span>
                   </button>
                 ))}
               </div>

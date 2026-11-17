@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { DiagnosticoAgente } from '@/components/DiagnosticoAgente'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Attempt = {
   id: string
@@ -304,7 +305,7 @@ function AttemptRow({ a }: { a: Attempt }) {
             {a.question.ano && <span>{a.question.ano}</span>}
             <span className="ml-auto">{new Date(a.createdAt).toLocaleDateString('pt-BR')}</span>
           </div>
-          <p className={cn('text-xs line-clamp-2', !expanded && 'line-clamp-2')}>{a.question.enunciado}</p>
+          <p className={cn('text-xs line-clamp-2', !expanded && 'line-clamp-2')}><TextoMarcado texto={a.question.enunciado} /></p>
           {expanded && (
             <div className="mt-2 space-y-2">
               <ul className="space-y-1 text-xs">
@@ -318,7 +319,7 @@ function AttemptRow({ a }: { a: Attempt }) {
                         : 'border-border',
                     )}
                   >
-                    <strong>({alt.letra})</strong> {alt.texto}
+                    <strong>({alt.letra})</strong> <TextoMarcado texto={alt.texto} />
                   </li>
                 ))}
               </ul>

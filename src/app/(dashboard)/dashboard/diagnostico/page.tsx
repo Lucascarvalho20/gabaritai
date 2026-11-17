@@ -10,6 +10,7 @@ import {
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Alt = { letra: string; texto: string }
 type Question = {
@@ -304,7 +305,7 @@ export default function DiagnosticoPage() {
         </div>
 
         <p className="text-foreground font-medium leading-relaxed whitespace-pre-wrap text-sm">
-          {q.enunciado}
+          <TextoMarcado texto={q.enunciado} />
         </p>
 
         <div className="space-y-2">
@@ -327,7 +328,7 @@ export default function DiagnosticoPage() {
                 )}>
                   {a.letra}
                 </span>
-                <span className="leading-relaxed">{isCE ? (a.letra === 'C' ? 'Certo' : 'Errado') : a.texto}</span>
+                <span className="leading-relaxed">{isCE ? (a.letra === 'C' ? 'Certo' : 'Errado') : <TextoMarcado texto={a.texto} />}</span>
               </button>
             )
           })}

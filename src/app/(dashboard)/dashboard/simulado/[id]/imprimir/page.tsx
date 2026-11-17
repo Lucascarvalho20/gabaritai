@@ -6,6 +6,7 @@ import { Loader2, Printer, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type Q = {
   numero: number
@@ -151,7 +152,7 @@ export default function ImprimirSimuladoPage() {
                 return (
                   <article key={q.id} className="break-inside-avoid">
                     <div className="font-bold text-sm mb-2">Questão {q.numero}</div>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed mb-3">{q.enunciado}</p>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed mb-3"><TextoMarcado texto={q.enunciado} /></p>
                     {isCE ? (
                       <div className="flex gap-6 text-sm">
                         <span>(  ) Certo</span>
@@ -162,7 +163,7 @@ export default function ImprimirSimuladoPage() {
                         {q.alternativas?.map((alt) => (
                           <li key={alt.letra} className="flex gap-2">
                             <span className="font-semibold">({alt.letra})</span>
-                            <span>{alt.texto}</span>
+                            <span><TextoMarcado texto={alt.texto} /></span>
                           </li>
                         ))}
                       </ol>

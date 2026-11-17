@@ -29,13 +29,24 @@ function slugify(nome: string) {
   return nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+const NOME_DA_BANCA: Record<string, string> = {
+  cebraspe: 'Cebraspe', 'instituto-aocp': 'Instituto AOCP', iades: 'IADES', funrio: 'Funrio',
+  funiversa: 'Funiversa', vunesp: 'Vunesp', fgv: 'FGV', fcc: 'FCC', idecan: 'IDECAN', quadrix: 'Quadrix', ibfc: 'IBFC',
+}
+
 export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao> {
   const problemas = problemasDaProva(arq)
   if (problemas.length) throw new Error(`Arquivo ${arq.slug} com problemas: ${problemas.slice(0, 5).join('; ')}`)
 
   const curso = await prisma.course.findUnique({ where: { slug: arq.curso }, select: { id: true } })
   if (!curso) throw new Error(`O curso ${arq.curso} não existe no banco.`)
-  const banca = await prisma.banca.findUnique({ where: { slug: arq.banca }, select: { id: true } })
+  // Banca nova (a Funrio da PMGO 2017, por exemplo) entra no cadastro em vez de ficar sem vínculo.
+  const banca = await prisma.banca.upsert({
+    where: { slug: arq.banca },
+    update: {},
+    create: { slug: arq.banca, name: NOME_DA_BANCA[arq.banca] ?? arq.banca },
+    select: { id: true },
+  })
 
   // Matérias pelo nome; a que não existir é criada (ex.: Química, na prova de Papiloscopista).
   // O slug indicado no arquivo (materiasSlug) vence: é a matéria do curso.
@@ -69,7 +80,7 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
 
   const dadosProva = {
     courseId: curso.id,
-    bancaId: banca?.id ?? null,
+    bancaId: banca.id,
     ano: arq.ano,
     titulo: arq.titulo,
     cargo: arq.cargo,

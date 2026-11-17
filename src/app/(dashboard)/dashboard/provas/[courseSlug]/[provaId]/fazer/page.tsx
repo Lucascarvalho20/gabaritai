@@ -10,6 +10,7 @@ import {
   agrupar, alternativasDe, AvisoOriginal, TextoBase, TextoFormatado, fmtDuracao,
   type ItemTela, type TextoTela,
 } from '@/components/provas/comum'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 /**
  * Fazer uma prova oficial com o tempo do edital.
@@ -224,7 +225,7 @@ export default function FazerProvaPage() {
                                   className={cn('rounded-lg border text-sm font-semibold transition-colors text-left',
                                     ce ? 'px-5 py-2' : 'w-full px-3 py-2 flex gap-2',
                                     marcado ? 'bg-brand-600 border-brand-600 text-white' : 'border-border hover:bg-muted')}>
-                                  {ce ? (a.letra === 'C' ? 'Certo' : 'Errado') : <><span>{a.letra})</span><span className="font-normal">{a.texto}</span></>}
+                                  {ce ? (a.letra === 'C' ? 'Certo' : 'Errado') : <><span>{a.letra})</span><span className="font-normal"><TextoMarcado texto={a.texto} /></span></>}
                                 </button>
                               )
                             })}

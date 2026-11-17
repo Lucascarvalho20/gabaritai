@@ -1,0 +1,2776 @@
+{
+ "slug": "pmdf-2023-soldado",
+ "curso": "pmdf-soldado",
+ "titulo": "PMDF 2023 — Soldado (QPPMC)",
+ "ano": 2023,
+ "banca": "instituto-aocp",
+ "orgao": "Polícia Militar do Distrito Federal",
+ "cargo": "Soldado Policial Militar (QPPMC)",
+ "formato": "ME_5",
+ "erradaAnulaCerta": false,
+ "duracaoMin": 300,
+ "incluiaDiscursiva": true,
+ "aplicadaEm": "2023-05-21",
+ "fonte": {
+  "pagina": "https://www.institutoaocp.org.br/concursos/549",
+  "caderno": "/provas/originais/pmdf-2023-soldado-tipo1.pdf",
+  "gabarito": "https://link.institutoaocp.org.br/open-link?identificador=4be57620-874f-4e94-9080-42d646248a80",
+  "aviso": "Prova e gabarito definitivo oficiais — Instituto AOCP, concurso de Soldado da PMDF (Edital nº 04/2023-DGP/PMDF), caderno Tipo 1. A banca mostra o caderno só por um visualizador com link temporário; o PDF aqui é o arquivo original dela, sem alteração. Reproduzidos para fins didáticos, com a fonte citada."
+ },
+ "materiasSlug": {
+  "Língua Portuguesa": "lingua-portuguesa",
+  "Língua Inglesa": "lingua-inglesa",
+  "Matemática e Raciocínio Lógico": "matematica-raciocinio-logico",
+  "Atualidades": "atualidades",
+  "Legislação Aplicada à PMDF": "legislacao-pmdf",
+  "Direito Constitucional e Direitos Humanos": "direito-constitucional-direitos-humanos",
+  "Direito Administrativo": "direito-administrativo",
+  "Direito Penal": "direito-penal",
+  "Direito Processual Penal": "direito-processual-penal",
+  "Direito Penal Militar": "direito-penal-militar",
+  "Direito Processual Penal Militar": "direito-processual-penal-militar",
+  "Criminologia": "criminologia"
+ },
+ "textos": [
+  {
+   "codigo": "T1",
+   "titulo": "Texto das questões 1 a 8",
+   "conteudo": "<b>ChatGPT: a inteligência artificial como aliada ou a substituta da mente humana?</b>\n\nDenis Strum Desde que o ChatGPT foi lançado, no final de novembro do ano passado, você provavelmente foi impactado por diversos conteúdos que trazem reflexões sobre o avanço da inteligência artificial (IA) e como isso pode afetar a nossa vida, correto? Há opiniões que transitam por todos os lados: desde os mais alarmistas – que afirmam o caráter ameaçador da IA frente ao trabalho humano –, até os mais céticos – que duvidam da capacidade dos programas em atuar no nosso lugar. O ChatGPT é um chatbot desenvolvido pela OpenAI que utiliza inteligência artificial para promover diálogos incrivelmente humanizados. Na primeira semana em que foi ao ar, o programa foi baixado por mais de cinco milhões de usuários. Apesar de inovadora, a IA ainda está muito longe de substituir a singularidade do trabalho humano. A Microsoft é uma das grandes investidoras da OpenAI – nos últimos quatro anos, aproximadamente US$ 1 bilhão já foi investido na startup. Pessoalmente, acredito que estamos vivendo o nascimento de diversas novas tecnologias disruptivas que estão vindo para ficar, mas que ainda estão muito longe de substituir a singularidade do intelecto humano. Sem sombras de dúvidas, as novas plataformas poderão contribuir muito para o nosso cotidiano, desde que tenham suas usabilidades bem aplicadas e previamente pensadas de forma estratégica. Isso é algo que, por enquanto, somente nós conseguimos fazer de forma verdadeiramente eficiente. (...) Aos primeiros olhares, o robô assusta por sua capacidade humanizada de interagir. Em poucos segundos, você pode ter em sua tela a resposta para uma dúvida sobre questões complexas de matemática ou uma receita detalhada de bolo. Porém, ainda que a IA seja aperfeiçoada cada vez mais e que suas interações fiquem ainda mais humanas, tem algo indispensável que seguirá sendo a espinha dorsal: o comando por trás de toda resposta parte da mente humana. É nesse ponto que devemos prestar atenção.\n\n<b>Experimentando o ChatGPT</b>\n\nAntes de escrever este artigo, experimentei\n\nalgumas vezes a plataforma (embora esteja\n\napresentando instabilidades por conta do número\n\nexcessivo de novos usuários). A primeira coisa que\n\nreparei é que sua base de dados demanda\n\natualizações. Os dados estão atualizados até meados\n\nde 2021, o que significa que, se você perguntar, por\n\nexemplo, “quem venceu as eleições em 2022 no\n\nBrasil?”, ele não poderá responder.\n\nEm seguida, logo reparei que, se você aplicar\n\ncomandos genéricos, terá também respostas\n\ngenéricas. Portanto, não adianta pedir para que o\n\nrobô “escreva um post para o Linkedin que seja capaz\n\nde viralizar”. Se assim o fizer, até terá uma resposta\n\nna tela, mas, ao copiar e colar a publicação na rede\n\nsocial, provavelmente não cumprirá seu objetivo.\n\nRepare que esses dois pontos observados\n\n(atualização da base de dados e comandos bem\n\naplicados) necessitam dos indispensáveis olhares e\n\npensamentos exclusivos de nós, humanos. São\n\npontos que evidenciam que o auxílio da IA em nossas\n\nvidas não tornará as coisas tão simples e\n\nautomatizadas assim. (...)\n\nPor fim, o desenvolvimento das novas IAs\n\nservirão, e muito, para contribuir com a nossa\n\nevolução. Serão cada vez mais ferramentas\n\nindispensáveis em nosso cotidiano, que nos darão\n\nexcelentes atalhos para nos levar ainda mais longe.\n\nSem dúvidas, os milionários investimentos que estão\n\nsendo aplicados nos darão tecnologias cada vez mais\n\naperfeiçoadas. No entanto, ainda que possam\n\navançar muito mais do que possamos imaginar, a\n\ncriatividade da mente humana é insubstituível.\n\nAdaptado de: https://www.ecommercebrasil.com.br/artigos/chatgpt-\n\na-inteligencia-artificial-como-aliada-ou-a-substituta-da-mente-\n\nhumana. Acesso em: 10 Mar.2023.",
+   "pagina": 2
+  },
+  {
+   "codigo": "T2",
+   "titulo": "Text 1",
+   "conteudo": "Adapted from: https://dilbert.com/. Accessed on: 28 Feb. 2023.\n\n[Imagem no caderno original — veja a página indicada.]",
+   "pagina": 5
+  },
+  {
+   "codigo": "T3",
+   "titulo": "Text 2",
+   "conteudo": "<b>People who read books are nicer than those who don’t, study finds.</b>\n\nPeople often think that, yes, books make you smarter but at the same time people who read a lot struggle when it comes to social relationships. A new study reveals that this is not true. <i>In fact, reading could actually make you a _____, _____ person. It also makes you act in a _____ acceptable manner.</i> The study, conducted by Kingston University in London, involved 124 participants. Participants were quizzed on their preferences for books, TV, and plays. They were also tested on interpersonal skills including how much they considered other people’s feelings and whether they acted to help others. The study found that those who preferred books were more likely to act in a socially acceptable manner compared to those who preferred watching TV. Those who preferred watching TV, on the other hand, came across as less friendly and less understanding of others’ views. However, not all types of books tend to have the same effect. The study shows that the type of literature you choose also has a huge impact on your emotional intelligence. In particular, the study revealed that fiction fans showed more positive social behavior while readers of drama and romance novels were found to be the most empathic. In the same vein, fans of experimental books were most able to see things from alternative perspectives, and readers who favored comedy fans were best at relating to others. “Exposure to fiction relates to a range of empathetic abilities […] Engaging with fictional prose and comedy in particular could be key to enhancing people’s empathetic abilities,” said the researchers during the British Psychological Society conference in Brighton. It should be borne in mind, however, that the study did not prove cause-and-effect. It may very well be that nicer people are more drawn to reading books. Adapted from: https://thelanguagenerds.com. Accessed on: 28 Feb. 2023.",
+   "pagina": 6
+  }
+ ],
+ "itens": [
+  {
+   "numero": 1,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Sobre o conteúdo do texto lido, é correto afirmar que",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "o ChatGPT corresponde a uma inteligência artificial surpreendente, com funcionalidades aptas, atualmente, para raciocinar habilmente, sem necessidade de qualquer intervenção humana."
+    },
+    {
+     "letra": "B",
+     "texto": "as atualizações recorrentes voltadas à nova IA tendem a tornar tal mecanismo capaz de propor interações humanas tão reais a ponto de, no futuro, tornar-se um robô equiparado a um ser humano."
+    },
+    {
+     "letra": "C",
+     "texto": "a experiência do autor ao manusear a plataforma ChatGPT o assustou, devido à competência desta para interagir de forma tão eficiente e equivalente a qualquer ação humana."
+    },
+    {
+     "letra": "D",
+     "texto": "a nova IA pode oferecer, em curtíssimo prazo, respostas e demais produções textuais sobre temas diversos, as quais o ser humano, sem dispor de tal tecnologia, levaria muito mais tempo para desenvolver."
+    },
+    {
+     "letra": "E",
+     "texto": "a empresa que mais investiu no aperfeiçoamento da plataforma ChatGPT, até então, foi a Microsoft, tendo destinado US$ 1 bilhão para essa nova plataforma de inteligência artificial."
+    }
+   ]
+  },
+  {
+   "numero": 2,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Tendo em vista o posicionamento do autor do texto lido, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O autor demonstra não ver um futuro promissor para as IAs, visto que defende a ideia de que nenhuma tecnologia será capaz de substituir determinadas particularidades humanas."
+    },
+    {
+     "letra": "B",
+     "texto": "Para o autor, as novas plataformas de IA já se tornaram imprescindíveis atualmente, mas necessitam de atualizações anuais para atingirem os resultados esperados em conteúdos precisos e particulares."
+    },
+    {
+     "letra": "C",
+     "texto": "Strum pontua que as respostas oferecidas pela plataforma ChatGPT apresentam conteúdos muitos abrangentes, logo, segundo ele, não são eficazes para produção de posts de grande alcance."
+    },
+    {
+     "letra": "D",
+     "texto": "O autor demonstra estar satisfeito com o avanço das tecnologias voltadas às novas lAs e afirma que elas serão cada vez mais grandiosas e otimizadas; não concorda, porém, com os imensos investimentos realizados neste setor."
+    },
+    {
+     "letra": "E",
+     "texto": "Ao defender sua tese de que a IA ainda não é capaz de substituir todo o trabalho humano, Strum discorre sobre duas necessidades observadas por ele: a demanda por atualização da plataforma e a exigência de comandos específicos."
+    }
+   ]
+  },
+  {
+   "numero": 3,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Assinale a alternativa em que os termos destacados sejam acentuados pela mesma norma gramatical.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "“(...) <b><u>até</u></b> os mais <b><u>céticos</u></b> – que duvidam da capacidade dos programas em atuar no nosso lugar.”."
+    },
+    {
+     "letra": "B",
+     "texto": "“O ChatGPT é um chatbot desenvolvido pela OpenAI que utiliza <b><u>inteligência</u></b> artificial para promover <b><u>diálogos</u></b> incrivelmente humanizados.”."
+    },
+    {
+     "letra": "C",
+     "texto": "“Em poucos segundos, você pode ter em sua tela a resposta para uma <b><u>dúvida</u></b> sobre questões complexas de <b><u>matemática</u></b> (...)”."
+    },
+    {
+     "letra": "D",
+     "texto": "“(...) tem algo <b><u>indispensável</u></b> que <b><u>seguirá</u></b> sendo a espinha dorsal: o comando por trás de toda resposta parte da mente humana.”."
+    },
+    {
+     "letra": "E",
+     "texto": "“Em seguida, logo reparei que, se você aplicar comandos <b><u>genéricos</u></b>, <b><u>terá</u></b> também respostas genéricas.”."
+    }
+   ]
+  },
+  {
+   "numero": 4,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Analise o trecho a seguir. “<u>No entanto</u>, <u>ainda que</u> possam avançar muito mais do que possamos imaginar, a criatividade da mente humana é insubstituível.” Os conectivos destacados podem ser substituídos, sem prejuízo de sentido, respectivamente, por",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 3,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "porém, embora."
+    },
+    {
+     "letra": "B",
+     "texto": "com isso, conquanto."
+    },
+    {
+     "letra": "C",
+     "texto": "portanto, mesmo que."
+    },
+    {
+     "letra": "D",
+     "texto": "entretanto, dado que."
+    },
+    {
+     "letra": "E",
+     "texto": "todavia, contanto que."
+    }
+   ]
+  },
+  {
+   "numero": 5,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Tendo em vista aspectos linguísticos do texto em análise, assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O trecho “(...) você provavelmente foi impactado por diversos conteúdos (...)” poderia ser reescrito, sem mudança sintática ou de sentido, da seguinte forma: “diversos conteúdos provavelmente impactaram você”."
+    },
+    {
+     "letra": "B",
+     "texto": "Em “(...) o comando por trás de toda resposta parte da mente humana. É <b><u>nesse</u></b> ponto que devemos prestar atenção.” (parágrafo 05), o pronome destacado faz referência a – ainda requerida e tão citada no texto – ação humana para se manusear as IAs."
+    },
+    {
+     "letra": "C",
+     "texto": "No trecho “(...), logo reparei que, se você <b><u>aplicar</u></b> comandos genéricos, terá também respostas genéricas.”, a forma verbal em destaque, juntamente ao uso de “se”, expressa noção de certeza, factualidade."
+    },
+    {
+     "letra": "D",
+     "texto": "Em “A primeira coisa que reparei é que <b><u>sua</u></b> base de dados demanda atualizações.” (parágrafo 06), o pronome destacado, nesse contexto, gera ambiguidade, podendo referir-se tanto à plataforma ChatGPT quanto ao leitor do texto."
+    },
+    {
+     "letra": "E",
+     "texto": "Em “<b><u>Serão</u></b> cada vez mais ferramentas indispensáveis em nosso cotidiano, que nos darão excelentes atalhos para nos levar ainda mais longe” (parágrafo 09), o sujeito do verbo destacado é “ferramentas”."
+    }
+   ]
+  },
+  {
+   "numero": 6,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Analise o trecho a seguir. “Pessoalmente, acredito que estamos vivendo o nascimento de diversas novas tecnologias <u>disruptivas</u> que estão vindo para ficar (...)” Todos os termos que seguem possuem significado semelhante ao da palavra destacada, EXCETO",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "separativas."
+    },
+    {
+     "letra": "B",
+     "texto": "rompedoras."
+    },
+    {
+     "letra": "C",
+     "texto": "suspensivas."
+    },
+    {
+     "letra": "D",
+     "texto": "anacrônicas."
+    },
+    {
+     "letra": "E",
+     "texto": "interruptivas."
+    }
+   ]
+  },
+  {
+   "numero": 7,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Referente ao uso da(s) vírgula(s) em cada respectivo trecho, analise as assertivas e assinale a alternativa que aponta a(s) correta(s). \nI. Em “Pessoalmente, acredito que estamos vivendo o nascimento de diversas novas tecnologias disruptivas (...)”, a vírgula foi empregada para isolar um adjunto adverbial deslocado. \nII. No trecho “(...) se você perguntar, por exemplo, “quem venceu as eleições em 2022 no Brasil?” (...)”, as vírgulas foram inseridas para separar uma expressão de explicação. \nIII. No trecho “No entanto, ainda que possam avançar muito mais do que possamos imaginar, a criatividade da mente humana é insubstituível.”, a primeira vírgula foi utilizada, sobretudo, para isolar um conectivo em início de período.",
+   "gabarito": null,
+   "anulada": true,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Apenas I."
+    },
+    {
+     "letra": "B",
+     "texto": "Apenas II."
+    },
+    {
+     "letra": "C",
+     "texto": "Apenas I e II."
+    },
+    {
+     "letra": "D",
+     "texto": "Apenas II e III."
+    },
+    {
+     "letra": "E",
+     "texto": "I, II e III."
+    }
+   ]
+  },
+  {
+   "numero": 8,
+   "materia": "Língua Portuguesa",
+   "texto": "T1",
+   "comando": null,
+   "enunciado": "Examine o excerto a seguir. “Sem sombras de dúvidas, as novas plataformas poderão contribuir muito para o nosso cotidiano, <u>desde que tenham suas usabilidades bem aplicadas e previamente pensadas de forma estratégica</u>.”. A sentença destacada expressa valor",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 4,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "causal, pois sinaliza o motivo de as novas tecnologias poderem ofertar facilidades ao nosso dia a dia."
+    },
+    {
+     "letra": "B",
+     "texto": "temporal, bem como ocorre na primeira oração inserida no texto “Desde que o ChatGPT foi lançado”, indicando periodização, tempo."
+    },
+    {
+     "letra": "C",
+     "texto": "condicional, visto que indica a condição para que as novas plataformas possam oferecer contribuições para o nosso cotidiano."
+    },
+    {
+     "letra": "D",
+     "texto": "explicativo, uma vez que explicitam o modo como as plataformas recentes podem propor melhorias e benefícios ao nosso cotidiano."
+    },
+    {
+     "letra": "E",
+     "texto": "concessivo, como ocorre no segmento grifado em \"<u>Apesar de inovadora</u>, a IA ainda está muito longe de substituir a singularidade do trabalho humano.” (ou seja, expressa uma quebra de expectativa)."
+    }
+   ]
+  },
+  {
+   "numero": 9,
+   "materia": "Língua Portuguesa",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considerando as instruções presentes no Manual de Redação da Presidência da República, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A redação oficial deve caracterizar-se por: clareza; objetividade; concisão; coesão; pessoalidade; formalidade; e uso adequado da norma padrão da língua portuguesa."
+    },
+    {
+     "letra": "B",
+     "texto": "No que se refere ao atributo de objetividade, estabelece-se que um texto objetivo é “aquele que consegue transmitir o máximo de informações com o mínimo de palavras.”."
+    },
+    {
+     "letra": "C",
+     "texto": "Em se tratando de concisão, entende-se que ser conciso é “ir diretamente ao assunto que se deseja abordar, sem voltas e sem redundâncias.”."
+    },
+    {
+     "letra": "D",
+     "texto": "As comunicações oficiais (via impressa) devem obedecer a regras de forma. Já aquelas realizadas por meio eletrônico (e-mail) são mais flexíveis quanto a isso, não exigindo, assim, alto nível de rigor."
+    },
+    {
+     "letra": "E",
+     "texto": "Em relação à formalidade, exige-se: uso correto do pronome de tratamento adequado a cada autoridade, além de uniformidade e civilidade no próprio enfoque dado ao assunto de cada comunicação."
+    }
+   ]
+  },
+  {
+   "numero": 10,
+   "materia": "Língua Portuguesa",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No Manual de Redação da Presidência da República, em relação ao emprego dos pronomes de tratamento, é correto afirmar que",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "o vocativo adequado para se dirigir tanto ao Presidente da República quanto ao vice-presidente é: “Excelentíssimo Senhor”."
+    },
+    {
+     "letra": "B",
+     "texto": "no corpo de uma comunicação oficial, usa-se “Vossa Excelência” para se referir ao Oficial-General das Forças Armadas e também aos demais postos militares."
+    },
+    {
+     "letra": "C",
+     "texto": "a concordância entre os pronomes de tratamento e os pronomes possessivos é feita em segunda pessoa. Exemplo: “Vossa Senhoria designará <b><u>vosso</u></b> substituto.” (E não “Vossa Senhoria designará <b><u>seu</u></b> substituto.”)."
+    },
+    {
+     "letra": "D",
+     "texto": "a concordância de gênero entre adjetivos e pronomes de tratamento deve coincidir com o sexo da pessoa a que se refere, e não com o substantivo que compõe a locução. Exemplo: “Vossa Excelência está <b><u>atarefada</u></b>” (se o interlocutor for mulher)."
+    },
+    {
+     "letra": "E",
+     "texto": "os pronomes de tratamento levam a concordância verbal sempre para a segunda pessoa. Exemplo: “Vossa Senhoria <b><u>designarás</u></b> o assessor.” (E não “Vossa Senhoria <b><u>designará</u></b> o assessor.”)."
+    }
+   ]
+  },
+  {
+   "numero": 11,
+   "materia": "Língua Inglesa",
+   "texto": "T2",
+   "comando": null,
+   "enunciado": "Choose the correct alternative according to the Text 1.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": true,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "The dog is satisfied with the TV program it is watching."
+    },
+    {
+     "letra": "B",
+     "texto": "The man is disappointed because he can’t be on social media."
+    },
+    {
+     "letra": "C",
+     "texto": "The woman is surprised by the high number of followers the man has on social media."
+    },
+    {
+     "letra": "D",
+     "texto": "The man is happy, because everybody wants to follow him on social media."
+    },
+    {
+     "letra": "E",
+     "texto": "The man is frustrated, because it is necessary to be on social medial to be socially recognized."
+    }
+   ]
+  },
+  {
+   "numero": 12,
+   "materia": "Língua Inglesa",
+   "texto": "T2",
+   "comando": null,
+   "enunciado": "According to the Text 1 in ‘It’s <u>as if</u> I don’t exist’, ‘as if’ is expressing",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": true,
+   "formula": false,
+   "pagina": 5,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "contrast."
+    },
+    {
+     "letra": "B",
+     "texto": "condition."
+    },
+    {
+     "letra": "C",
+     "texto": "comparison."
+    },
+    {
+     "letra": "D",
+     "texto": "purpose."
+    },
+    {
+     "letra": "E",
+     "texto": "reason."
+    }
+   ]
+  },
+  {
+   "numero": 13,
+   "materia": "Língua Inglesa",
+   "texto": "T3",
+   "comando": null,
+   "enunciado": "Do statements agree with the information from the Text 2? Decide True (T) if the statement agrees with the information from the article or False (F) if the statement contradicts the information from the article. \n( ) The study has shown that although people who read tend to be more intelligent, they have more difficulties with social interactions. \n( ) The study with 124 participants researched their own reading preferences as well as how they notice what is happening to other people. \n( ) People who prefer watching TV tend to be more polite and better behaved. \n( ) Literature as a whole affects people equally, regardless of the genre. \n( ) The study does not decisively prove that reading actually makes people become nicer. \nNow choose the alternative with the correct sequence.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 6,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "T – F – T – F – T."
+    },
+    {
+     "letra": "B",
+     "texto": "T – T – F – T – F."
+    },
+    {
+     "letra": "C",
+     "texto": "F – T – F – T – F."
+    },
+    {
+     "letra": "D",
+     "texto": "F – T – F – F – T."
+    },
+    {
+     "letra": "E",
+     "texto": "F – F – T – F – T."
+    }
+   ]
+  },
+  {
+   "numero": 14,
+   "materia": "Língua Inglesa",
+   "texto": "T3",
+   "comando": null,
+   "enunciado": "The following extract, Text 2, comes from the introductory paragraph of the article: <i>In fact, reading could actually make you a _____, _____ person. It also makes you act in a _____ acceptable manner.</i> The alternative with the sequence of words that accurately completes the extract is",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 6,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "more kind / more empathetic / social"
+    },
+    {
+     "letra": "B",
+     "texto": "kinder / more empathetic / socially"
+    },
+    {
+     "letra": "C",
+     "texto": "most kind / most empathetic / socially"
+    },
+    {
+     "letra": "D",
+     "texto": "kinder / more empathetic / more social"
+    },
+    {
+     "letra": "E",
+     "texto": "kindest / most empathetic / socially"
+    }
+   ]
+  },
+  {
+   "numero": 15,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Durante uma ocorrência no DF, a Polícia Militar fez alguns levantamentos e determinou que todos os presentes seriam considerados suspeitos. No boletim de ocorrência, algumas informações foram anotadas sobre os suspeitos: \nInformação 01: Havia 5 mulheres. \nInformação 02: Entre os suspeitos, 6 usavam boné. \nInformação 03: Entre os homens, 3 não usavam boné. \nInformação 04: Entre as mulheres, 2 usavam boné. Se todas as informações estão corretas, quantos são os suspeitos?",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "16"
+    },
+    {
+     "letra": "B",
+     "texto": "15"
+    },
+    {
+     "letra": "C",
+     "texto": "14"
+    },
+    {
+     "letra": "D",
+     "texto": "13"
+    },
+    {
+     "letra": "E",
+     "texto": "12"
+    }
+   ]
+  },
+  {
+   "numero": 16,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A ocorrência de um crime contava com apenas duas testemunhas oculares. Após o início das investigações, as evidências apontaram para três irmãos gêmeos idênticos, sem qualquer característica física que permitisse distinguí-los naquela situação. Sabe-se que nenhum deles tem álibi e que um deles realmente é o único criminoso. As testemunhas, na ânsia de se livrarem rapidamente da situação, optaram por apontar aleatoriamente (ainda que de forma imprudente) um dos três irmãos como culpado. Considerando as informações constantes nesse problema, qual é a probabilidade de ambas as testemunhas terem apontado corretamente para o criminoso?",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Aproximadamente 50%."
+    },
+    {
+     "letra": "B",
+     "texto": "Aproximadamente 33%."
+    },
+    {
+     "letra": "C",
+     "texto": "Aproximadamente 17%."
+    },
+    {
+     "letra": "D",
+     "texto": "Aproximadamente 11%."
+    },
+    {
+     "letra": "E",
+     "texto": "Aproximadamente 2%."
+    }
+   ]
+  },
+  {
+   "numero": 17,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Durante uma patrulha diária, uma viatura se desloca com uma velocidade média de 40Km/h, completando certo percurso em 3 horas. Em quanto tempo faria esse mesmo percurso se a velocidade utilizada fosse de 48 km/h?",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "2 horas e 15 minutos."
+    },
+    {
+     "letra": "B",
+     "texto": "2 horas e 30 minutos."
+    },
+    {
+     "letra": "C",
+     "texto": "2 horas e 50 minutos."
+    },
+    {
+     "letra": "D",
+     "texto": "3 horas e 36 minutos."
+    },
+    {
+     "letra": "E",
+     "texto": "3 horas e 60 minutos."
+    }
+   ]
+  },
+  {
+   "numero": 18,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Certa mercadoria era vendida a R$200,00 a unidade e teve um aumento de 25%, chegando a custar R$250,00. Caso o dono deseje dar um desconto sobre os R$250,00 para que o valor volte a ser R$200,00, qual deve ser o percentual de desconto?",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "50%."
+    },
+    {
+     "letra": "B",
+     "texto": "25%."
+    },
+    {
+     "letra": "C",
+     "texto": "20%."
+    },
+    {
+     "letra": "D",
+     "texto": "75%."
+    },
+    {
+     "letra": "E",
+     "texto": "80%."
+    }
+   ]
+  },
+  {
+   "numero": 19,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Certa receita pedia que fossem usados “tomates” no preparo de certo alimento, sem mais instruções. Um homem, que nunca havia cozinhado, teve várias dúvidas sobre o preparo e percebeu que não havia uma forma única de se usar os tomates. Ao ir ao supermercado, viu que havia a opção de comprar “tomate cereja”, “tomate saladete” e “tomate longa vida”. Em casa, ficou em dúvida se deixaria com ou sem pele, da mesma forma que não sabia se deixava as sementes ou retirava. Se considerarmos todas as maneiras de se cozinhar, desde a escolha do tipo de tomate, escolher deixar ou retirar a pele, deixar ou retirar as sementes, quantas são essas maneiras?",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 7,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "12"
+    },
+    {
+     "letra": "B",
+     "texto": "9"
+    },
+    {
+     "letra": "C",
+     "texto": "7"
+    },
+    {
+     "letra": "D",
+     "texto": "6"
+    },
+    {
+     "letra": "E",
+     "texto": "3"
+    }
+   ]
+  },
+  {
+   "numero": 20,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considere um quadrado de lado igual a √π unidades de comprimento e um círculo de raio medindo R unidades de comprimento. Se as áreas dessas duas figuras são iguais, quanto deve medir o raio R do círculo?",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "π"
+    },
+    {
+     "letra": "B",
+     "texto": "1"
+    },
+    {
+     "letra": "C",
+     "texto": "√π"
+    },
+    {
+     "letra": "D",
+     "texto": "− 1"
+    },
+    {
+     "letra": "E",
+     "texto": "√π − 1"
+    }
+   ]
+  },
+  {
+   "numero": 21,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A afirmação “Todo dia é dia de luta” é falsa, sendo equivalente a dizer que",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "“Chegaram os dias de paz”."
+    },
+    {
+     "letra": "B",
+     "texto": "“Nenhum dia é dia de luta”."
+    },
+    {
+     "letra": "C",
+     "texto": "“Todo dia é dia de não lutar”."
+    },
+    {
+     "letra": "D",
+     "texto": "“Algum dia não é dia de luta”."
+    },
+    {
+     "letra": "E",
+     "texto": "“Toda luta acontece de dia”."
+    }
+   ]
+  },
+  {
+   "numero": 22,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considere um hexaedro regular (cubo) de arestas medindo L unidades de comprimento. Suponha que uma de suas faces (base) esteja apoiada em uma superfície plana. Se unirmos cada vértice da base ao ponto médio da face oposta à base, determinamos uma pirâmide. A diferença entre o volume do cubo e o volume da pirâmide é igual a qual percentual aproximado do volume do cubo?",
+   "gabarito": null,
+   "anulada": true,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Aproximadamente 25,7%."
+    },
+    {
+     "letra": "B",
+     "texto": "Aproximadamente 33,3%."
+    },
+    {
+     "letra": "C",
+     "texto": "Aproximadamente 50%."
+    },
+    {
+     "letra": "D",
+     "texto": "Aproximadamente 66,7%."
+    },
+    {
+     "letra": "E",
+     "texto": "Aproximadamente 74,3%."
+    }
+   ]
+  },
+  {
+   "numero": 23,
+   "materia": "Matemática e Raciocínio Lógico",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sabendo que todo compositor é poeta e que todo cantor é poeta, então, pode-se concluir corretamente que",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "todo poeta é compositor."
+    },
+    {
+     "letra": "B",
+     "texto": "algum poeta é cantor."
+    },
+    {
+     "letra": "C",
+     "texto": "todo compositor é cantor."
+    },
+    {
+     "letra": "D",
+     "texto": "nenhum compositor é cantor."
+    },
+    {
+     "letra": "E",
+     "texto": "algum compositor é cantor."
+    }
+   ]
+  },
+  {
+   "numero": 24,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "O espaço da Região Integrada de Desenvolvimento do Distrito Federal e Entorno (RIDE-DF) foi institucionalizado seguindo um modelo de vinculação entre o Estado brasileiro com suas regiões, evidenciando",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "as dificuldades em considerar tanto o território quanto a região como fragmentados."
+    },
+    {
+     "letra": "B",
+     "texto": "o rigor quanto aos pressupostos metodológicos das Regiões de Influência das Cidades."
+    },
+    {
+     "letra": "C",
+     "texto": "as similaridades culturais entre as cidades que constituem a RIDE-DF."
+    },
+    {
+     "letra": "D",
+     "texto": "as disparidades politicas existentes nas diversas regiões que compõem a RIDE-DF."
+    },
+    {
+     "letra": "E",
+     "texto": "a proposta de regionalização baseada nas características fisiográficas do território nacional."
+    }
+   ]
+  },
+  {
+   "numero": 25,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A produção do espaço da RIDE-DF no atual momento é composto por diferentes macroprocessos. Em relação a esses macroprocessos, marque verdadeiro (V) ou falso (F) para os citados a seguir e assinale a alternativa com a sequência correta. \n( ) A expansão metropolitana de Brasília. \n( ) A expansão da agropecuária moderna. \n( ) As negociações para prestação de serviços junto aos países europeus. \n( ) A integração do eixo Brasília-Anápolis- Goiânia.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 8,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "V – V – F – F."
+    },
+    {
+     "letra": "B",
+     "texto": "F – V – F – V."
+    },
+    {
+     "letra": "C",
+     "texto": "V – F – V – V."
+    },
+    {
+     "letra": "D",
+     "texto": "F – F – V – V."
+    },
+    {
+     "letra": "E",
+     "texto": "V – V – F – V."
+    }
+   ]
+  },
+  {
+   "numero": 26,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "As mudanças climáticas em âmbito global afetam diretamente no clima local, isso torna necessário o enfrentamento da mudança do clima por meio de uma governança que adote ações de enfrentamento da mudança climática como parte do desenvolvimento local. Nesse sentido, foram sugeridas aos formuladores de políticas públicas e tomadores de decisão, a fim de promover a resiliência dos sistemas naturais e humanos e garantir o desenvolvimento sustentável do DF e da RIDE-DF, dentre outras, as seguintes estratégias, EXCETO",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "mobilizar centros geradores de conhecimento científico, academias científicas, universidades, institutos técnicos e fundações de apoio à pesquisa para a produção científica de pesquisas climáticas voltadas para o DF e a RIDE-DF."
+    },
+    {
+     "letra": "B",
+     "texto": "promover a revisão e a regulamentação da Lei de Clima do DF, orientando-se pelos últimos achados científicos para a escala local."
+    },
+    {
+     "letra": "C",
+     "texto": "desenvolver políticas públicas educativas nas escolas de educação infantil tendo como foco as questões ambientais e o desenvolvimento sustentável."
+    },
+    {
+     "letra": "D",
+     "texto": "requerer o aprofundamento de investigações científicas do clima voltadas à escala local, como forma de subsidiar permanentemente políticas públicas locais."
+    },
+    {
+     "letra": "E",
+     "texto": "requerer inventário periódico (off-line e on-line) de emissões e sumidouros de GEE, de modo a monitorar o cumprimento de metas e determinar as melhores opções, estratégias e tecnologias de mitigação."
+    }
+   ]
+  },
+  {
+   "numero": 27,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação às mudanças no clima do Distrito Federal (DF) e da RIDE-DF observadas nas últimas décadas, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Houve uma diminuição da amplitude térmica (DRT) entre as temperaturas máxima e mínima diária."
+    },
+    {
+     "letra": "B",
+     "texto": "Diminuição da quantidade de dias com umidade relativa do ar abaixo de 30% no ano."
+    },
+    {
+     "letra": "C",
+     "texto": "O período mais quente ocorre entre julho e dezembro, no qual a média histórica das temperaturas mais altas chega aos quase 38 °C."
+    },
+    {
+     "letra": "D",
+     "texto": "Cerca de 90% da precipitação ocorre na estação das chuvas abril/maio a setembro."
+    },
+    {
+     "letra": "E",
+     "texto": "Diminuição de mais de 3°C na temperatura mínima no período no final do outono e início do inverno."
+    }
+   ]
+  },
+  {
+   "numero": 28,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Analise as seguintes imagens: Fonte: CODEPLAN. Secretaria de Planejamento, Orçamento e Gestão; GDF. Atlas do Distrito Federal. 2020 Com base nas imagens apresentadas, é possível observar que",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": true,
+   "formula": false,
+   "pagina": 9,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "o DF possui um grande mercado consumidor que se baseia, economicamente, no setor industrial."
+    },
+    {
+     "letra": "B",
+     "texto": "no DF, os resultados do PIB e Renda per capita se devem à maioria da população economicamente ativa atuando no setor agropecuário."
+    },
+    {
+     "letra": "C",
+     "texto": "a Renda per capita está diretamente relacionada à densidade populacional das diferentes regiões do DF."
+    },
+    {
+     "letra": "D",
+     "texto": "o DF se destaca pelo seu PIB elevado, entretanto apresenta grande desigualdade social caracterizada pela variação da distribuição de renda entre as Regiões Administrativas."
+    },
+    {
+     "letra": "E",
+     "texto": "no DF, o crescimento vegetativo alcançou níveis superiores a média nacional graças a sua renda per capita e à implantação de políticas públicas."
+    }
+   ]
+  },
+  {
+   "numero": 29,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Dentre as sete bacias que compõem o Distrito Federal, a única bacia totalmente inserida no DF é a do",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Rio das Mortes."
+    },
+    {
+     "letra": "B",
+     "texto": "Lago Paranoá."
+    },
+    {
+     "letra": "C",
+     "texto": "Alto São Lourenço."
+    },
+    {
+     "letra": "D",
+     "texto": "Jequitinhonha."
+    },
+    {
+     "letra": "E",
+     "texto": "Paraguaçú."
+    }
+   ]
+  },
+  {
+   "numero": 30,
+   "materia": "Atualidades",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Os jardins do Teatro Municipal e do 308 South são exemplos de obras desenvolvidas pelo paisagista Burle Marx em Brasília. Uma das grandes características do artista em suas criações era",
+   "gabarito": null,
+   "anulada": true,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "o estilo Jardim Medieval, utilizando-se de plantas alimentícias, medicinais e floríferas."
+    },
+    {
+     "letra": "B",
+     "texto": "a inserção de espécies de origem europeia, visando a um jardim no estilo renascentista."
+    },
+    {
+     "letra": "C",
+     "texto": "a utilização de espaços para a meditação, pontes e plantas com topiaria em buxinhos."
+    },
+    {
+     "letra": "D",
+     "texto": "o emprego da diversidade da vegetação nativa na composição de formas orgânicas."
+    },
+    {
+     "letra": "E",
+     "texto": "a implantação de jardins verticais e cascatas nas fachadas dos prédios para isolamento térmico."
+    }
+   ]
+  },
+  {
+   "numero": 31,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Acerca da Lei Orgânica do Distrito Federal, assinale a alternativa correta.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Entre outros previstos, constitui valor fundamental do Distrito Federal promover, proteger e defender os direitos da criança, do adolescente e do jovem."
+    },
+    {
+     "letra": "B",
+     "texto": "O Distrito Federal organiza-se em Regiões Administrativas, com vistas à centralização administrativa, à utilização racional de recursos para o desenvolvimento sócio-econômico e à melhoria da qualidade de vida."
+    },
+    {
+     "letra": "C",
+     "texto": "Ao Distrito Federal são atribuídas as competências legislativas reservadas aos Estados e Municípios, cabendo-lhe exercer, em seu território, todas as competências que não lhe sejam vedadas pela Constituição Federal."
+    },
+    {
+     "letra": "D",
+     "texto": "Os bens do Distrito Federal destinar-se-ão exclusivamente ao uso público, respeitadas as normas de proteção ao meio ambiente, ao patrimônio histórico, cultural, arquitetônico e paisagístico, e garantido o interesse social."
+    },
+    {
+     "letra": "E",
+     "texto": "Os bens públicos tornar-se-ão disponíveis ou indisponíveis por meio de afetação ou desafetação, respectivamente."
+    }
+   ]
+  },
+  {
+   "numero": 32,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação à Lei Orgânica do Distrito Federal, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 10,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "São Poderes do Distrito Federal, independentes e harmônicos entre si, o Executivo, o Legislativo e o Judiciário."
+    },
+    {
+     "letra": "B",
+     "texto": "Cabe à Câmara Legislativa, com a sanção do Governador, dispor sobre seu regimento interno, polícia e serviços administrativos."
+    },
+    {
+     "letra": "C",
+     "texto": "Em caso de impedimento do Governador e do Vice-Governador, ou de vacância dos respectivos cargos, será primeiramente chamado ao exercício da chefia do Poder Executivo o Presidente do Tribunal de Justiça do Distrito Federal e Territórios."
+    },
+    {
+     "letra": "D",
+     "texto": "É condição de elegibilidade para Governador e Vice-Governador do Distrito Federal a idade mínima de trinta e cinco anos."
+    },
+    {
+     "letra": "E",
+     "texto": "A emenda à Lei Orgânica será promulgada pela Mesa Diretora da Câmara Legislativa, com o respectivo número de ordem."
+    }
+   ]
+  },
+  {
+   "numero": 33,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Nos termos da Lei Federal nº 6.450/1977, que dispõe sobre a organização básica da Polícia Militar do Distrito Federal, os cargos de Subcomandante-Geral e de Chefe do Estado-Maior da Corporação serão exercidos por Oficiais do posto de Coronel PM do Quadro de Oficiais Policiais Militares, indicados pelo",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Governador do Distrito Federal e nomeados pelo Presidente da República."
+    },
+    {
+     "letra": "B",
+     "texto": "Estado-Maior e nomeados pelo Comandante - Geral."
+    },
+    {
+     "letra": "C",
+     "texto": "Secretário de Segurança Pública do Distrito Federal e nomeados pelo Comandante-Geral."
+    },
+    {
+     "letra": "D",
+     "texto": "Comandante-Geral e nomeados pelo Governador do Distrito Federal."
+    },
+    {
+     "letra": "E",
+     "texto": "Secretário de Segurança Pública do Distrito Federal e nomeados pelo Governador do Distrito Federal."
+    }
+   ]
+  },
+  {
+   "numero": 34,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Izaac é Soldado PM do Quadro de Praças Policiais Militares Combatentes. De acordo com a Lei Federal nº 12.086/2009, que dispõe sobre os militares da Polícia Militar do Distrito Federal, como regra geral, para que Izaac seja promovido à graduação de Cabo PM, entre outros requisitos legais, deve-se respeitar o interstício de",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "36 meses."
+    },
+    {
+     "letra": "B",
+     "texto": "48 meses."
+    },
+    {
+     "letra": "C",
+     "texto": "60 meses."
+    },
+    {
+     "letra": "D",
+     "texto": "90 meses."
+    },
+    {
+     "letra": "E",
+     "texto": "120 meses."
+    }
+   ]
+  },
+  {
+   "numero": 35,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Determinado Praça da Polícia Militar do Distrito Federal está se julgando preterido no que tange ao seu direito de promoção. Nesse caso, à luz da Lei Federal nº 12.086/2009, como última instância na esfera administrativa, o Praça poderá interpor recurso ao",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Comandante-Geral."
+    },
+    {
+     "letra": "B",
+     "texto": "Governador do Distrito Federal."
+    },
+    {
+     "letra": "C",
+     "texto": "Presidente da respectiva Comissão de Promoções."
+    },
+    {
+     "letra": "D",
+     "texto": "Corregedor-Geral."
+    },
+    {
+     "letra": "E",
+     "texto": "Secretário de Segurança Pública do Distrito Federal."
+    }
+   ]
+  },
+  {
+   "numero": 36,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Nos termos do Decreto Federal nº 10.443/2020, o órgão de assessoramento do Comandante-Geral da Polícia Militar do Distrito Federal responsável pelo planejamento estratégico e centro do sistema de planejamento, programação e orçamento é o/a",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Alto-Comando."
+    },
+    {
+     "letra": "B",
+     "texto": "Estado-Maior."
+    },
+    {
+     "letra": "C",
+     "texto": "Departamento de Operações."
+    },
+    {
+     "letra": "D",
+     "texto": "Assessoria."
+    },
+    {
+     "letra": "E",
+     "texto": "Departamento de Logística e Finanças."
+    }
+   ]
+  },
+  {
+   "numero": 37,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação ao Estatuto dos Policiais-Militares da Polícia Militar do Distrito Federal (Lei Federal nº 7.289/1984), assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 11,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Os policiais-militares da reserva remunerada são aqueles dispensados, definitivamente, da prestação de serviço na ativa, continuando, entretanto, a perceber remuneração do Distrito Federal."
+    },
+    {
+     "letra": "B",
+     "texto": "Posto é o grau hierárquico do Oficial, conferido por ato do Governador do Distrito Federal e confirmado em Carta Patente."
+    },
+    {
+     "letra": "C",
+     "texto": "A hierarquia é a rigorosa observância e acatamento integral da legislação que fundamenta o organismo policial-militar e coordena seu funcionamento regular e harmônico."
+    },
+    {
+     "letra": "D",
+     "texto": "Acatar as autoridades civis e cumprir seus deveres de cidadão são manifestações essenciais do valor policial-militar."
+    },
+    {
+     "letra": "E",
+     "texto": "A subordinação não afeta, de modo algum, a dignidade pessoal do policial-militar e decorre, exclusivamente, da disciplina exigida pela Polícia Militar."
+    }
+   ]
+  },
+  {
+   "numero": 38,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação ao Estatuto dos Policiais-Militares da Polícia Militar do Distrito Federal (Lei Federal nº 7.289/1984), assinale a alternativa INCORRETA.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Em igualdade de posto ou graduação, os policiais-militares em atividade têm precedência sobre os da inatividade."
+    },
+    {
+     "letra": "B",
+     "texto": "Os Cabos e Soldados são essencialmente elementos de execução."
+    },
+    {
+     "letra": "C",
+     "texto": "Por motivo de luto, obedecidas as disposições legais e regulamentares, o policial-militar possui direito ao período de oito dias de afastamento total do serviço."
+    },
+    {
+     "letra": "D",
+     "texto": "O Aspirante-a-Oficial PM, bem como as Praças com estabilidade assegurada, presumivelmente incapazes de permanecer como policiais-militares da ativa, serão submetidos a Conselho de Justificação."
+    },
+    {
+     "letra": "E",
+     "texto": "A agregação é a situação na qual o policial-militar da ativa deixa de ocupar a vaga na escala hierárquica do seu quadro, nela permanecendo sem número."
+    }
+   ]
+  },
+  {
+   "numero": 39,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com o R-200 (Decreto Federal nº 88.777/1983), o aprestamento pode ser conceituado como",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "conjunto de medidas, incluindo instrução, adestramento e preparo logístico, para tornar uma organização policial-militar pronta para emprego imediato."
+    },
+    {
+     "letra": "B",
+     "texto": "atividade destinada a exercitar o policial-militar, individualmente e em equipe, desenvolvendo-lhe a habilidade para o desempenho das tarefas para as quais já recebeu a adequada instrução."
+    },
+    {
+     "letra": "C",
+     "texto": "ato ou efeito de estudar os assuntos pertinentes, propor soluções a cada um deles, elaborar diretrizes, normas e outros documentos."
+    },
+    {
+     "letra": "D",
+     "texto": "ato da autoridade competente, com objetivo de verificar, para fins de controle e coordenação, as atividades e os meios das Polícias Militares."
+    },
+    {
+     "letra": "E",
+     "texto": "exercício dinâmico do poder de polícia, no campo da segurança pública, manifestado por atuações predominantemente ostensivas, visando prevenir, dissuadir, coibir ou reprimir eventos que violem a ordem pública."
+    }
+   ]
+  },
+  {
+   "numero": 40,
+   "materia": "Legislação Aplicada à PMDF",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que diz respeito ao Decreto nº 41.167/2020 do Distrito Federal, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) Aos órgãos de apoio, constituídos pelas Unidades Operacionais da Corporação, incumbem as atividades de policiamento ostensivo e de preservação da ordem pública, valendo-se dos meios inerentes a tal fim. \n( ) O Centro de Políticas de Segurança Pública, ao qual compete assessorar na implementação e consolidação das políticas de segurança pública e no desenvolvimento de programas sociais preventivos voltados à sociedade, subordina-se ao Subcomandante- Geral. \n( ) A estrutura básica dos Comandos de Policiamento compreende: Seção Administrativa, Seção de Inteligência e Seção de Planejamento, Operações e Instrução. \n( ) Os Comandos de Policiamento são considerados órgãos de execução de nível operacional.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 12,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "F – F – F – V."
+    },
+    {
+     "letra": "B",
+     "texto": "F – F – V – F."
+    },
+    {
+     "letra": "C",
+     "texto": "F – V – V – F."
+    },
+    {
+     "letra": "D",
+     "texto": "V – F – V – V."
+    },
+    {
+     "letra": "E",
+     "texto": "V – V – F – V."
+    }
+   ]
+  },
+  {
+   "numero": 41,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com a Constituição Federal de 1988, assinale a alternativa correta acerca das ações e dos remédios constitucionais.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Compete aos Tribunais Regionais Federais processar e julgar, originariamente, os <i>habeas corpus</i>, quando a autoridade coautora for juiz estadual."
+    },
+    {
+     "letra": "B",
+     "texto": "São recorríveis as decisões do Tribunal Superior Eleitoral, exceto as denegatórias de <i>habeas corpus</i> ou mandado de segurança."
+    },
+    {
+     "letra": "C",
+     "texto": "Aos juízes federais compete processar e julgar os <i>habeas corpus</i>, em matéria criminal de sua competência ou quando o constrangimento provier de autoridade cujos atos não estejam diretamente sujeitos a outra jurisdição."
+    },
+    {
+     "letra": "D",
+     "texto": "O mandado de segurança coletivo não pode ser impetrado por partido político com representação no Congresso Nacional, por não possuir legitimidade ativa para tanto."
+    },
+    {
+     "letra": "E",
+     "texto": "Cabe ao Superior Tribunal de Justiça julgar, em recurso ordinário, o <i>habeas corpus</i>, o mandado de segurança, o <i>habeas data</i> e o mandado de injunção decididos em única instância pelos Tribunais Superiores, se denegatória a decisão."
+    }
+   ]
+  },
+  {
+   "numero": 42,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "José tem dezenove anos e é analfabeto. Considerando o que dispõe a Constituição Federal de 1988 acerca dos direitos políticos, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Apesar de ser maior de dezoito anos, tanto o alistamento eleitoral quanto o voto são facultativos para José por ele ser analfabeto."
+    },
+    {
+     "letra": "B",
+     "texto": "O alistamento eleitoral é obrigatório para José por ele ser maior de dezoito anos, mas o voto é facultativo por ele ser analfabeto."
+    },
+    {
+     "letra": "C",
+     "texto": "O fato de José ser analfabeto não guarda relação com o alistamento eleitoral nem o voto, mas sim com as condições de elegibilidade."
+    },
+    {
+     "letra": "D",
+     "texto": "Tanto o alistamento eleitoral quanto o voto são proibidos para José pelo fato de ele ser analfabeto."
+    },
+    {
+     "letra": "E",
+     "texto": "O alistamento eleitoral e o voto são obrigatórios para José por ele ser maior de dezoito anos."
+    }
+   ]
+  },
+  {
+   "numero": 43,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre a defesa do estado e das instituições democráticas, em conformidade com o disposto na Constituição Federal de 1988, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) O decreto que instituir o estado de defesa não poderá indicar medidas de restrições aos direitos de reunião nem de sigilo de correspondência. \n( ) Na vigência do estado de defesa a prisão ou detenção de qualquer pessoa não poderá ser superior a cinco dias, salvo quando autorizada pelo Poder Judiciário. \n( ) As polícias militares e os corpos de bombeiros militares, forças auxiliares e reserva do Exército subordinam-se, juntamente com as polícias civis e as polícias penais estaduais e distrital, aos Governadores dos Estados, do Distrito Federal e dos Territórios. \n( ) O estado de sítio, no caso de comoção grave de repercussão nacional ou ocorrência de fatos que comprovem a ineficácia de medida tomada durante o estado de defesa, não poderá ser decretado por mais de trinta dias, nem prorrogado, de cada vez, por prazo superior. \n( ) A Mesa do Congresso Nacional, ouvidos os líderes partidários, designará Comissão composta de cinco de seus membros para acompanhar e fiscalizar a execução das medidas referentes ao estado de defesa e ao estado de sítio.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 13,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "V – F – V – V – F."
+    },
+    {
+     "letra": "B",
+     "texto": "F – V – V – F – V."
+    },
+    {
+     "letra": "C",
+     "texto": "V – V – F – V – F."
+    },
+    {
+     "letra": "D",
+     "texto": "F – F – V – V – V."
+    },
+    {
+     "letra": "E",
+     "texto": "F – V – F – V – F."
+    }
+   ]
+  },
+  {
+   "numero": 44,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considere um caso de tortura envolvendo um brasileiro como vítima em outro país em que tanto o Brasil quanto esse outro Estado são partes da Convenção Contra a Tortura e Outros Tratamentos ou Penas Cruéis, Desumanos ou Degradantes. Com base nesse caso e no que prevê a referida Convenção promulgada pelo Decreto n° 40/1991, assinale a alternativa correta.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Como o autor do crime não é brasileiro, não poderão ser adotadas medidas por parte do Brasil."
+    },
+    {
+     "letra": "B",
+     "texto": "Os Estados Partes não poderão estabelecer sua jurisdição sobre o delito, salvo quando a tortura houver sido cometida no âmbito de sua jurisdição e sob sua supervisão e concessão."
+    },
+    {
+     "letra": "C",
+     "texto": "O Brasil tomará as medidas necessárias para estabelecer sua jurisdição sobre o delito tendo em vista que a vítima é nacional do Estado em questão, se este o considerar apropriado."
+    },
+    {
+     "letra": "D",
+     "texto": "A referida Convenção exclui qualquer jurisdição criminal exercida de acordo com o direito interno."
+    },
+    {
+     "letra": "E",
+     "texto": "Se o crime foi cometido a bordo de aeronave ou de navio, não será considerado o registro desses no Estado Parte para o exercício da jurisdição, mas sim o local que se encontravam as embarcações ou aeronaves no momento em que ocorreu o delito."
+    }
+   ]
+  },
+  {
+   "numero": 45,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca da Convenção Americana sobre os Direitos Humanos (Pacto de São José da Costa Rica), promulgado pelo Decreto n° 678/1992.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Ninguém pode ser condenado por ações ou omissões que, no momento em que forem cometidas, não sejam delituosas, de acordo com o direito aplicável. Pode ser imposta pena mais grave que a aplicável no momento da perpetração do delito, ou mais leve se a lei dispuser depois da perpetração."
+    },
+    {
+     "letra": "B",
+     "texto": "Nos países que não houverem abolido a pena de morte, esta só poderá ser imposta pelos delitos mais graves, em cumprimento de sentença final de tribunal competente e em conformidade com lei que estabeleça tal pena, promulgada depois de haver o delito sido cometido, desde que este seja grave."
+    },
+    {
+     "letra": "C",
+     "texto": "Os juízes da Corte Interamericana de Direitos Humanos serão eleitos, em votação secreta e pelo voto da maioria absoluta dos Estados-Partes na Convenção, na Assembleia-Geral da Organização, de uma lista de candidatos propostos pelos mesmos Estados."
+    },
+    {
+     "letra": "D",
+     "texto": "Toda pessoa tem direito à liberdade de consciência e de religião. Assim, a liberdade de manifestar a própria religião e as próprias crenças não está sujeita às limitações prescritas pela lei."
+    },
+    {
+     "letra": "E",
+     "texto": "A Comissão Interamericana de Direitos Humanos compor-se-á de oito membros, que deverão ser pessoas de alta autoridade moral e de reconhecido saber em matéria de direitos humanos."
+    }
+   ]
+  },
+  {
+   "numero": 46,
+   "materia": "Direito Constitucional e Direitos Humanos",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Considerando a teoria geral dos direitos humanos acerca da terminologia, ressalvadas as particularidades linguísticas e regionais de uma minoria de países, assinale a alternativa INCORRETA.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 14,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Os chamados “direitos fundamentais” devem constar de todos os textos constitucionais, sob pena de o instrumento chamado “Constituição” perder o sentido de sua existência."
+    },
+    {
+     "letra": "B",
+     "texto": "Os “direitos humanos” se referem aos direitos inscritos em tratados e declarações ou previstos em costumes internacionais."
+    },
+    {
+     "letra": "C",
+     "texto": "Os “direitos do homem” versam sobre direitos que não estão expressamente previstos no direito interno ou no direito internacional."
+    },
+    {
+     "letra": "D",
+     "texto": "Os direitos garantidos e limitados no tempo e no espaço, objetivamente vigentes numa ordem jurídica concreta são denominados “direitos fundamentais”."
+    },
+    {
+     "letra": "E",
+     "texto": "Os “direitos do homem” são aqueles direitos positivados que já ultrapassaram as fronteiras estatais de proteção e ascenderam ao plano da proteção internacional."
+    }
+   ]
+  },
+  {
+   "numero": 47,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Pedro, servidor público no exercício de suas funções, dolosamente, facilitou a aquisição de bem por preço superior ao de mercado, bem como facilitou o enriquecimento ilícito de terceiro. De acordo com o que dispõe a Lei n° 8.429/1992, assinale a alternativa que representa a classificação correta dos atos de improbidade administrativa praticados por Pedro.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O primeiro é um ato de improbida de administrativa que importa enriquecimento ilícito, e o segundo é um ato de improbidade administrativa que causa prejuízo ao erário."
+    },
+    {
+     "letra": "B",
+     "texto": "Os dois atos são de improbidade administrativa que causam prejuízo ao erário."
+    },
+    {
+     "letra": "C",
+     "texto": "O primeiro é um ato de improbidade administrativa que causa prejuízo ao erário, e o segundo é um ato de improbidade administrativa que importa enriquecimento ilícito."
+    },
+    {
+     "letra": "D",
+     "texto": "O primeiro é um ato de improbidade administrativa que atenta contra os princípios da administração pública, e o segundo é um ato de improbidade administrativa que importa enriquecimento ilícito."
+    },
+    {
+     "letra": "E",
+     "texto": "Os dois atos são de improbidade administrativa que importa enriquecimento ilícito."
+    }
+   ]
+  },
+  {
+   "numero": 48,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca do regime de concessão e permissão da prestação de serviços públicos, de acordo com o que prevê a Lei n° 8.987/1995.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Declarada a caducidade da concessão, não resultará para o poder concedente qualquer espécie de responsabilidade em relação aos encargos, ônus, obrigações ou compromissos com terceiros ou com empregados da concessionária."
+    },
+    {
+     "letra": "B",
+     "texto": "Acerca da política tarifária, os contratos não poderão prever mecanismos de revisão das tarifas, a fim de preservar a segurança e a previsibilidade do negócio."
+    },
+    {
+     "letra": "C",
+     "texto": "No contrato de concessão, incumbe à concessionária a execução do serviço concedido, não sendo cabível a ela responder pelos prejuízos causados ao poder concedente, mas sim aqueles causados aos usuários ou a terceiros, sem que a fiscalização exercida pelo órgão competente exclua ou atenue essa responsabilidade."
+    },
+    {
+     "letra": "D",
+     "texto": "Incumbe ao poder concedente manter em dia o inventário e o registro dos bens vinculados à concessão, bem como captar, aplicar e gerir os recursos financeiros necessários à prestação do serviço."
+    },
+    {
+     "letra": "E",
+     "texto": "Considera-se encampação a retomada do serviço pelo poder concedente antes do início do prazo da concessão por motivo de interesse público, mediante lei autorizativa específica e posterior pagamento da indenização."
+    }
+   ]
+  },
+  {
+   "numero": 49,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com a Lei de Acesso à Informação (Lei n° 12.527/2011), informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) Considera-se autenticidade a qualidade da informação que tenha sido produzida, expedida, recebida ou modificada por determinado indivíduo, equipamento ou sistema. \n( ) No caso de indeferimento de acesso a informações ou às razões da negativa do acesso, poderá o interessado interpor recurso contra a decisão no prazo de 10 (dez) dias a contar da sua ciência. \n( ) As informações ou documentos que versem sobre condutas que impliquem violação dos direitos humanos praticada por agentes públicos ou a mando de autoridades públicas poderão ser objeto de restrição de acesso. \n( ) As informações que puderem colocar em risco a segurança do Presidente e Vice - Presidente da República e respectivos cônjuges e filhos(as) serão classificadas como ultrassecretas e ficarão sob sigilo até o término do mandato em exercício ou do último mandato, em caso de reeleição.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 15,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "F – V – V – V."
+    },
+    {
+     "letra": "B",
+     "texto": "V – F – V – V."
+    },
+    {
+     "letra": "C",
+     "texto": "F – F – F – V."
+    },
+    {
+     "letra": "D",
+     "texto": "V – V – F – F."
+    },
+    {
+     "letra": "E",
+     "texto": "F – V – F – F."
+    }
+   ]
+  },
+  {
+   "numero": 50,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A Administração da cidade Alfa deseja contratar objeto que envolve uma inovação tecnológica, atendendo todos os requisitos para que seja utilizada a modalidade diálogo competitivo. Sobre essa modalidade, assinale a alternativa correta com base no que dispõe a Lei n° 14.133/2021.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 16,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Os critérios empregados para pré-seleção dos licitantes deverão ser previstos em edital, e serão admitidos os primeiros interessados que preencherem os requisitos objetivos estabelecidos, até o limite de cinco licitantes."
+    },
+    {
+     "letra": "B",
+     "texto": "O diálogo competitivo será conduzido por comissão de contratação composta de pelo menos 4 (quatro) servidores efetivos ou empregados públicos pertencentes aos quadros permanentes da Administração, não sendo admitida a contratação de profissionais para assessoramento técnico da comissão."
+    },
+    {
+     "letra": "C",
+     "texto": "A Administração apresentará, por ocasião da divulgação do edital em sítio eletrônico oficial, suas necessidades e as exigências já definidas e estabelecerá prazo mínimo de 25 (vinte e cinco) dias úteis para manifestação de interesse na participação da licitação."
+    },
+    {
+     "letra": "D",
+     "texto": "As reuniões com os licitantes pré-selecionados serão sigilosas e não poderão ser registradas em ata."
+    },
+    {
+     "letra": "E",
+     "texto": "O edital não poderá prever a realização de fases sucessivas para a modalidade diálogo competitivo."
+    }
+   ]
+  },
+  {
+   "numero": 51,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Assinale a alternativa correta acerca dos bens públicos.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 16,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O uso comum do bem público por particular admite duas modalidades, o uso comum ordinário, que está sujeito à remuneração, e o uso comum especial, que é limitado a determinada categoria de usuários."
+    },
+    {
+     "letra": "B",
+     "texto": "Sobre as minas e jazidas, a autorização de pesquisa será sempre por prazo determinado e as autorizações e concessões não poderão ser cedidas ou transferidas, total ou parcialmente, sem prévia anuência do poder concedente."
+    },
+    {
+     "letra": "C",
+     "texto": "O uso privativo dos bens públicos é o que a Administração Pública confere, mediante título jurídico individual, a pessoa ou grupo de pessoas determinadas, para que o exerçam, sem exclusividade, sobre parcela de bem público."
+    },
+    {
+     "letra": "D",
+     "texto": "Diante da atual Constituição Federal, a competência para legislar sobre águas foi reservada privativamente aos Estados e Municípios, afastando a competência da União."
+    },
+    {
+     "letra": "E",
+     "texto": "As águas públicas admitem o uso comum, sendo vedado o uso privativo. O uso comum é aberto a todos e, em regra, gratuito, podendo ser remunerado."
+    }
+   ]
+  },
+  {
+   "numero": 52,
+   "materia": "Direito Administrativo",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação ao processo administrativo, assinale a alternativa INCORRETA de acordo com a Lei n° 9.784/1999.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 16,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Os prazos começam a correr a partir da data da cientificação oficial, excluindo-se da contagem o dia do começo e incluindo-se o do vencimento."
+    },
+    {
+     "letra": "B",
+     "texto": "As sanções, a serem aplicadas por autoridade competente, terão natureza pecuniária ou consistirão em obrigação de fazer ou de não fazer, assegurado sempre o direito de defesa."
+    },
+    {
+     "letra": "C",
+     "texto": "A Administração deve anular seus próprios atos, quando eivados de vício de legalidade, e pode revogá-los por motivo de conveniência ou oportunidade, respeitados os direitos adquiridos."
+    },
+    {
+     "letra": "D",
+     "texto": "Concluída a instrução de processo administrativo, a Administração tem o prazo de até trinta dias para decidir, salvo prorrogação por igual período expressamente motivada."
+    },
+    {
+     "letra": "E",
+     "texto": "Inexistindo disposição específica, os atos do órgão ou autoridade responsável pelo processo e dos administrados que dele participem devem ser praticados no prazo de dez dias, salvo motivo de força maior."
+    }
+   ]
+  },
+  {
+   "numero": 53,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em determinado dia, Zeus avista Hades, seu inimigo mortal, passeando pela orla da praia, momento em que, imediatamente, saca sua arma e dispara, matando Hades. Acontece que, a título de culpa, Zeus também matou Poseidon, vendedor ambulante local, porque o projétil perfurou o corpo de Hades, atravessando-o, e atingiu Poseidon no coração. Nesse caso, à luz da normativa penal, é correto afirmar que restou configurada hipótese de",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 17,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "erro sobre a pessoa."
+    },
+    {
+     "letra": "B",
+     "texto": "erro sobre o objeto."
+    },
+    {
+     "letra": "C",
+     "texto": "erro determinado por terceiro."
+    },
+    {
+     "letra": "D",
+     "texto": "aberratio causae."
+    },
+    {
+     "letra": "E",
+     "texto": "erro na execução."
+    }
+   ]
+  },
+  {
+   "numero": 54,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Acerca do Direito Penal, assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 17,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Salvo se utilizadas para beneficiar o réu, a analogia e a interpretação analógica não são admitidas pelo direito penal."
+    },
+    {
+     "letra": "B",
+     "texto": "O <i>iter criminis</i> é composto de quatro etapas, quais sejam: cogitação, preparação, execução e consumação."
+    },
+    {
+     "letra": "C",
+     "texto": "Considera-se regime aberto a execução da pena em colônia agrícola, industrial ou estabelecimento similar."
+    },
+    {
+     "letra": "D",
+     "texto": "No concurso de crimes, quando adotado o sistema da exasperação, aplica-se ao réu o somatório das penas de cada uma das infrações penais pelas quais foi condenado."
+    },
+    {
+     "letra": "E",
+     "texto": "São causas de exclusão da tipicidade: a anistia, a graça e o indulto."
+    }
+   ]
+  },
+  {
+   "numero": 55,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "A coação moral irresistível, também denominada de <i>vis compulsiva</i>, à luz do ordenamento jurídico penal, é classificada como causa de",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 17,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "diminuição da pena."
+    },
+    {
+     "letra": "B",
+     "texto": "extinção da punibilidade."
+    },
+    {
+     "letra": "C",
+     "texto": "exclusão da ilicitude."
+    },
+    {
+     "letra": "D",
+     "texto": "exclusão da culpabilidade."
+    },
+    {
+     "letra": "E",
+     "texto": "exclusão da tipicidade."
+    }
+   ]
+  },
+  {
+   "numero": 56,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Determinado agente público de trânsito, atendendo ao pedido do prefeito da cidade, deixou de multá-lo por avançar o sinal vermelho do semáforo. Nesse caso, nos termos do Código Penal, o agente de trânsito praticou o crime de",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 17,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "condescendência criminosa."
+    },
+    {
+     "letra": "B",
+     "texto": "corrupção passiva."
+    },
+    {
+     "letra": "C",
+     "texto": "advocacia administrativa."
+    },
+    {
+     "letra": "D",
+     "texto": "prevaricação."
+    },
+    {
+     "letra": "E",
+     "texto": "tráfico de influência."
+    }
+   ]
+  },
+  {
+   "numero": 57,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Nos termos da Lei de Abuso de Autoridade, presente o especial fim de agir do art. 1º, §1º, da citada Lei, configura crime de abuso de autoridade, EXCETO",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 17,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "deixar de identificar-se ou identificar-se falsamente ao preso por ocasião de sua captura ou quando deva fazê-lo durante sua detenção ou prisão."
+    },
+    {
+     "letra": "B",
+     "texto": "proceder à obtenção de prova, em procedimento de investigação ou fiscalização, por meio manifestamente ilícito."
+    },
+    {
+     "letra": "C",
+     "texto": "submeter o preso capturado em flagrante delito a interrogatório policial durante o período de repouso noturno."
+    },
+    {
+     "letra": "D",
+     "texto": "manter presos de ambos os sexos na mesma cela ou espaço de confinamento."
+    },
+    {
+     "letra": "E",
+     "texto": "constranger a depor, sob ameaça de prisão, pessoa que, em razão de função, ministério, ofício ou profissão, deva guardar segredo ou resguardar sigilo."
+    }
+   ]
+  },
+  {
+   "numero": 58,
+   "materia": "Direito Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação à Lei dos Crimes Hediondos e à Lei de Tortura, informe se é verdadeiro (V) ou falso (F) o que se afirma a seguir e assinale a alternativa com a sequência correta. \n( ) O Supremo Tribunal Federal, considerando a gravidade dos delitos, entende como constitucional a obrigatoriedade do regime inicial fechado para os condenados por crimes hediondos e equiparados. \n( ) A prisão temporária em relação a crimes hediondos e equiparados terá o prazo de cinco dias, prorrogável por igual período em caso de extrema e comprovada necessidade. \n( ) Incide causa de aumento de pena no crime de tortura se dela resulta lesão corporal de natureza grave ou gravíssima. \n( ) A condenação pelo crime de tortura acarretará a perda do cargo, função ou emprego público e a interdição para seu exercício pelo dobro do prazo da pena aplicada.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 18,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "F – F – F – V."
+    },
+    {
+     "letra": "B",
+     "texto": "F – V – V – F."
+    },
+    {
+     "letra": "C",
+     "texto": "F – F – V – V."
+    },
+    {
+     "letra": "D",
+     "texto": "V – V – F – F."
+    },
+    {
+     "letra": "E",
+     "texto": "V – F – V – V."
+    }
+   ]
+  },
+  {
+   "numero": 59,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que diz respeito aos Juizados Especiais Criminais (Lei Federal nº 9.099/95), assinale a alternativa correta.",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 18,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Consideram-se infrações penais de menor potencial ofensivo, para os efeitos da referida Lei, as contravenções penais e os crimes a que a lei comine pena máxima não superior a quatro anos, cumulada ou não com multa."
+    },
+    {
+     "letra": "B",
+     "texto": "Nas infrações penais de menor potencial ofensivo, ao autor do fato que, após a lavratura do termo, for imediatamente encaminhado ao Juizado ou assumir o compromisso de a ele comparecer, não se imporá prisão em flagrante, nem se exigirá fiança."
+    },
+    {
+     "letra": "C",
+     "texto": "A competência do Juizado será determinada pelo domicílio da vítima da infração penal."
+    },
+    {
+     "letra": "D",
+     "texto": "Oralidade, formalidade e celeridade são alguns dos princípios que norteiam o procedimento nos Juizados Especiais."
+    },
+    {
+     "letra": "E",
+     "texto": "Nos crimes em que a pena mínima cominada for igual ou inferior a dois anos, o Ministério Público, ao oferecer a denúncia, poderá prop or a suspensão condicional do processo."
+    }
+   ]
+  },
+  {
+   "numero": 60,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Euclides foi preso em flagrante por dois policiais militares pela prática do crime de furto qualificado mediante escalada, disposto no artigo 155, §4º, inciso II, do Código Penal. Após todo deslinde investigativo, o Ministério Público denunciou Euclides nas disposições do delito mencionado, e o Juízo recebeu a exordial acusatória pelo procedimento do rito comum ordinário. O réu foi regularmente citado e, posteriormente, apresentou resposta à acusação. O Juízo, por sua vez, não vislumbrou nenhuma das hipóteses de absolvição sumária, razão pela qual designou audiência de instrução e julgamento. No dia da audiência, estavam presentes o ofendido, os policiais militares que efetuaram a prisão em flagrante, uma testemunha de defesa, mas, em contrapartida, o réu, que está solto, apesar de intimado, não compareceu ao ato. Acerca dos fatos, considerando que os policiais militares foram arrolados somente pelo Ministério Público, assinale a alternativa correta, conforme preceitua o Código de Processo Penal.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 18,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Considerando que o acusado não compareceu à audiência de instrução e julgamento, o Juízo deverá redesignar o ato, em observância aos princípios do contraditório e da ampla defesa."
+    },
+    {
+     "letra": "B",
+     "texto": "A testemunha de defesa deverá ser inquirida depois da colheita das declarações da vítima, mas antes da inquirição dos policiais militares."
+    },
+    {
+     "letra": "C",
+     "texto": "A vítima deverá prestar declarações depois da inquirição dos policiais militares e da testemunha de defesa."
+    },
+    {
+     "letra": "D",
+     "texto": "Os policiais militares serão inquiridos após a colheita das declarações da vítima, mas antes da inquirição da testemunha de defesa."
+    },
+    {
+     "letra": "E",
+     "texto": "O Ministério Público poderá desistir da oitiva dos policiais militares, desde que a defesa concorde com a desistência."
+    }
+   ]
+  },
+  {
+   "numero": 61,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com a Lei Federal nº 11.340/2006 (Lei Maria da Penha), assinale a alternativa correta.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 19,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Para configuração da violência doméstica e familiar contra mulher, deve existir coabitação entre o autor e a ofendida."
+    },
+    {
+     "letra": "B",
+     "texto": "É direito da mulher em situação de violência doméstica e familiar o atendimento policial e pericial especializado, prestado, obrigatoriamente, por servidoras do sexo feminino previamente capacitadas."
+    },
+    {
+     "letra": "C",
+     "texto": "A ofendida tem a opção de propor ação de divórcio ou de dissolução de união estável no Juizado de Violência Doméstica e Familiar contra a Mulher."
+    },
+    {
+     "letra": "D",
+     "texto": "Inclui-se na competência dos Juizados de Violência Doméstica e Familiar contra a Mulher a pretensão relacionada à partilha de bens."
+    },
+    {
+     "letra": "E",
+     "texto": "O Ministério Público poderá propor transação penal para o autor de violência doméstica contra mulher, desde que ele seja primário."
+    }
+   ]
+  },
+  {
+   "numero": 62,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Com base na Lei nº 9.296/1996, que dispõe sobre o procedimento da Interceptação Telefônica, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 19,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A interceptação telefônica, como meio célere de obtenção de prova, pode ser admitida ainda que a prova possa ser feita por outros meios disponíveis."
+    },
+    {
+     "letra": "B",
+     "texto": "A interceptação telefônica não poderá exceder o prazo de 90 dias, sob pena de nulidade."
+    },
+    {
+     "letra": "C",
+     "texto": "A interceptação telefônica poderá ser admitida para apurar infração administrativa em procedimento administrativo disciplinar."
+    },
+    {
+     "letra": "D",
+     "texto": "O juiz deverá decidir, no prazo máximo de quarenta e oito horas, sobre o pedido de interceptação das comunicações telefônicas."
+    },
+    {
+     "letra": "E",
+     "texto": "Não se admite a interceptação telefônica se o fato investigado constitui infração penal punida, no máximo, com pena de detenção."
+    }
+   ]
+  },
+  {
+   "numero": 63,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que concerne à prisão em flagrante, assinale a alternativa correta.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 19,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Ato contínuo à lavratura do auto de prisão em flagrante, será entregue ao preso a nota de culpa, assinada pelo condutor da prisão."
+    },
+    {
+     "letra": "B",
+     "texto": "O agente conduzido pelos policiais será recolhido à prisão, cabendo à autoridade policial o arbitramento de fiança em casos de crime com pena privativa de liberdade máxima não superior a cinco anos."
+    },
+    {
+     "letra": "C",
+     "texto": "Não havendo autoridade no lugar em que se tiver efetuado a prisão, o preso será logo apresentado à do lugar mais próximo."
+    },
+    {
+     "letra": "D",
+     "texto": "A prisão em flagrante ocorre quando o agente é detido, após a prática da infração penal, mesmo sem a posse dos objetos relacionados à prática do delito, desde que possua antecedentes criminais, fato que denota ser ele o autor da infração."
+    },
+    {
+     "letra": "E",
+     "texto": "A falta de testemunhas da infração é impeditivo à lavratura do auto de prisão em flagrante, motivo pelo qual deverá ser instaurada portaria pela autoridade policial."
+    }
+   ]
+  },
+  {
+   "numero": 64,
+   "materia": "Direito Processual Penal",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com as disposições do Código de Processo Penal e sobre o inquérito policial, assinale a alternativa correta.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 19,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O defensor constituído, no interesse do representado, poderá ter acesso amplo aos elementos de prova, desde que estejam documentados em procedimento investigatório."
+    },
+    {
+     "letra": "B",
+     "texto": "Caso a autoridade policial entenda que não há provas da materialidade e indícios suficientes da autoria, poderá mandar arquivar os autos de inquérito policial."
+    },
+    {
+     "letra": "C",
+     "texto": "Do despacho que indeferir o requerimento de abertura de inquérito policial caberá recurso ao Juízo."
+    },
+    {
+     "letra": "D",
+     "texto": "O inquérito policial, em caso de investigado preso, deverá ser concluído no prazo de 30 dias improrrogáveis."
+    },
+    {
+     "letra": "E",
+     "texto": "O inquérito, nos crimes em que a ação pública depender de representação, poderá sem ela ser iniciado, tendo em vista que se trata de procedimento oficioso."
+    }
+   ]
+  },
+  {
+   "numero": 65,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com o Código Penal Militar, assinale a alternativa INCORRETA.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "A lei posterior que, de qualquer outro modo, favorece o agente, aplica-se retroativamente, ainda quando já tenha sobrevindo sentença condenatória irrecorrível."
+    },
+    {
+     "letra": "B",
+     "texto": "Ninguém pode ser punido por fato que lei posterior deixa de considerar crime, cessando, em virtude dela, a própria vigência de sentença condenatória irrecorrível, salvo quanto aos efeitos de natureza civil."
+    },
+    {
+     "letra": "C",
+     "texto": "O ajuste, a determinação ou instigação e o auxílio, salvo disposição em contrário, não são puníveis se o crime não chega, pelo menos, a ser tentado."
+    },
+    {
+     "letra": "D",
+     "texto": "Não é imputável o agente que, por embriaguez completa proveniente de caso fortuito ou força maior, era, ao tempo da ação ou da omissão, inteiramente incapaz de entender o caráter criminoso do fato ou de determinar-se de acordo com esse entendimento."
+    },
+    {
+     "letra": "E",
+     "texto": "Cumpridos os requisitos legais, aplica-se a suspensão condicional da pena ao condenado por crime cometido em tempo de paz ou de guerra."
+    }
+   ]
+  },
+  {
+   "numero": 66,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que concerne ao estado de necessidade, é correto afirmar que o Código Penal Militar adotou a",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "teoria unitária, na qual o estado de necessidade atua apenas como excludente de tipicidade."
+    },
+    {
+     "letra": "B",
+     "texto": "teoria unitária, na qual o estado de necessidade atua apenas como excludente de ilicitude."
+    },
+    {
+     "letra": "C",
+     "texto": "teoria unitária, na qual o estado de necessidade atua apenas como excludente de culpabilidade."
+    },
+    {
+     "letra": "D",
+     "texto": "teoria diferenciadora, na qual o estado de necessidade, a depender do caso, atua como excludente de ilicitude ou de culpabilidade."
+    },
+    {
+     "letra": "E",
+     "texto": "teoria diferenciadora, na qual o estado de necessidade, a depender do caso, atua como excludente de tipicidade ou de ilicitude."
+    }
+   ]
+  },
+  {
+   "numero": 67,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Nos termos do Código Penal Militar, podem ser classificadas como medidas de segurança pessoais não detentivas:",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "a interdição de estabelecimento ou sede de sociedade ou associação e o confisco."
+    },
+    {
+     "letra": "B",
+     "texto": "a internação em manicômio judiciário e a proibição de frequentar determinados lugares."
+    },
+    {
+     "letra": "C",
+     "texto": "o confisco e a cassação de licença para direção de veículos motorizados."
+    },
+    {
+     "letra": "D",
+     "texto": "a interdição de estabelecimento ou sede de sociedade ou associação e o exílio local."
+    },
+    {
+     "letra": "E",
+     "texto": "a cassação de licença para direção de veículos motorizados e a proibição de frequentar determinados lugares."
+    }
+   ]
+  },
+  {
+   "numero": 68,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "À luz do Código Penal Militar, assinale a alternativa que apresenta corretamente somente penas principais.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Detenção, impedimento e suspensão do exercício do posto."
+    },
+    {
+     "letra": "B",
+     "texto": "Morte, reclusão e perda da função pública."
+    },
+    {
+     "letra": "C",
+     "texto": "Reclusão, detenção e inabilitação para o exercício de função pública."
+    },
+    {
+     "letra": "D",
+     "texto": "Morte, reforma e exclusão das Forças Armadas."
+    },
+    {
+     "letra": "E",
+     "texto": "Prisão, impedimento e perda da função pública."
+    }
+   ]
+  },
+  {
+   "numero": 69,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "De acordo com o Código Penal Militar, no crime de deserção cometido por praça, embora decorrido o prazo da prescrição, esta só extingue a punibilidade quando o desertor atinge a idade de",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "trinta anos."
+    },
+    {
+     "letra": "B",
+     "texto": "trinta e cinco anos."
+    },
+    {
+     "letra": "C",
+     "texto": "quarenta e cinco anos."
+    },
+    {
+     "letra": "D",
+     "texto": "sessenta anos."
+    },
+    {
+     "letra": "E",
+     "texto": "setenta anos."
+    }
+   ]
+  },
+  {
+   "numero": 70,
+   "materia": "Direito Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Segundo o Código Penal Militar, o crime de conspiração consiste em",
+   "gabarito": "B",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 20,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "aliciar militar ou assemelhado para a prática de crimes contra a autoridade ou disciplina militar."
+    },
+    {
+     "letra": "B",
+     "texto": "concertarem-se militares ou assemelhados para a prática do crime de motim ou de revolta."
+    },
+    {
+     "letra": "C",
+     "texto": "incitar à desobediência, à indisciplina ou à prática de crime militar."
+    },
+    {
+     "letra": "D",
+     "texto": "reunirem-se militares ou assemelhados agindo contra a ordem recebida de superior, ou negando-se a cumpri-la."
+    },
+    {
+     "letra": "E",
+     "texto": "promover a reunião de militares, ou nela tomar parte, para discussão de ato de superior ou assunto atinente à disciplina militar."
+    }
+   ]
+  },
+  {
+   "numero": 71,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Jânio, policial militar, foi denunciado por ter cometido, em tese, o crime de incêndio, previsto no artigo 268 do Código Penal Militar. Contudo o Juízo Militar não vislumbrou justa causa suficiente para instaurar ação penal contra o investigado, motivo pelo qual decidiu pelo não recebimento da exordial acusatória. Irresignado, o órgão ministerial deseja impugnar essa decisão. Nesse caso, de acordo com o Código de Processo Penal Militar, o recurso cabível é",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "apelação."
+    },
+    {
+     "letra": "B",
+     "texto": "recurso ordinário."
+    },
+    {
+     "letra": "C",
+     "texto": "recurso em sentido estrito."
+    },
+    {
+     "letra": "D",
+     "texto": "recurso extraordinário."
+    },
+    {
+     "letra": "E",
+     "texto": "recurso inominado."
+    }
+   ]
+  },
+  {
+   "numero": 72,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Segundo o Código de Processo Penal Militar, assinale a alternativa correta.",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "São consideradas medidas preliminares ao inquérito policial militar a prisão do infrator, a apreensão dos instrumentos que tenham relação com o fato e a oitiva de testemunhas."
+    },
+    {
+     "letra": "B",
+     "texto": "Por força do princípio da imparcialidade, o inquérito policial militar não pode ser iniciado em virtude de requisição do Ministério Público."
+    },
+    {
+     "letra": "C",
+     "texto": "O Policial Militar investigado por fato relacionado ao uso da força letal no exercício da profissão deverá ser citado da instauração do procedimento investigatório, podendo constituir defensor no prazo de até setenta e duas horas a contar do recebimento da citação."
+    },
+    {
+     "letra": "D",
+     "texto": "Independentemente de flagrante delito, o indiciado poderá ficar detido, durante as investigações policiais, até sessenta dias, comunicando-se a detenção à autoridade judiciária competente."
+    },
+    {
+     "letra": "E",
+     "texto": "Compete à Polícia judiciária militar requisitar da polícia civil e das repartições técnicas civis as pesquisas e os exames necessários ao complemento e subsídio de inquérito policial militar."
+    }
+   ]
+  },
+  {
+   "numero": 73,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No contexto de operação militar de garantia da lei e da ordem, determinado militar das Forças Armadas praticou crime doloso contra a vida de um civil. Nesse caso, à luz da legislação castrense, o referido delito será de competência do/da",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Justiça Comum Estadual."
+    },
+    {
+     "letra": "B",
+     "texto": "Justiça Comum Federal."
+    },
+    {
+     "letra": "C",
+     "texto": "Tribunal do Júri da Justiça Estadual."
+    },
+    {
+     "letra": "D",
+     "texto": "Justiça Militar da União."
+    },
+    {
+     "letra": "E",
+     "texto": "Justiça Militar Estadual."
+    }
+   ]
+  },
+  {
+   "numero": 74,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Conforme o Código de Processo Penal Militar, o processo ordinário inicia-se com o/a",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "encaminhamento do auto de prisão em flagrante ao juiz competente."
+    },
+    {
+     "letra": "B",
+     "texto": "regular citação do acusado."
+    },
+    {
+     "letra": "C",
+     "texto": "oferecimento da denúncia."
+    },
+    {
+     "letra": "D",
+     "texto": "recebimento da denúncia."
+    },
+    {
+     "letra": "E",
+     "texto": "instalação do Conselho de Justiça."
+    }
+   ]
+  },
+  {
+   "numero": 75,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Em relação ao Código de Processo Penal Militar, assinale a alternativa INCORRETA.",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "Admitir-se-á a interpretação extensiva ou a interpretação restritiva, quando for manifesto, no primeiro caso, que a expressão da lei é mais estrita e, no segundo, que é mais ampla, do que sua intenção."
+    },
+    {
+     "letra": "B",
+     "texto": "Em atenção ao princípio da intranscendência, a ação penal militar somente pode ser proposta contra o autor da infração penal, não podendo ser instaurada, por exemplo, contra seus sucessores."
+    },
+    {
+     "letra": "C",
+     "texto": "Haverá conexão quando duas ou mais pessoas forem acusadas da mesma infração."
+    },
+    {
+     "letra": "D",
+     "texto": "A acusação apresentará o rol das testemunhas, que não poderá ser superior a seis, na própria denúncia."
+    },
+    {
+     "letra": "E",
+     "texto": "A lei de processo penal militar deve ser interpretada no sentido literal de suas expressões."
+    }
+   ]
+  },
+  {
+   "numero": 76,
+   "materia": "Direito Processual Penal Militar",
+   "texto": null,
+   "comando": null,
+   "enunciado": "No que concerne às exceções, preencha a lacuna e assinale a alternativa correta, de acordo com o Código de Processo Penal Militar. A arguição de __________ precederá a qualquer outra, salvo quando fundada em motivo superveniente.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 21,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "suspeição ou impedimento"
+    },
+    {
+     "letra": "B",
+     "texto": "incompetência do juízo"
+    },
+    {
+     "letra": "C",
+     "texto": "prescrição"
+    },
+    {
+     "letra": "D",
+     "texto": "litispendência"
+    },
+    {
+     "letra": "E",
+     "texto": "coisa julgada"
+    }
+   ]
+  },
+  {
+   "numero": 77,
+   "materia": "Criminologia",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Sobre o método, objeto e natureza da Criminologia, é correto afirmar que",
+   "gabarito": "C",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 22,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "é pacífico na doutrina que a vitimologia configura uma ciência autônoma."
+    },
+    {
+     "letra": "B",
+     "texto": "seu método é dedutivo e ela se preocupa exclusivamente com o estudo do delinquente."
+    },
+    {
+     "letra": "C",
+     "texto": "seu método é empírico e ela se ocupa do estudo do delito, do delinquente, da vítima e dos mecanismos de controle social."
+    },
+    {
+     "letra": "D",
+     "texto": "seu método é indutivo e ela somente se ocupa de aspectos sociológicos do crime, da vítima e do delinquente."
+    },
+    {
+     "letra": "E",
+     "texto": "seu método é lógico-abstrato e ela se ocupa do estudo do delito, do delinquente, da vítima e dos mecanismos de controle social."
+    }
+   ]
+  },
+  {
+   "numero": 78,
+   "materia": "Criminologia",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Determinado policial militar é acionado para verificar ocorrência de violência doméstica envolvendo, como vítimas, esposa e filhas do suspeito agressor. Considerando os dispositivos legais e tratando da vitimologia na Lei Federal nº 11.340/2006, assinale a alternativa INCORRETA.",
+   "gabarito": "D",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 22,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "O policial deve ter cautela para não incidir no crime de violência institucional prevista na Lei de abuso de autoridade."
+    },
+    {
+     "letra": "B",
+     "texto": "O policial deve agir com cuidado para evitar a vitimização secundária ou revitimização das ofendidas."
+    },
+    {
+     "letra": "C",
+     "texto": "Caso seja constatado que as crianças estão em situação de risco, o policial deve adotar a cautela de acionar o Conselho Tutelar."
+    },
+    {
+     "letra": "D",
+     "texto": "O policial deve somente preservar o local do crime e, em nenhuma hipótese, determinar o afastamento do agressor do lar conjugal, sendo esta uma medida exclusiva do magistrado ou da autoridade policial."
+    },
+    {
+     "letra": "E",
+     "texto": "O policial deve providenciar o afastamento do agressor do lar, domicílio ou local de convivência com a ofendida, caso o Município não seja sede de comarca e não haja delegado disponível no momento da denúncia."
+    }
+   ]
+  },
+  {
+   "numero": 79,
+   "materia": "Criminologia",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Classificam-se como teorias de consenso de vertentes sociológicas:",
+   "gabarito": "E",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 22,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "a criminologia crítica, a associação diferencial e a teoria do etiquetamento."
+    },
+    {
+     "letra": "B",
+     "texto": "a teoria do etiquetamento, a criminologia marxista e a subcultura delinquente."
+    },
+    {
+     "letra": "C",
+     "texto": "a criminologia crítica, a teoria do etiquetamento e a escola de Chicago."
+    },
+    {
+     "letra": "D",
+     "texto": "a criminologia marxista, a criminologia crítica e a escola de Chicago."
+    },
+    {
+     "letra": "E",
+     "texto": "a teria da anomia, a subcultura delinquente e a associação diferencial."
+    }
+   ]
+  },
+  {
+   "numero": 80,
+   "materia": "Criminologia",
+   "texto": null,
+   "comando": null,
+   "enunciado": "Constatar, como policial, que o número de casos de registro de extorsão, em determinada comunidade, tem baixo índice de notificação à autoridade significa reconhecer que questões práticas relativas à falta de confiança no Estado, à possibilidade de vingança privada e à deficiência no acesso à informação motivam a referida estatística criminal. Em consonância com essas hipóteses práticas, assinale a alternativa INCORRETA.",
+   "gabarito": "A",
+   "anulada": false,
+   "figura": false,
+   "formula": false,
+   "pagina": 22,
+   "alternativas": [
+    {
+     "letra": "A",
+     "texto": "As taxas de subnotificação não têm relação com o tema das cifras ocultas."
+    },
+    {
+     "letra": "B",
+     "texto": "As cifras douradas representam o índice de crimes de colarinho-branco."
+    },
+    {
+     "letra": "C",
+     "texto": "As cifras cinza dizem respeito aos casos de crimes que não chegaram à fase processual de persecução penal."
+    },
+    {
+     "letra": "D",
+     "texto": "Prognósticos estatísticos são aqueles que têm como base tabelas de predição que não levam em conta certos fatores internos e só servem para orientar o estudo de um tipo específico de crime e de seus autores."
+    },
+    {
+     "letra": "E",
+     "texto": "As cifras rosas de criminalidade dizem respeito às espécies de cifras ocultas ligadas aos crimes de intolerância e à discriminação sexual e homofóbica que não foram formalmente comunicados ao Estado."
+    }
+   ]
+  }
+ ]
+}

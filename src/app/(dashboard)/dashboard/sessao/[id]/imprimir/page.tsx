@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Printer, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import ReactMarkdown from 'react-markdown'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 type SessionData = {
   course: { name: string; cargo: string | null }
@@ -86,13 +87,13 @@ export default function ImprimirSessaoPage() {
               {data.officialQuestions.map((q, i) => (
                 <article key={i} className="break-inside-avoid">
                   <div className="font-bold text-sm">Questão {i + 1}</div>
-                  <p className="text-sm mt-1 whitespace-pre-wrap">{q.enunciado}</p>
+                  <p className="text-sm mt-1 whitespace-pre-wrap"><TextoMarcado texto={q.enunciado} /></p>
                   {q.alternativas && q.alternativas.length > 0 ? (
                     <ol className="mt-2 space-y-1 text-sm">
                       {q.alternativas.map((alt: any) => (
                         <li key={alt.letra} className="flex gap-2">
                           <span className="font-bold">({alt.letra})</span>
-                          <span>{alt.texto}</span>
+                          <span><TextoMarcado texto={alt.texto} /></span>
                         </li>
                       ))}
                     </ol>

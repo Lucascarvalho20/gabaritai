@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, ExternalLink, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TextoMarcado } from '@/components/TextoMarcado'
 
 /**
  * Peças compartilhadas pelas telas de prova (fazer, gabarito, resultado):
@@ -26,6 +27,33 @@ export type ItemTela = {
   caderno?: string | null
 }
 
+/** As alternativas de múltipla escolha do item (certo/errado não tem lista). */
+export function alternativasDoItem(item: ItemTela): Array<{ letra: string; texto: string }> {
+  if (!Array.isArray(item.alternativas)) return []
+  return (item.alternativas as Array<{ letra?: unknown; texto?: unknown }>)
+    .filter((a): a is { letra: string; texto: string } => typeof a?.letra === 'string' && typeof a?.texto === 'string' && a.texto.trim() !== '')
+}
+
+/** Alternativas com a certa marcada e, no resultado, a que o aluno escolheu. */
+export function ListaAlternativas({ item, gabarito, resposta }: { item: ItemTela; gabarito?: string | null; resposta?: string | null }) {
+  const alternativas = alternativasDoItem(item)
+  if (alternativas.length === 0) return null
+  return (
+    <ul className="space-y-1">
+      {alternativas.map((a) => {
+        const certa = gabarito === a.letra
+        const errada = resposta === a.letra && !certa
+        return (
+          <li key={a.letra} className={cn('flex gap-2 text-sm rounded-lg px-2 py-1', certa && 'bg-success-500/10', errada && 'bg-danger-500/10')}>
+            <span className={cn('font-semibold w-5 shrink-0', certa && 'text-success-600', errada && 'text-danger-600')}>{a.letra})</span>
+            <span className="leading-relaxed"><TextoMarcado texto={a.texto} /></span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export type TextoTela = { id: string; codigo: string; titulo: string; conteudo: string }
 
 /**
@@ -45,7 +73,7 @@ export function TextoFormatado({ texto, className }: { texto: string; className?
           )
         ) : (
           p.split(/\n{2,}/).filter((x) => x.trim()).map((par, j) => (
-            <p key={`${i}-${j}`} className="whitespace-pre-line">{par.trim()}</p>
+            <p key={`${i}-${j}`} className="whitespace-pre-line"><TextoMarcado texto={par.trim()} /></p>
           ))
         ),
       )}
@@ -68,7 +96,7 @@ function LinhasNumeradas({ texto }: { texto: string }) {
       {linhas.map((l, i) => (
         <div key={i} className="grid grid-cols-[2rem_1fr] gap-x-2">
           <span className="text-right text-[0.7rem] tabular-nums text-muted-foreground/70 pt-[0.15rem] select-none">{l.num}</span>
-          <span className={cn(l.corpo.startsWith('  ') && 'pl-5', !l.num && 'pt-1 text-xs text-muted-foreground')}>{l.corpo.trim()}</span>
+          <span className={cn(l.corpo.startsWith('  ') && 'pl-5', !l.num && 'pt-1 text-xs text-muted-foreground')}><TextoMarcado texto={l.corpo.trim()} /></span>
         </div>
       ))}
     </div>

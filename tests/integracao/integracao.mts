@@ -500,6 +500,37 @@ await caso('desempenho somado nas provas: aponta a matéria a revisar', async ()
   exigir(d.revisar.some((m: any) => m.materia === 'Língua Portuguesa'), JSON.stringify(d.revisar.map((m: any) => m.materia)))
 })
 
+console.log('\nPROVA DE MÚLTIPLA ESCOLHA (PMDF 2023 de verdade)')
+{
+  await prisma.course.create({ data: { id: 'ens-pmdf', slug: 'pmdf-soldado', name: 'PMDF — Soldado (ensaio)' } })
+  const arqPm = lerArquivoDeProva('pmdf-2023-soldado')
+  let provaPm = ''
+  await caso('importa 80 questões A–E: banca nova entra no cadastro e o destaque da prova continua', async () => {
+    const r: any = await importarProva(arqPm)
+    provaPm = r.provaId
+    exigir(r.itens === 80 && r.anulados === 3, JSON.stringify(r))
+    const banca = await prisma.banca.findUnique({ where: { slug: 'instituto-aocp' } })
+    exigir(banca?.name === 'Instituto AOCP', `banca: ${JSON.stringify(banca)}`)
+    const q3: any = await prisma.question.findUnique({ where: { id: idDoItem('pmdf-2023-soldado', 3) } })
+    exigir(Array.isArray(q3.alternativas) && q3.alternativas.map((a: any) => a.letra).join('') === 'ABCDE', JSON.stringify(q3.alternativas))
+    exigir(/<u>até<\/u>/.test(q3.alternativas[0].texto), `sublinhado perdido: ${q3.alternativas[0].texto}`)
+    exigir(q3.gabaritoOficial === 'C', `gabarito ${q3.gabaritoOficial}`)
+  })
+  await caso('nota de múltipla escolha: erro não desconta e anulada vale para todos', async () => {
+    const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPm)
+    exigir(r.tentativa.duracaoMin === 300 && r.itens.length === 80, `duração ${r.tentativa.duracaoMin}, itens ${r.itens.length}`)
+    const outra = (l: string) => (l === 'E' ? 'A' : String.fromCharCode(l.charCodeAt(0) + 1))
+    const validas = arqPm.itens.filter((i: any) => !i.anulada)
+    // erra as 10 primeiras de propósito, acerta o resto
+    const respostas = Object.fromEntries(validas.map((i: any, k: number) => [idDoItem('pmdf-2023-soldado', i.numero), k < 10 ? outra(i.gabarito) : i.gabarito]))
+    await provasAluno.entregarTentativa('ens-aluno-pf', r.tentativa.id, { respostas })
+    const t: any = await prisma.provaTentativa.findUnique({ where: { id: r.tentativa.id } })
+    // 77 válidas: 67 acertos + 3 anuladas = 70; as 10 erradas não tiram ponto
+    exigir(t.acertos === 67 && t.erros === 10 && t.anuladas === 3 && t.pontos === 70 && t.pontosMax === 80,
+      JSON.stringify({ acertos: t.acertos, erros: t.erros, anuladas: t.anuladas, pontos: t.pontos, max: t.pontosMax }))
+  })
+}
+
 console.log('\nRESPOSTA DE QUESTÃO (rota rápida)')
 await caso('domínio por matéria: 10 respostas simultâneas somam 10, sem perder nenhuma', async () => {
   const base = { userId: 'ens-outro', courseId: 'ens-curso', subjectId: 'ens-port' }
