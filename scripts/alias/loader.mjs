@@ -7,7 +7,8 @@ export async function resolve(especificador, contexto, proximo) {
     return await proximo(especificador, contexto)
   } catch (e) {
     if (e.code !== 'ERR_MODULE_NOT_FOUND' && e.code !== 'ERR_UNSUPPORTED_DIR_IMPORT') throw e
-    for (const ext of ['.ts', '.tsx', '/index.ts']) {
+    // '.js': pacote sem "exports" (o Next 14), que o ESM não completa sozinho: next/server -> next/server.js
+    for (const ext of ['.ts', '.tsx', '/index.ts', '.js']) {
       try { return await proximo(especificador + ext, contexto) } catch {}
     }
     throw e

@@ -511,6 +511,79 @@ await caso('domínio por matéria: 10 respostas simultâneas somam 10, sem perde
   exigir(r.antes === 70 && r.novo === 64 && r.total === 11, JSON.stringify(r))
 })
 
+console.log('\nPAYWALL (conta gratuita organiza; conteúdo é do plano pago)')
+{
+  const { NextRequest } = await import('next/server')
+  const { signToken } = await import(W + 'jwt.ts')
+  const rota = (p: string) => import(new URL(`../../src/app/api/${p}/route.ts`, import.meta.url).href)
+  const [rSessao, rQuestoes, rSimulado, rImprimir, rDiag, rGerar] = await Promise.all([
+    rota('sessao/[id]'), rota('me/questoes'), rota('simulados/[id]'), rota('simulados/[id]/print'),
+    rota('me/diagnostico/start'), rota('ai/gerar'),
+  ])
+  await prisma.user.createMany({ data: [
+    { id: 'pw-gratis', name: 'Plano Gratuito', password: 'x', email: 'gratis@teste.local' },
+    { id: 'pw-trial', name: 'Em Trial', password: 'x', email: 'trial@teste.local' },
+  ] })
+  await prisma.trialPeriod.create({ data: { userId: 'pw-trial', endsAt: new Date(Date.now() + 5 * 864e5) } })
+  for (const userId of ['pw-gratis', 'pw-trial'])
+    await prisma.userCourseEnrollment.create({ data: { userId, courseId: 'ens-curso', isPrimary: true, isActive: true } })
+  await prisma.question.create({ data: { id: 'pw-q1', subjectId: 'ens-penal', enunciado: 'Questão oficial do paywall', alternativas: [], gabarito: 'C', explicacao: 'explicação que só o plano pago vê', source: 'OFFICIAL' } })
+  const sessoes: Record<string, string> = {}
+  for (const userId of ['pw-gratis', 'pw-trial']) {
+    const plano = await prisma.studyPlan.create({ data: { userId, courseId: 'ens-curso', hoursPerDay: 2, daysPerWeek: [1, 2, 3, 4, 5], startDate: new Date(), endDate: new Date(Date.now() + 30 * 864e5) } })
+    sessoes[userId] = (await prisma.studyPlanSession.create({ data: { studyPlanId: plano.id, date: new Date(), durationMin: 50, subjectId: 'ens-penal' } })).id
+  }
+  const simulado = await prisma.mockExam.create({ data: { title: 'Simulado do paywall', questions: ['pw-q1'], courseId: 'ens-curso' } })
+  const pedido = async (sub: string, caminho: string, metodo = 'GET', corpo?: unknown) =>
+    new NextRequest(`http://localhost${caminho}`, {
+      method: metodo,
+      headers: { authorization: `Bearer ${await signToken({ sub })}`, 'content-type': 'application/json' },
+      ...(corpo ? { body: JSON.stringify(corpo) } : {}),
+    })
+  // Nenhuma chamada a modelo de IA pode sair de uma conta gratuita.
+  const chamadasIA: string[] = []
+  const fetchAntes = globalThis.fetch
+  globalThis.fetch = (async (url: any, init?: any) => {
+    if (/generativelanguage|groq\.com|openai\.com|anthropic\.com|deepseek/.test(String(url))) chamadasIA.push(String(url))
+    return fetchAntes(url, init)
+  }) as typeof fetch
+
+  await caso('sessão de estudo no gratuito: checklist e cronômetro, sem questão, flashcard nem resumo', async () => {
+    const r = await rSessao.GET(await pedido('pw-gratis', `/api/sessao/${sessoes['pw-gratis']}`), { params: { id: sessoes['pw-gratis'] } })
+    const d = await r.json()
+    exigir(r.status === 200 && d.locked === true && d.session?.durationMin === 50, `status ${r.status}, locked ${d.locked}`)
+    exigir(d.officialQuestions.length === 0 && d.aiQuestions.length === 0 && d.flashcards.length === 0 && d.resumo === null,
+      JSON.stringify({ oficiais: d.officialQuestions.length, ia: d.aiQuestions.length, resumo: d.resumo }))
+    exigir(!JSON.stringify(d).includes('só o plano pago vê'), 'a explicação vazou na resposta')
+  })
+  await caso('aba Questões no gratuito: 403, sem enunciado', async () => {
+    const r = await rQuestoes.GET(await pedido('pw-gratis', '/api/me/questoes'))
+    const d = await r.json()
+    exigir(r.status === 403 && d.locked === true && d.questions.length === 0, `status ${r.status}`)
+  })
+  await caso('simulado que não iniciou, no gratuito: 403 ao abrir e ao imprimir', async () => {
+    const ctx = { params: { id: simulado.id } }
+    const abrir = await rSimulado.GET(await pedido('pw-gratis', `/api/simulados/${simulado.id}`), ctx)
+    const imprimir = await rImprimir.GET(await pedido('pw-gratis', `/api/simulados/${simulado.id}/print`), ctx)
+    exigir(abrir.status === 403 && imprimir.status === 403, `abrir ${abrir.status}, imprimir ${imprimir.status}`)
+  })
+  await caso('diagnóstico inicial e geração com IA no gratuito: 403, sem chamar o modelo', async () => {
+    const diag = await rDiag.POST(await pedido('pw-gratis', '/api/me/diagnostico/start', 'POST', {}))
+    const gerar = await rGerar.POST(await pedido('pw-gratis', '/api/ai/gerar', 'POST', { tipo: 'questoes', materia: 'Penal', curso: 'Ensaio' }))
+    exigir(diag.status === 403 && gerar.status === 403, `diagnóstico ${diag.status}, gerar ${gerar.status}`)
+    exigir(chamadasIA.length === 0, `uma conta gratuita chamou a IA: ${chamadasIA[0]}`)
+  })
+  await caso('trial vê o conteúdo: sessão com questões, aba Questões e simulado abrem', async () => {
+    const r = await rSessao.GET(await pedido('pw-trial', `/api/sessao/${sessoes['pw-trial']}`), { params: { id: sessoes['pw-trial'] } })
+    const d = await r.json()
+    exigir(r.status === 200 && d.locked === false && d.officialQuestions.some((q: any) => q.id === 'pw-q1'), `status ${r.status}, locked ${d.locked}`)
+    const q = await rQuestoes.GET(await pedido('pw-trial', '/api/me/questoes'))
+    const sim = await rSimulado.GET(await pedido('pw-trial', `/api/simulados/${simulado.id}`), { params: { id: simulado.id } })
+    exigir(q.status === 200 && sim.status === 200, `questões ${q.status}, simulado ${sim.status}`)
+  })
+  globalThis.fetch = fetchAntes
+}
+
 console.log('\nVIGIA DOS CRONS')
 process.env.TELEGRAM_BOT_TOKEN = 'token-falso-do-ensaio'
 process.env.TELEGRAM_CHAT_ID = '1'

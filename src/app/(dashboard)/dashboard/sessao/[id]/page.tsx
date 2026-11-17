@@ -26,6 +26,8 @@ type SessionData = {
   subject: { id: string; name: string; slug: string } | null
   topic: { id: string; name: string; description: string | null; parentName: string | null } | null
   bancaSlug: string | null
+  /** Plano gratuito: a sessão vem sem resumo, questões e flashcards. */
+  locked?: boolean
   resumo: string | null
   resumoCached: boolean
   officialQuestions: Array<any>
@@ -381,6 +383,18 @@ export default function SessaoPage() {
           )} />
         </button>
       </div>
+
+      {data.locked && (
+        <div className="card p-4 border-brand-500/40 bg-brand-500/5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 text-sm">
+            <p className="font-bold">Resumo, questões e flashcards são do plano pago</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              No gratuito você usa o cronograma: marca o que estudou, cronometra e usa o pomodoro desta sessão.
+            </p>
+          </div>
+          <Link href="/planos" className="btn-primary text-xs px-4 py-2 whitespace-nowrap">Ver planos</Link>
+        </div>
+      )}
 
       {/* MODO CICLO GUIADO — fluxo sequencial */}
       {cicloMode ? (

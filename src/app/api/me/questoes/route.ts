@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { lerCursor, montarCursor, type Situacao } from '@/lib/questoes-lista'
 import { cadernoDoItem } from '@/lib/provas/cadernos'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+  // Enunciado, alternativas e texto-base são conteúdo pago, mesmo sem o gabarito.
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'As questões fazem parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true, questions: [], total: 0 }, { status: 403 })
+  }
 
   const sp = new URL(req.url).searchParams
   const texto = (k: string) => sp.get(k)?.trim() || undefined

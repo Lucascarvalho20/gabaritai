@@ -3,6 +3,7 @@ import { GEMINI_MODEL, GROQ_MODELS } from '@/lib/ai-client'
 import { verifyToken } from '@/lib/jwt'
 import { consumeQuota, type QuotaKind } from '@/lib/ai-quota'
 import { prisma } from '@/lib/prisma'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const maxDuration = 60
 // tipo: 'flashcards' | 'questoes' | 'simulado'
@@ -26,7 +27,12 @@ export async function POST(req: NextRequest) {
     where: { id: String(payload.sub) },
     select: { id: true, hasFullAccess: true },
   })
-  if (realUser && kind) {
+  if (!realUser) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
+  // Gerar com IA é recurso pago: o plano gratuito não chama o modelo.
+  if (await isContentLockedForUser(realUser.id)) {
+    return NextResponse.json({ message: 'A geração com IA faz parte dos planos pagos.', locked: true }, { status: 403 })
+  }
+  if (kind) {
     try {
       await consumeQuota({ userId: realUser.id, kind, hasFullAccess: realUser.hasFullAccess })
     } catch (err: any) {

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
+  if (await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Mapas mentais fazem parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   const mat = await prisma.material.findUnique({
     where: { id: params.id },

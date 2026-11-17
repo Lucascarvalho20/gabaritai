@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
+import { isContentLockedForUser } from '@/lib/trial-content'
 import { prisma } from '@/lib/prisma'
 import { isWindowOpen } from '@/lib/mock-exam-scheduler'
 
@@ -25,6 +26,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       where: { userId_mockExamId: { userId: user.id, mockExamId: exam.id } },
       select: { id: true },
     })
+    // Quem não iniciou (o /start tem o guarda de plano) não lê as questões no
+    // plano gratuito. Quem já fez continua vendo a própria tentativa.
+    if (!hasResult && await isContentLockedForUser(user.id)) {
+      return NextResponse.json({ message: 'Simulados fazem parte dos planos pagos.', locked: true }, { status: 403 })
+    }
     if (!hasResult) {
       const isShared = exam.weekStart && exam.scheduledDay
       if (isShared && !isWindowOpen(exam)) {

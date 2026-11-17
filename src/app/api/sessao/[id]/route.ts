@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { generateOrFetchCached } from '@/lib/ai-cache'
 import { consumeQuota, trackFeatureUsage } from '@/lib/ai-quota'
 import { parseAIJson } from '@/lib/ai-client'
+import { isContentLockedForUser } from '@/lib/trial-content'
 
 export const maxDuration = 60
 
@@ -31,6 +32,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ message: 'Sessão não encontrada' }, { status: 404 })
   }
 
+  // Plano gratuito (planner): a sessão serve para organizar — checklist,
+  // cronômetro, pomodoro —, mas questões, flashcards e resumo são do plano pago.
+  // Sem isto, a sessão entregava 30 questões com gabarito e gerava resumo com IA
+  // para quem não assinou: o cadeado da tela não segura quem chama a rota.
+  const bloqueado = await isContentLockedForUser(user.id)
+
   const subjectId = session.subjectId
   const topicId = session.topicId
   const bancaSlug = session.studyPlan.edital?.banca?.slug ?? null
@@ -42,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   // Questões OFICIAIS desse subject/topic
-  const officialQuestions = await prisma.question.findMany({
+  const officialQuestions = bloqueado ? [] : await prisma.question.findMany({
     where: {
       active: true,
       anulada: false,
@@ -58,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   })
 
   // Questões IA já geradas pra esse tópico (compartilhadas entre alunos)
-  const aiQuestions = await prisma.question.findMany({
+  const aiQuestions = bloqueado ? [] : await prisma.question.findMany({
     where: {
       active: true,
       anulada: false,
@@ -74,8 +81,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   })
 
   // Flashcards: lógica DIFERENTE pra sessão REVISAO
-  let flashcards: Array<{ id: string; frente: string; verso: string }>
-  if (session.type === 'REVISAO') {
+  let flashcards: Array<{ id: string; frente: string; verso: string }> = []
+  if (bloqueado) {
+    // plano gratuito: sem flashcards
+  } else if (session.type === 'REVISAO') {
     // REVISAO usa fila SM-2 PERSONALIZADA do aluno — cards com nextReview <= hoje
     // OU cards do tópico/matéria que o aluno nunca viu ainda
     const today = new Date()
@@ -132,7 +141,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   let resumoSource: 'notebooklm-material' | 'notebooklm-cache' | 'ai-banca' | 'ai-global' | 'ia-generated' | null = null
   try {
     // 1. Material PUBLISHED do tópico (jeito oficial de cola admin)
-    if (topicId) {
+    if (topicId && !bloqueado) {
       const material = await prisma.material.findFirst({
         where: { topicId, type: 'RESUMO', status: 'PUBLISHED', active: true },
         orderBy: { updatedAt: 'desc' },
@@ -145,7 +154,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       }
     }
     // 2. Fallback: AIGenerationCache com modelUsed='notebooklm' (via /api/admin/topics/[id]/resumo)
-    if (!resumo && topicId) {
+    if (!resumo && topicId && !bloqueado) {
       const { getTopicResumo } = await import('@/lib/topic-resumo')
       const adminResumo = await getTopicResumo({ topicId, subjectId, bancaSlug })
       if (adminResumo.content) {
@@ -158,7 +167,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     console.warn('[sessao] admin resumo lookup failed:', err.message)
   }
   try {
-    if (!resumo) {
+    if (!resumo && !bloqueado) {
     const topicName = session.topic?.name ?? subject?.name ?? 'Conteúdo geral'
     const subjectName = subject?.name ?? '—'
 
@@ -234,6 +243,7 @@ Máximo 800 palavras. Use negritos pra termos técnicos.`
       parentName: session.topic.parent?.name ?? null,
     } : null,
     bancaSlug,
+    locked: bloqueado,
     resumo,
     resumoCached,
     resumoSource,

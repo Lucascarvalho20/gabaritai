@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth-server'
+import { isContentLockedForUser } from '@/lib/trial-content'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
   const auth = await requireUser(req)
   if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
   const userId = auth.user.id
+  if (await isContentLockedForUser(userId)) {
+    return NextResponse.json({ message: 'O diagnóstico faz parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   // 1. Acha curso principal
   const primaryEnrollment = await prisma.userCourseEnrollment.findFirst({

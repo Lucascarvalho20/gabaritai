@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth-server'
+import { isContentLockedForUser } from '@/lib/trial-content'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/simulados/[id]/print
@@ -20,6 +21,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const myResult = exam.results[0]
   const windowEnded = exam.availableUntil ? new Date() > exam.availableUntil : true
   const completed = myResult && (myResult.status === 'SUBMITTED' || myResult.status === 'EXPIRED')
+
+  // Simulado sem data de fim conta como "janela encerrada": sem este guarda,
+  // qualquer conta logada imprimia o caderno com gabarito.
+  if (user.role !== 'ADMIN' && !completed && await isContentLockedForUser(user.id)) {
+    return NextResponse.json({ message: 'Simulados fazem parte dos planos pagos.', locked: true }, { status: 403 })
+  }
 
   if (user.role !== 'ADMIN' && !completed && !windowEnded) {
     return NextResponse.json({
