@@ -10,6 +10,7 @@ import { Logo } from '@/components/ui/logo'
 import { CountdownToProva } from '@/components/CountdownToProva'
 import { EditalHighlight } from '@/components/EditalHighlight'
 import { cn } from '@/lib/utils'
+import { paraJsonLd } from '@/lib/json-ld'
 
 export const revalidate = 300 // 5min — revalida automaticamente em background
 
@@ -174,7 +175,7 @@ export default async function ConcursoPage({ params, searchParams }: Props) {
       {/* JSON-LD pro Google entender o conteúdo */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: paraJsonLd(jsonLd) }}
       />
 
       {/* Header */}

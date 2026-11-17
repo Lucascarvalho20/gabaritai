@@ -5,6 +5,7 @@ import { ChevronLeft, Calendar, Clock, ArrowRight } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { EmailCapture } from '@/components/EmailCapture'
 import { getAllPosts, getPost } from '@/lib/blog-posts'
+import { paraJsonLd } from '@/lib/json-ld'
 
 export async function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }))
@@ -296,7 +297,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: paraJsonLd(jsonLd) }} />
 
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
