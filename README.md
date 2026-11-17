@@ -9,10 +9,11 @@ Plataforma SaaS de preparação para concursos públicos. Aplicação Next.js 14
 - **Quanto tempo o edital pede, medido no banco.** Escolha o concurso e as suas horas: o tempo sai do conteúdo cadastrado — palavras de cada material, questões ativas, a mediana real do tempo dos alunos por questão — e a resposta diz quanto dela é dado medido. A mesma conta vale na home e no cronograma. → [seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)
 - **Pagamento que não perde nem duplica dinheiro.** Notificação repetida, fora de ordem ou perdida; três avisos simultâneos liberam o acesso uma vez só — provado contra PostgreSQL real. → [seção 4](#4-pagamento-três-camadas-de-defesa-contra-o-dinheiro-sumir)
 - **IA com as contas fora do modelo.** RAG que só busca no edital do aluno e mostra as fontes; um agente que não escolhe de quem são os dados. → [seção 7](#7-ia-rag-com-escopo-agente-com-ferramentas-cronograma-adaptativo)
-- **CI/CD com trava de banco.** Todo push passa por tipos, lint, 210 testes unitários, 44 cenários contra Postgres real, build sem segredo, caça a chaves vazadas e auditoria de dependências. A promoção para produção é automática, mas espera o SQL da versão estar aplicado e termina com teste de fumaça contra o site no ar. → [CI/CD](#cicd-do-commit-à-produção)
-- **Provas oficiais refeitas com o tempo do edital.** 16 provas (1.920 itens) da PF, PRF e PCDF extraídas dos PDFs da banca e conferidas contra o gabarito definitivo, cronômetro com o prazo guardado no servidor, correção com a regra da Cebraspe e histórico de cada tentativa. → [seção 10](#10-provas-oficiais-anteriores-refeitas-com-o-tempo-do-edital)
+- **CI/CD com trava de banco.** Todo push passa por tipos, lint, 249 testes unitários, 57 cenários contra Postgres real, build sem segredo, caça a chaves vazadas e auditoria de dependências. A promoção para produção é automática, mas espera o SQL da versão estar aplicado e termina com teste de fumaça contra o site no ar. → [CI/CD](#cicd-do-commit-à-produção)
+- **Provas oficiais refeitas com o tempo do edital.** 20 provas (2.160 itens) da PF, PRF, PCDF, PMDF e PMGO extraídas dos PDFs de quatro bancas e conferidas contra o gabarito definitivo, cronômetro com o prazo guardado no servidor, correção com a regra de cada banca e histórico de cada tentativa. → [seção 10](#10-provas-oficiais-anteriores-refeitas-com-o-tempo-do-edital)
 - **Banco de questões que não espera.** Função na mesma região do banco, paginação por cursor de chave, pré-busca e explicação da IA gerada uma vez para todos. → [seção 9](#9-banco-de-questões-que-responde-sem-esperar)
 - **Auditoria por classe de bug.** Achada uma senha com valor padrão, a busca foi pelo padrão — e virou um teste que impede a volta. → [seção 6](#6-segredo-ausente-é-erro-nunca-valor-padrão)
+- **Conteúdo pago trancado no servidor.** A conta gratuita usa a calculadora e o cronograma; material, provas e IA ficam atrás de uma trava por rota — nove rotas abertas achadas e fechadas, com teste que confere até que nenhuma chamada à IA sai de conta gratuita. → [seção 11](#11-conteúdo-pago-trancado-no-servidor-não-na-tela)
 
 ---
 
@@ -66,14 +67,14 @@ Não há `middleware.ts`: a sessão é verificada dentro de cada rota com `getUs
 
 ### 1. Cronograma determinístico, não gerado por LLM
 
-[`src/lib/schedule-algorithm.ts`](src/lib/schedule-algorithm.ts) · 303 linhas
+[`src/lib/schedule-algorithm.ts`](src/lib/schedule-algorithm.ts) · 323 linhas · o método em [`src/lib/metodo-estudo.ts`](src/lib/metodo-estudo.ts)
 
 LLM erra data, inventa carga horária e custa dinheiro a cada regeração. O algoritmo aqui é aritmética pura e **reprodutível** — mesma entrada, mesma saída, sempre:
 
 1. Conta os dias entre hoje e a prova, filtrando só os dias da semana que o aluno marcou como disponíveis.
-2. Multiplica pelas sessões inteiras de 50 min que cabem nas horas/dia → `totalMinAvailable`.
+2. Converte as horas/dia em **pomodoros** (25 min de foco, 5 de pausa, 15 a cada 4 blocos): 3 h rendem 5 pomodoros = 125 min de foco → `totalMinAvailable`.
 3. Soma o tempo que o **conteúdo** de cada matéria pede, medido no banco ([seção 8](#8-quanto-tempo-o-edital-pede-medido-no-banco)) → `totalMinRecommended`. Antes eram 60 h fixas por matéria.
-4. Distribui as matérias em **round-robin ponderado** pelo peso da banca, em blocos de 50 min, na proporção 65% teoria / 20% revisão / 15% questões.
+4. Distribui as matérias em **round-robin ponderado** pelo peso da banca, em blocos de 25 min de estudo novo e de questões. Cada sessão de estudo agenda **revisões espaçadas** da matéria 1, 7, 15 e 30 dias depois (20%, 10%, 7% e 5% do tempo estudado — a curva do esquecimento de Ebbinghaus e o efeito de espaçamento de Cepeda et al., 2008); as revisões vencidas abrem o dia, até metade dele, e o que não cabe passa para o dia seguinte.
 5. Se `recomendado > disponível`, devolve `isFeasible: false` com o déficit em minutos — o aluno descobre **antes** que não vai dar tempo, e ajusta.
 
 ### 2. Repetição espaçada SM-2
@@ -177,11 +178,11 @@ A pergunta que mais pesa na decisão do aluno — *dá tempo de estudar o edital
 |---|---|---|
 | Teoria | palavras do material de cada tópico ÷ 120 por minuto | contadas no SQL, ignorando marcação |
 | Questões | questões ativas × mediana do tempo por questão | tentativas reais dos alunos, entre 5 s e 15 min |
-| Revisão | a fração da teoria que o cronograma reserva | a mesma constante do cronograma |
+| Revisão | 42% da teoria: as quatro revisões espaçadas (1, 7, 15 e 30 dias) | a mesma constante do cronograma ([`metodo-estudo.ts`](src/lib/metodo-estudo.ts)) |
 
 - **A árvore de tópicos conta uma vez.** Os tópicos são assunto → subassuntos. Assunto que só agrupa não ganha tempo próprio, e subassunto cujo assunto já tem texto está coberto pela leitura do pai. A primeira versão contava a lista plana; os números de produção mostraram o erro — no PF Agente, 54 dos 589 tópicos eram contados em dobro.
 - **Medido ou estimado, sempre dito.** Tópico ainda sem material (e sem cobertura) herda a mediana dos tópicos medidos da matéria; matéria com poucas tentativas usa a mediana da plataforma. A resposta traz `percentualMedido` — quanto do total é dado real — para a estimativa não parecer mais certa do que é. Mediana, e não média, porque uma questão esquecida aberta por 14 minutos não pode puxar o tempo de todo mundo.
-- **Uma régua só.** A calculadora pública e o "vai dar tempo?" do cronograma usam a mesma função e o mesmo modelo de sessões de 50 min. Unificar expôs um bug antigo: o cronograma ignorava o edital ativo e montava o plano com a lista de matérias do curso.
+- **Uma régua só.** A calculadora pública e o "vai dar tempo?" do cronograma usam a mesma função e a mesma régua: as horas viram pomodoros, com as pausas contadas. Unificar expôs um bug antigo: o cronograma ignorava o edital ativo e montava o plano com a lista de matérias do curso.
 - **Barato de servir.** Um número fixo de consultas agregadas — cinco, seja 1 edital ou 100 — calcula todos os concursos de uma vez, sem uma consulta por edital; a CDN guarda a resposta por 1 hora e a função por 10 minutos (quem fura o cache da CDN com `?x=` recebe a mesma resposta, sem o banco recalcular); a conta com as horas do aluno roda no navegador — elas nem chegam ao servidor.
 
 Os testes cobrem propriedades — mais palavras nunca reduz o tempo; as horas sugeridas sempre bastam e meia hora a menos nunca basta — e, contra um Postgres real, tudo o que engana a contagem: markdown, rascunho mais novo que o publicado, resumo, material rejeitado, tópico arquivado, questão anulada, tempo absurdo.
@@ -202,7 +203,7 @@ Duas reclamações reais: "demora para mostrar a resposta" e "as questões se re
 
 [`src/lib/provas/`](src/lib/provas) · [`data/provas/`](data/provas)
 
-16 provas oficiais, 1.920 itens: PF 2018, 2021 e 2025 (Agente, Escrivão, Papiloscopista e Delegado, e Perito de Informática em 2025), PRF 2019 e 2021 e PCDF Escrivão 2021. Os cadernos em PDF foram encontrados pela API pública da banca e extraídos por um parser próprio — posição e fonte de cada trecho, recuo das linhas, correção de palavras partidas com o corretor ortográfico do sistema —, conferidos contra o gabarito definitivo e guardados como JSON versionado, com a duração lida no edital de cada ano. O import é idempotente e nunca sobrescreve uma explicação já escrita.
+20 provas oficiais, 2.160 itens. Certo ou errado (Cebraspe): PF 2018, 2021 e 2025 (Agente, Escrivão, Papiloscopista e Delegado, e Perito de Informática em 2025), PRF 2019 e 2021 e PCDF Escrivão 2021. Múltipla escolha: PMDF Soldado 2018 (IADES) e 2023 (Instituto AOCP), PMGO Soldado 2017 (Funrio) e 2022 (Instituto AOCP). Os cadernos em PDF foram encontrados pela API pública da banca e extraídos por um parser próprio — posição e fonte de cada trecho, recuo das linhas, correção de palavras partidas com o corretor ortográfico do sistema —, conferidos contra o gabarito definitivo e guardados como JSON versionado, com a duração lida no edital de cada ano. O import é idempotente e nunca sobrescreve uma explicação já escrita.
 
 O que cada ano de caderno ensinou ao parser, porque PDF não guarda "questão" nem "texto", só pedaços de texto com posição:
 
@@ -210,15 +211,25 @@ O que cada ano de caderno ensinou ao parser, porque PDF não guarda "questão" n
 - **Fontes que mentem.** Nos cadernos antigos (WordPerfect), o código do caractere não é o símbolo: "R" é ℓ, "6" é →, "w" é ∨. O mapa foi conferido contra o próprio gabarito — o item que afirma uma tautologia só fecha com aquelas setas. Na Cambria Math sem tabela de caracteres, os glifos seguem sequências (A–Z, a–z, dígitos), deduzidas das contas dos itens.
 - **Justificativa oficial da banca.** A Cebraspe publicou o caderno da PCDF "com justificativa": cada item vem com o porquê do gabarito, e ele vira o comentário do item. Mas a justificativa é a do gabarito *preliminar* — então só fica a que concorda com o definitivo; a de item anulado ou com gabarito trocado ensinaria errado e é descartada.
 - **Prova em vários cadernos.** A PF 2025 tem até três cadernos por cargo; o aviso "ver na prova original, página N" abre o caderno daquele item.
+- **Colunas que o PDF embaralha.** O caderno da Funrio guardava as duas colunas intercaladas e com a altura errada; para ele, um segundo motor de leitura — o PDFKit da Apple, por script — devolve as linhas como o leitor as vê.
+- **Ênfase que muda a questão.** Negrito, itálico e sublinhado (o sublinhado é um traço desenhado, não um atributo do texto) viram `<b>`, `<i>` e `<u>`. Na tela, um parser de lista branca reconhece só essas três marcas e o resto continua texto — sem `dangerouslySetInnerHTML`, sem porta para XSS.
 
 - **Dois modos.** Gabarito comentado, item por item com a resposta oficial e a fonte; e a prova de verdade: cronômetro com a duração do edital daquele ano, folha de respostas e entrega automática quando o tempo acaba.
 - **O prazo é do servidor.** O relógio da tela é só exibição: o servidor grava o prazo ao iniciar, aceita 2 minutos de tolerância de rede e, fora disso, corrige com o que já tinha salvo. As respostas vão para o `localStorage` na hora e para o servidor a cada poucos segundos — fechar a aba não perde nada.
-- **Corrigir como a banca.** Na Cebraspe, errada anula certa, item anulado vale ponto para todos e branco vale zero. A correção é uma função pura, com um teste por regra.
+- **Corrigir como a banca.** Na Cebraspe, errada anula certa, item anulado vale ponto para todos e branco vale zero; na múltipla escolha, errar não desconta. A correção é uma função pura, com um teste por regra — e um teste de integração corrige uma tentativa na prova real da PMDF 2023.
 - **Concorrência.** Dois cliques em "Iniciar" criavam duas tentativas: um `pg_advisory_xact_lock` por aluno e prova serializa o início, e a entrega é idempotente (`UPDATE … WHERE status = 'EM_ANDAMENTO'`).
 - **Histórico e onde revisar.** Cada tentativa guarda nota, tempo e desempenho por matéria; o resultado compara com a anterior e lista as matérias abaixo de 60%, com um mínimo de itens para um erro em dois não virar "matéria fraca". Matéria deixada toda em branco aparece à parte: não é evidência de nada.
 - **Acesso e fonte.** Só quem comprou o curso vê as provas dele, e a fonte oficial é sempre citada — o caderno da banca permite a reprodução para fins didáticos desde que citada a fonte.
 
 ---
+
+### 11. Conteúdo pago trancado no servidor, não na tela
+
+[`src/lib/trial-content.ts`](src/lib/trial-content.ts) · [`tests/integracao/integracao.mts`](tests/integracao/integracao.mts)
+
+A conta gratuita usa a calculadora, o cronograma e o cronômetro; material, questões, simulados, provas e IA são do plano pago. O cadeado da tela é só interface — a API responde a quem a chama direto —, então cada rota que entrega conteúdo confere o plano no servidor. Uma auditoria rota por rota achou nove sem essa trava; a pior gerava resumo com IA para quem não pagava, vazando conteúdo e custo. Os testes de integração chamam as rotas com uma conta gratuita e uma em teste, e conferem até que nenhuma requisição a provedor de IA saiu.
+
+Na mesma linha: cadastro e login testados de ponta a ponta (senha só em bcrypt, CPF só em hash e cifrado, mesma resposta para senha errada e e-mail inexistente), o link de confirmação de e-mail fora da resposta em produção, JSON-LD com `<` escapado e um cliente do Supabase morto — que levaria a chave anônima para o navegador — removido com a dependência.
 
 ## Stack
 
@@ -262,8 +273,8 @@ npm run dev                   # http://localhost:3000
 Testes:
 
 ```bash
-npm run verificar             # tipos + lint + 210 testes unitários
-npm run test:integracao       # 44 cenários num Postgres + pgvector descartável (Docker)
+npm run verificar             # tipos + lint + 249 testes unitários
+npm run test:integracao       # 57 cenários num Postgres + pgvector descartável (Docker)
 npm run ci:fumaca -- --site https://gabaritai-red.vercel.app   # o teste de fumaça contra qualquer endereço
 npm run ci:auditoria          # vulnerabilidades das dependências de produção
 ```
@@ -282,8 +293,8 @@ Nenhuma mudança vai direto para quem está pagando, e ninguém precisa mexer em
 flowchart LR
     P["push em<br/>homologacao"] --> CI
     subgraph CI["CI — ci.yml, em paralelo"]
-        Q["tipos · lint<br/>210 testes"]
-        I["44 cenários<br/>Postgres + pgvector"]
+        Q["tipos · lint<br/>249 testes"]
+        I["57 cenários<br/>Postgres + pgvector"]
         B["build de produção<br/>sem segredo"]
         S["gitleaks · auditoria<br/>de dependências"]
     end
@@ -325,7 +336,7 @@ As decisões que valem explicação:
 
 Sendo honesto sobre o estado do projeto:
 
-- **Cobertura ampla de teste.** 210 testes unitários e 44 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, segurança, cronograma, estimativa de tempo, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
+- **Cobertura ampla de teste.** 249 testes unitários e 57 cenários de integração, concentrados onde o erro custa dinheiro, dado pessoal ou a decisão do aluno: pagamento, cadastro e login, paywall, segurança, cronograma, estimativa de tempo, provas, vigia dos crons e IA. O SM-2 e o gerador de simulado ainda não têm.
 - **Tempo pelo programa oficial do edital.** Hoje o tamanho do edital é o conteúdo cadastrado na plataforma. O próximo passo é contar os itens do programa oficial (`EditalSubject.programa`) e mostrar quanto dele já tem material. E a teoria ainda é "palavras ÷ velocidade": o cronômetro de estudo existe, mas a página de material não registra o tópico — quando registrar, a teoria passa a usar o tempo real dos alunos, como as questões já usam.
 - **Next 15.** O projeto está no Next 14.2.35, o último da linha 14, que chegou ao fim do suporte. A migração para o 15.5+ (React 19, `params` assíncrono) é o próximo trabalho de plataforma; as exceções da auditoria vencem em 31/01/2027 para ela não ficar para depois.
 - **Avaliação do RAG.** A busca funciona, mas sem medição de qualidade. O próximo passo é um conjunto de perguntas com o trecho esperado, medindo *recall@5*.
