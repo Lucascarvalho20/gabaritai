@@ -1463,26 +1463,26 @@
    "figura": false,
    "formula": true,
    "pagina": 13,
-   "explicacao": "Justificativa oficial da banca: ERRADO. O dia, mês e ano são valores fixos e compostos por dois algarismos cada, totalizando 6 posições da senha. Considerando pe p as duas posições restantes e que as posições pe p podem assumir os algarismos de 0 a 9. Como pe p assumem o mesmo conjunto de valores (algarismos de 0 a 9), não há necessariamente a geração de senhas distintas quando se atribuem valores para pe p . Por exemplo, as sequências p -dia-p ano-mês e p -dia-p -ano-mês geram duas vezes cada senha, quando as posições pe p assumem os algarismos de 0 a 9. Logo, as possibilidades equivalem a (120 × 10 × 10)/2 = 6.000."
+   "explicacao": "Justificativa oficial da banca: ERRADO. O dia, mês e ano são valores fixos e compostos por dois algarismos cada, totalizando 6 posições da senha. Considerando p₁ e p₂ as duas posições restantes e que as posições p₁ e p₂ podem assumir os algarismos de 0 a 9. Como p₁ e p₂ assumem o mesmo conjunto de valores (algarismos de 0 a 9), não há necessariamente a geração de senhas distintas quando se atribuem valores para p₁ e p₂. Por exemplo, as sequências p₁-dia-p₂-ano-mês e p₂-dia-p₁-ano-mês geram duas vezes cada senha, quando as posições p₁ e p₂ assumem os algarismos de 0 a 9. Logo, as possibilidades equivalem a (120 × 10 × 10)/2 = 6.000."
   },
   {
    "numero": 110,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
    "comando": "Para ter acesso a um arquivo digital criptografado, um cibernauta deve testar uma senha de 8 dígitos composta pelos algarismos de 0 a 9, admitida a repetição. O cibernauta teve a informação prévia de que o arquivo foi criado no dia 23/12/19 e que o dia, o mês e o ano da criação do arquivo, representados por dois algarismos cada, estão presentes na senha, mas aparecem em ordem aleatória. Com base nessas informações, julgue os itens a seguir.",
-   "enunciado": "Sem a informação de que o dia, o mês e o ano da criação do arquivo fazem parte da senha, a quantidade máxima de senhas a serem testadas pelo cibernauta seria de 10 .",
+   "enunciado": "Sem a informação de que o dia, o mês e o ano da criação do arquivo fazem parte da senha, a quantidade máxima de senhas a serem testadas pelo cibernauta seria de 10⁸.",
    "gabarito": "C",
    "anulada": false,
    "figura": false,
    "formula": true,
    "pagina": 13,
-   "explicacao": "Justificativa oficial da banca: CERTO. Em cada posição da senha, pode-se ter um algarismo de 0 a 9, ou seja, 10 possibilidades. Sendo 8 posições, ter-se-á 1 0×1 0…×1 0=1 0 ."
+   "explicacao": "Justificativa oficial da banca: CERTO. Em cada posição da senha, pode-se ter um algarismo de 0 a 9, ou seja, 10 possibilidades. Sendo 8 posições, ter-se-á 10 × 10 × … × 10 = 10⁸."
   },
   {
    "numero": 111,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P)=− +1 0 P. Com base nessas informações, julgue os itens que se seguem.",
+   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P) = −P²/10 + 10P. Com base nessas informações, julgue os itens que se seguem.",
    "enunciado": "De acordo com o modelo estabelecido, a quantidade de candidatos que acertará 80% das questões da prova objetiva é igual ao número de vagas oferecidas.",
    "gabarito": null,
    "anulada": true,
@@ -1494,14 +1494,14 @@
    "numero": 112,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P)=− +1 0 P. Com base nessas informações, julgue os itens que se seguem.",
+   "comando": "Dos 3.250 candidatos inscritos em um concurso público com 160 vagas e apenas a aplicação de uma prova objetiva, 1,6% não compareceram para realizar a prova. Com base em eventos anteriores, os organizadores do certame conseguiram modelar o número N de candidatos que acertam o percentual P de questões da prova objetiva pela função\n\nN(P) = −P²/10 + 10P. Com base nessas informações, julgue os itens que se seguem.",
    "enunciado": "Considerando-se apenas os candidatos que compareceram à prova objetiva, verifica-se que a concorrência do concurso foi superior a 20 candidatos por vaga.",
    "gabarito": "E",
    "anulada": false,
    "figura": false,
    "formula": true,
    "pagina": 14,
-   "explicacao": "Justificativa oficial da banca: ERRADO. Calculando-se 1,6% de 3.250, tem-se 3.250 × 0,016 = 52. Logo, compareceram 3.198 candidatos para realizar as provas objetivas. Considerando-se a proporção 3.198160□ = 19,98 candidatos por vaga."
+   "explicacao": "Justificativa oficial da banca: ERRADO. Calculando-se 1,6% de 3.250, tem-se 3.250 × 0,016 = 52. Logo, compareceram 3.198 candidatos para realizar as provas objetivas. Considerando-se a proporção 3.198/160 = 19,98 candidatos por vaga."
   },
   {
    "numero": 113,
@@ -1526,7 +1526,7 @@
    "figura": false,
    "formula": true,
    "pagina": 14,
-   "explicacao": "Justificativa oficial da banca: ERRADO. O valor de cada aposta segue uma PA com a =2 e razão r=2. Logo na décima aposta o jogador apostou a = 2+2×9=R $ 2 0, recebendo R$ 200. Com as 10 apostas, o jogador gastou a soma dos 10 primeiros termos da PA S ="
+   "explicacao": "Justificativa oficial da banca: ERRADO. O valor de cada aposta segue uma PA com a₁ = 2 e razão r = 2. Logo na décima aposta o jogador apostou a₁₀ = 2 + 2 × 9 = R$ 20, recebendo R$ 200. Com as 10 apostas, o jogador gastou a soma dos 10 primeiros termos da PA S₁₀ = (a₁ + a₁₀) × 10/2 = R$ 110. Logo, o ganho líquido foi de R$ 90."
   },
   {
    "numero": 115,
@@ -1546,24 +1546,26 @@
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
    "comando": "= R$ 110. Logo, o ganho líquido foi de R$ 90. Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
-   "enunciado": "A proposição [p ∧ q] → [p V (~q)], em que (~q) denota a",
+   "enunciado": "A proposição [p ∧ q] → [p ∨ (~q)], em que (~q) denota a negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa.",
    "gabarito": "E",
    "anulada": false,
    "figura": false,
    "formula": false,
-   "pagina": 14
+   "pagina": 14,
+   "explicacao": "Justificativa oficial da banca: ERRADO. A tabela verdade a seguir mostra que, independentemente do valor das proposições, o resultado será sempre verdadeiro.\n\n```\np | q | p ∧ q | ~q | p ∨ (~q) | p ∧ q → p ∨ (~q)\nV | V |   V   | F  |    V     |        V\nV | F |   F   | V  |    V     |        V\nF | V |   F   | F  |    F     |        V\nF | F |   F   | V  |    V     |        V\n```"
   },
   {
    "numero": 117,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
    "comando": "negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa. JUSTIFICATIVA - ERRADO. A tabela verdade a seguir mostra que, independentemente do valor das proposições, o resultado será sempre verdadeiro.",
-   "enunciado": "A negação da proposição “Todos são iguais perante a lei” é",
+   "enunciado": "A negação da proposição “Todos são iguais perante a lei” é “Todos são diferentes perante a lei”.",
    "gabarito": "E",
    "anulada": false,
    "figura": true,
    "formula": false,
-   "pagina": 14
+   "pagina": 14,
+   "explicacao": "Justificativa oficial da banca: ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”."
   },
   {
    "numero": 118,

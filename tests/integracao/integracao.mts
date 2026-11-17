@@ -412,6 +412,15 @@ await caso('reimportar não duplica e não apaga o comentário escrito para o it
   const q2 = await prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', 2) } })
   exigir(q2?.explicacao === 'Comentário do professor.', `explicação perdida: ${q2?.explicacao}`)
 })
+await caso('reimportar atualiza a justificativa da banca corrigida no arquivo, e só ela', async () => {
+  // Fórmula corrigida no JSON (o caso da PCDF 2021: "3.198160□" virou "3.198/160").
+  await prisma.question.update({ where: { id: idDoItem('pf-2021-agente', 3) }, data: { explicacao: 'Justificativa oficial da banca: CERTO. 3.198160□ = 19,98.' } })
+  const corrigido = { ...arqPf, itens: arqPf.itens.map((i: any) => i.numero === 3 ? { ...i, explicacao: 'Justificativa oficial da banca: CERTO. 3.198/160 = 19,98.' } : i) }
+  await importarProva(corrigido)
+  const [q3, q2] = await Promise.all([3, 2].map((n) => prisma.question.findUnique({ where: { id: idDoItem('pf-2021-agente', n) } })))
+  exigir(q3?.explicacao === 'Justificativa oficial da banca: CERTO. 3.198/160 = 19,98.', `justificativa não atualizou: ${q3?.explicacao}`)
+  exigir(q2?.explicacao === 'Comentário do professor.', `comentário do professor perdido: ${q2?.explicacao}`)
+})
 await caso('sem o curso: lista com cadeado, e prova e gabarito recusados', async () => {
   const lista: any = await provasAluno.provasDoCurso('ens-sem-plano', 'pf-agente')
   exigir(lista.acesso === false && lista.provas.length === 1, JSON.stringify({ acesso: lista.acesso, n: lista.provas.length }))

@@ -427,7 +427,7 @@
    "materia": "Raciocínio Lógico",
    "texto": "T2",
    "comando": "Considerando essa situação hipotética, julgue os itens seguintes.",
-   "enunciado": "Considere que {q }, para n variando de 1 a 10, seja a sequência numérica formada pelas quantidades de veículos fiscalizados apenas no decorrer da n-ésima hora de realização da operação, ou seja, q é a quantidade de veículos fiscalizados apenas no decorrer da primeira hora de realização da operação; q é a quantidade de veículos fiscalizados apenas no decorrer da segunda hora de realização da operação; e assim por diante. Nessa situação, a sequência {q }, para n variando de 1 a 10, é uma progressão aritmética.",
+   "enunciado": "Considere que {qₙ}, para n variando de 1 a 10, seja a sequência numérica formada pelas quantidades de veículos fiscalizados apenas no decorrer da n-ésima hora de realização da operação, ou seja, q₁ é a quantidade de veículos fiscalizados apenas no decorrer da primeira hora de realização da operação; q₂ é a quantidade de veículos fiscalizados apenas no decorrer da segunda hora de realização da operação; e assim por diante. Nessa situação, a sequência {qₙ}, para n variando de 1 a 10, é uma progressão aritmética.",
    "gabarito": "C",
    "anulada": false,
    "figura": false,

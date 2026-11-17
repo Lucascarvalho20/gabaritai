@@ -132,7 +132,9 @@ export async function importarProva(arq: ProvaArquivo): Promise<ResumoImportacao
       gabarito = EXCLUDED.gabarito, "gabaritoOficial" = EXCLUDED."gabaritoOficial", anulada = EXCLUDED.anulada,
       tags = EXCLUDED.tags, active = true, comando = EXCLUDED.comando, "provaTextoId" = EXCLUDED."provaTextoId",
       -- Explicação escrita depois (professor, revisão) nunca é sobrescrita; só preenche a vazia.
-      explicacao = CASE WHEN questions.explicacao = '' THEN EXCLUDED.explicacao ELSE questions.explicacao END,
+      -- A justificativa da banca é conteúdo do próprio arquivo: corrigida nele, a reimportação a atualiza.
+      explicacao = CASE WHEN questions.explicacao = '' OR questions.explicacao LIKE 'Justificativa oficial da banca:%'
+                        THEN EXCLUDED.explicacao ELSE questions.explicacao END,
       "temFigura" = EXCLUDED."temFigura", "temFormula" = EXCLUDED."temFormula", "paginaProva" = EXCLUDED."paginaProva"`
   await prisma.question.updateMany({ where: { provaId: prova.id, id: { notIn: ids } }, data: { active: false } })
 
