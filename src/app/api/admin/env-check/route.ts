@@ -25,8 +25,6 @@ export async function GET(req: NextRequest) {
     'NEXT_PUBLIC_SITE_URL',
     'NEXT_PUBLIC_BASE_URL',
     'NEXT_PUBLIC_API_URL',
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'EMAIL_FROM',
     'RESEND_API_KEY',
     'CRON_TOKEN',
