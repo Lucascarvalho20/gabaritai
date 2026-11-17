@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Loader2, ArrowLeft, BookOpen, Brain, Target, CheckCircle2, Clock,
-  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download, Flame,
+  FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download, Flame, MessageCircleQuestion,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { POMODORO } from '@/lib/metodo-estudo'
@@ -208,12 +208,12 @@ export default function SessaoPage() {
               </div>
             )}
           </div>
-          <div className="text-right">
+          <div className="flex flex-col items-end gap-1 shrink-0">
             <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" /> {data.session.durationMin} min
             </div>
             <div className={cn(
-              'mt-1 text-xs font-bold px-2 py-1 rounded-full inline-block',
+              'text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap',
               data.session.status === 'CONCLUIDO' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700',
             )}>
               {data.session.status === 'CONCLUIDO' ? '✓ Concluído' : 'Em andamento'}
@@ -403,6 +403,27 @@ export default function SessaoPage() {
           </div>
           <Link href="/planos" className="btn-primary text-xs px-4 py-2 whitespace-nowrap">Ver planos</Link>
         </div>
+      )}
+
+      {/* Dúvida no meio do estudo: o mentor abre já na matéria (e no tópico) desta sessão. */}
+      {!data.locked && data.subject && (
+        <Link
+          href={`/dashboard/mentor?${new URLSearchParams({
+            materia: data.subject.id,
+            nome: data.subject.name,
+            ...(data.topic ? { topico: data.topic.id, topicoNome: data.topic.name } : {}),
+          })}`}
+          className="card p-3 flex items-center gap-3 hover:border-brand-500/50 transition-colors"
+        >
+          <MessageCircleQuestion className="w-5 h-5 text-brand-600 shrink-0" />
+          <div className="flex-1 text-sm">
+            <p className="font-bold">Dúvida nesta matéria? Pergunte ao Mentor</p>
+            <p className="text-xs text-muted-foreground">
+              Ele responde com o material de {data.subject.name}{data.topic ? ` — ${data.topic.name}` : ''} e mostra de onde tirou.
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </Link>
       )}
 
       {/* MODO CICLO GUIADO — fluxo sequencial */}

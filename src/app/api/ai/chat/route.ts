@@ -6,6 +6,8 @@ import { searchMaterial, buildContextBlock } from '@/lib/rag/search'
 import { materiasDoAluno } from '@/lib/rag/escopo-aluno'
 import { GEMINI_FALLBACKS, GROQ_MODELS } from '@/lib/ai-client'
 import { isContentLockedForUser } from '@/lib/trial-content'
+import { ollamaConfig, OLLAMA_TIMEOUT_MS } from '@/lib/ollama'
+import { materiaDoPedido } from '@/lib/rag/escopo-pedido'
 
 /**
  * Persiste mensagem do user + resposta da IA na AiConversation.
@@ -98,7 +100,10 @@ export async function POST(req: NextRequest) {
   const payload = await verifyToken(auth.split(' ')[1])
   if (!payload?.sub) return NextResponse.json({ message: 'Token inválido' }, { status: 401 })
 
-  const { message, history = [], conversationId: incomingConvoId = null } = await req.json()
+  const corpo = await req.json()
+  const { message, history = [], conversationId: incomingConvoId = null } = corpo
+  // Vindo da sessão de estudo: a matéria (e o tópico) que o aluno está estudando agora.
+  const { subjectId: materiaPedida = null, topicId: topicoPedido = null } = corpo
 
   if (!message?.trim()) {
     return NextResponse.json({ message: 'Mensagem não pode ser vazia' }, { status: 400 })
@@ -118,7 +123,10 @@ export async function POST(req: NextRequest) {
       profile: { select: { concursoLabel: true, nivel: true, horasDia: true, meta: true } },
     },
   })
-  if (realUser && await isContentLockedForUser(realUser.id)) {
+  // Token válido de uma conta que não existe mais: sem o usuário não há plano nem
+  // cota para conferir, então não responde (antes passava direto pelos dois).
+  if (!realUser) return NextResponse.json({ message: 'Usuário não encontrado' }, { status: 401 })
+  if (await isContentLockedForUser(realUser.id)) {
     return NextResponse.json({ message: 'O Mentor IA faz parte dos planos pagos. No gratuito você usa o cronograma pra se organizar.', locked: true }, { status: 403 })
   }
 
@@ -173,7 +181,20 @@ export async function POST(req: NextRequest) {
   try {
     // Só nas matérias do edital do aluno (escopo-aluno.ts).
     const subjectIds = realUser ? await materiasDoAluno(realUser.id) : null
-    const trechos = await searchMaterial(message, { limit: 5, subjectIds })
+    // Da sessão de estudo: a matéria só vale se for do edital (escopo-pedido.ts), e o
+    // tópico só se for daquela matéria. Senão, a busca fica no edital inteiro.
+    const materia = materiaDoPedido(materiaPedida, subjectIds)
+    const doPedido = materia
+      ? await prisma.subject.findUnique({ where: { id: materia }, select: { name: true } })
+      : null
+    const topico = materia && typeof topicoPedido === 'string'
+      ? await prisma.topic.findFirst({ where: { id: topicoPedido, subjectId: materia }, select: { id: true, name: true } })
+      : null
+    let trechos = topico ? await searchMaterial(message, { limit: 5, topicId: topico.id }) : []
+    if (!trechos.length) trechos = await searchMaterial(message, materia ? { limit: 5, subjectId: materia } : { limit: 5, subjectIds })
+    if (doPedido) {
+      systemPrompt = `${systemPrompt}\n\nO aluno está numa sessão de estudo de ${doPedido.name}${topico ? `, tópico "${topico.name}"` : ''}. Responda pensando nesse conteúdo.`
+    }
     if (trechos.length) {
       systemPrompt = `${systemPrompt}\n\n${buildContextBlock(trechos)}`
       ragChunks = trechos.length
@@ -196,6 +217,15 @@ export async function POST(req: NextRequest) {
   const geminiKey    = process.env.GEMINI_API_KEY
   const groqKey      = process.env.GROQ_API_KEY
   const deepseekKey  = process.env.DEEPSEEK_API_KEY
+
+  // Modelo local primeiro, quando configurado (lib/ollama.ts): sem custo, sem API externa.
+  const local = ollamaConfig()
+  if (local) {
+    try {
+      const r = await callOpenAICompat(message, history, systemPrompt, 'ollama', local.url, local.modelo, OLLAMA_TIMEOUT_MS)
+      return persistAndRespond(r, 'ollama', detectCronogramaUpdate(message, r))
+    } catch (e) { console.error('[Ollama]', e) }
+  }
 
   // Cascade: Groq (grátis) → Gemini → Claude → OpenAI → DeepSeek → fallback
   if (groqKey) {
@@ -268,7 +298,7 @@ async function callOpenAI(message: string, history: any[], system: string, apiKe
 // Função genérica OpenAI-compatível: serve OpenAI, Groq, DeepSeek, xAI, etc.
 async function callOpenAICompat(
   message: string, history: any[], system: string, apiKey: string,
-  baseUrl: string, model: string
+  baseUrl: string, model: string, timeoutMs = 8000
 ) {
   const messages = [
     { role: 'system', content: system },
@@ -279,7 +309,7 @@ async function callOpenAICompat(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, max_tokens: 2048, messages }),
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   if (!res.ok) throw new Error(`${baseUrl} ${res.status}: ${await res.text()}`)
   const data = await res.json()

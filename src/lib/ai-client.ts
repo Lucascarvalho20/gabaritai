@@ -19,6 +19,8 @@
  * Os nomes com sufixo '-exp' são experimentais e sem garantia de permanência;
  * o padrão aqui é a versão estável. GEMINI_MODEL sobrescreve se precisar.
  */
+import { ollamaConfig, OLLAMA_TIMEOUT_MS } from '@/lib/ollama'
+
 export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
 
 /**
@@ -49,10 +51,34 @@ type AIOpts = {
   task?: AITask // default: 'generate'
 }
 
-const TASK_ROUTING: Record<AITask, Array<'groq' | 'gemini' | 'openai' | 'claude'>> = {
+type Provedor = 'ollama' | 'groq' | 'gemini' | 'openai' | 'claude'
+
+const TASK_ROUTING: Record<AITask, Array<Exclude<Provedor, 'ollama'>>> = {
   extract: ['groq', 'gemini', 'openai', 'claude'],     // mais barato primeiro
   generate: ['gemini', 'claude', 'openai', 'groq'],     // balanceado
   quality: ['claude', 'openai', 'gemini', 'groq'],      // melhor primeiro
+}
+
+/** Modelo local (Ollama), no formato da OpenAI. Só existe com OLLAMA_URL — ver lib/ollama.ts. */
+async function callOllama(prompt: string, maxTokens: number, temperature: number): Promise<string | null> {
+  const cfg = ollamaConfig()
+  if (!cfg) return null
+  try {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: cfg.modelo, max_tokens: maxTokens, temperature, messages: [{ role: 'user', content: prompt }] }),
+      signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
+    })
+    const data = await res.json()
+    const texto = data?.choices?.[0]?.message?.content
+    if (res.ok && texto) return texto
+    console.warn('[ai] ollama:', data?.error?.message ?? data?.error ?? res.status)
+    return null
+  } catch (err) {
+    console.warn('[ai] ollama exception:', err)
+    return null
+  }
 }
 
 async function callClaude(prompt: string, maxTokens: number, temperature: number): Promise<string | null> {
@@ -159,13 +185,19 @@ const PROVIDER_MAP = {
   groq: callGroq,
   gemini: callGemini,
   openai: callOpenAI,
+  ollama: callOllama,
+}
+
+/** A ordem de tentativa para a tarefa: o modelo local, se houver, vem antes de qualquer API. */
+export function cadeiaDaTarefa(task: AITask): Provedor[] {
+  return ollamaConfig() ? ['ollama', ...TASK_ROUTING[task]] : TASK_ROUTING[task]
 }
 
 export async function callAI(prompt: string, opts: AIOpts = {}): Promise<string> {
   const maxTokens = opts.maxTokens ?? 4000
   const temperature = opts.temperature ?? 0.7
   const task = opts.task ?? 'generate'
-  const chain = TASK_ROUTING[task]
+  const chain = cadeiaDaTarefa(task)
 
   for (const provider of chain) {
     const result = await PROVIDER_MAP[provider](prompt, maxTokens, temperature)
@@ -174,7 +206,7 @@ export async function callAI(prompt: string, opts: AIOpts = {}): Promise<string>
       return result
     }
   }
-  throw new Error(`Nenhum provider de IA disponível pra task=${task}. Configure ANTHROPIC_API_KEY, GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY.`)
+  throw new Error(`Nenhum provider de IA disponível pra task=${task}. Configure ANTHROPIC_API_KEY, GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY (ou OLLAMA_URL, para um modelo local).`)
 }
 
 /**

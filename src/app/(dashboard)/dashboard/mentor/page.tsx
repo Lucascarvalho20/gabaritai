@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Brain, Send, Loader2, Sparkles, RefreshCw } from 'lucide-react'
+import { Brain, Send, Loader2, Sparkles, RefreshCw, BookOpen, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { cn } from '@/lib/utils'
@@ -40,6 +40,20 @@ export default function MentorPage() {
   const [loadingHistory, setLoadingHistory] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  // Vindo de uma sessão de estudo (?materia=…&nome=…&topico=…&topicoNome=…): as respostas
+  // usam o material dessa matéria. O servidor só aceita se a matéria for do edital do aluno.
+  const [contexto, setContexto] = useState<{ subjectId: string; nome: string; topicId?: string; topico?: string } | null>(null)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const subjectId = p.get('materia')
+    if (subjectId) {
+      setContexto({ subjectId, nome: p.get('nome') ?? 'a matéria da sessão', topicId: p.get('topico') ?? undefined, topico: p.get('topicoNome') ?? undefined })
+    }
+  }, [])
+  function sairDoContexto() {
+    setContexto(null)
+    window.history.replaceState(null, '', window.location.pathname)
+  }
 
   // Carrega histórico salvo no DB (Mentor IA persistido)
   useEffect(() => {
@@ -79,7 +93,10 @@ export default function MentorPage() {
 
     try {
       const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
-      const res = await api.post('/ai/chat', { message: text, history, conversationId })
+      const res = await api.post('/ai/chat', {
+        message: text, history, conversationId,
+        ...(contexto ? { subjectId: contexto.subjectId, topicId: contexto.topicId } : {}),
+      })
       if (res.data.conversationId && res.data.conversationId !== conversationId) {
         setConversationId(res.data.conversationId)
       }
@@ -155,14 +172,26 @@ export default function MentorPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="badge-blue text-xs">
-            <Sparkles className="w-3 h-3 mr-1" /> Powered by Claude
+          <div className="badge-blue text-xs hidden sm:inline-flex">
+            <Sparkles className="w-3 h-3 mr-1" /> Responde com o material do seu curso
           </div>
           <button onClick={clearChat} className="btn-ghost btn-sm">
             <RefreshCw className="w-3.5 h-3.5" /> Limpar
           </button>
         </div>
       </div>
+
+      {contexto && (
+        <div className="mb-3 shrink-0 flex items-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/5 px-3 py-2 text-xs">
+          <BookOpen className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+          <span className="flex-1">
+            Estudando agora: <strong>{contexto.nome}</strong>{contexto.topico ? <> · {contexto.topico}</> : null} — as respostas usam o material dessa matéria.
+          </span>
+          <button onClick={sairDoContexto} className="btn-ghost btn-sm" aria-label="Perguntar sobre qualquer matéria">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Sugestões rápidas */}
       {messages.length <= 1 && (

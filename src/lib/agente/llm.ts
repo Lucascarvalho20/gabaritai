@@ -1,4 +1,5 @@
 import { GEMINI_FALLBACKS, GROQ_MODELS } from '@/lib/ai-client'
+import { ollamaConfig, OLLAMA_TIMEOUT_MS } from '@/lib/ollama'
 import type { ChamadaLLM, ChamadaFerramenta, Ferramenta, MensagemAgente } from './loop'
 
 /**
@@ -11,14 +12,18 @@ import type { ChamadaLLM, ChamadaFerramenta, Ferramenta, MensagemAgente } from '
  * Gemini assume o quarto lendo as mesmas mensagens. O agente não percebe a
  * troca.
  *
- * Ordem: Groq (rápido, grátis, bom em ferramentas) → Gemini (grátis) →
- * OpenAI (pago, só se tiver crédito).
+ * Ordem: Ollama (local, se configurado) → Groq (rápido, grátis, bom em
+ * ferramentas) → Gemini (grátis) → OpenAI (pago, só se tiver crédito).
  */
 
 type Provedor = { nome: string; url: string; chave: string; modelo: string }
 
 function provedores(): Provedor[] {
   const lista: Provedor[] = []
+  // Modelo local primeiro, quando configurado (lib/ollama.ts). Ferramentas exigem
+  // um modelo que as suporte — qwen2.5 e llama3.1 suportam.
+  const local = ollamaConfig()
+  if (local) lista.push({ nome: `ollama:${local.modelo}`, url: local.url, chave: 'ollama', modelo: local.modelo })
   const groq = process.env.GROQ_API_KEY
   if (groq) {
     lista.push({ nome: 'groq', url: 'https://api.groq.com/openai/v1/chat/completions', chave: groq, modelo: GROQ_MODELS[0] })
@@ -66,7 +71,7 @@ export function criarLLM(): { llm: ChamadaLLM; provedorUsado: () => string | nul
     let ultimoErro = ''
     for (const p of lista) {
       const controle = new AbortController()
-      const timer = setTimeout(() => controle.abort(), TIMEOUT_MS)
+      const timer = setTimeout(() => controle.abort(), p.nome.startsWith('ollama') ? OLLAMA_TIMEOUT_MS : TIMEOUT_MS)
       try {
         const res = await fetch(p.url, {
           method: 'POST',

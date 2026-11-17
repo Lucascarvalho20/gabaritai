@@ -714,6 +714,58 @@ console.log('\nPAYWALL (conta gratuita organiza; conteúdo é do plano pago)')
   globalThis.fetch = fetchAntes
 }
 
+console.log('\nMENTOR NA SESSÃO DE ESTUDO (busca pela matéria + modelo local)')
+{
+  const { NextRequest } = await import('next/server')
+  const { signToken } = await import(W + 'jwt.ts')
+  const rChat = await import(new URL('../../src/app/api/ai/chat/route.ts', import.meta.url).href)
+  await prisma.user.create({ data: { id: 'mentor-aluno', name: 'Aluna do Mentor', password: 'x', email: 'mentor@teste.local' } })
+  await prisma.userCourseEnrollment.create({ data: { userId: 'mentor-aluno', courseId: 'ens-curso', isPrimary: true, isActive: true } })
+  await prisma.trialPeriod.create({ data: { userId: 'mentor-aluno', endsAt: new Date(Date.now() + 5 * 864e5) } })
+  // Um "Ollama" de mentira, no formato da OpenAI que o Ollama de verdade fala.
+  const pedidos: any[] = []
+  const fetchAntes = globalThis.fetch
+  globalThis.fetch = (async (url: any, init?: any) => {
+    if (String(url) === 'http://ollama.ensaio/v1/chat/completions') {
+      pedidos.push(JSON.parse(init.body))
+      return Response.json({ choices: [{ message: { content: 'Resposta do modelo local.' } }] })
+    }
+    return fetchAntes(url, init)
+  }) as typeof fetch
+  process.env.OLLAMA_URL = 'http://ollama.ensaio'
+  const perguntar = async (extra: object, sub = 'mentor-aluno') => {
+    const r = await rChat.POST(new NextRequest('http://localhost/api/ai/chat', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${await signToken({ sub })}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'o que é prescrição penal?', ...extra }),
+    }))
+    return { status: r.status, d: await r.json() }
+  }
+  try {
+    await caso('da sessão de Penal: busca no material de Penal e responde pelo modelo local', async () => {
+      const { status, d } = await perguntar({ subjectId: 'ens-penal', topicId: 'ens-top-presc' })
+      exigir(status === 200 && d.provider === 'ollama' && d.response === 'Resposta do modelo local.', JSON.stringify({ status, provider: d.provider, msg: d.message }))
+      exigir(d.fontes.length > 0 && d.fontes.every((f: any) => f.titulo === 'Prescrição penal'), JSON.stringify(d.fontes))
+      const sistema = pedidos.at(-1).messages[0].content
+      exigir(sistema.includes('sessão de estudo de Direito Penal Ensaio, tópico "Prescrição"'), 'o prompt não diz a matéria da sessão')
+    })
+    await caso('matéria de fora do edital do aluno é ignorada: nada do material de outro curso', async () => {
+      const { status, d } = await perguntar({ subjectId: 'ens-contab' })
+      exigir(status === 200, `status ${status}`)
+      exigir(!d.fontes.some((f: any) => f.titulo === 'Prescrição tributária'), `vazou: ${JSON.stringify(d.fontes)}`)
+      exigir(!pedidos.at(-1).messages[0].content.includes('Contabilidade Ensaio'), 'o prompt citou a matéria de fora')
+    })
+    await caso('token assinado de conta que não existe mais: 401, sem plano nem cota, sem chamar modelo', async () => {
+      const antes = pedidos.length
+      const { status } = await perguntar({ subjectId: 'ens-penal' }, 'conta-apagada')
+      exigir(status === 401 && pedidos.length === antes, `status ${status}, chamadas ao modelo ${pedidos.length - antes}`)
+    })
+  } finally {
+    globalThis.fetch = fetchAntes
+    delete process.env.OLLAMA_URL
+  }
+}
+
 console.log('\nVIGIA DOS CRONS')
 process.env.TELEGRAM_BOT_TOKEN = 'token-falso-do-ensaio'
 process.env.TELEGRAM_CHAT_ID = '1'
