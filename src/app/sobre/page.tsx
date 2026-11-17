@@ -46,14 +46,14 @@ export default function SobrePage() {
             Vi gente perto de mim gastando caro em cursinho e continuando perdida sobre o que estudar primeiro. Então o foco aqui é outro: o cronograma sai de um cálculo determinístico em cima do edital e das horas que você realmente tem — e ele te avisa antes se o tempo até a prova não vai dar.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Hoje a plataforma cobre <strong className="text-foreground">5 concursos com conteúdo completo</strong> (PF, PRF, PM-DF, PM-GO e PC-DF), somando 14 cargos, e outros 7 estão em preparação. Cada curso tem cronograma, banco de questões, simulados cronometrados, flashcards com repetição espaçada e resumos gerados a partir do edital.
+            Hoje a plataforma cobre <strong className="text-foreground">5 concursos com conteúdo completo</strong> (PF, PRF, PM-DF, PM-GO e PC-DF), somando 12 cargos, e outros 7 estão em preparação. Cada curso tem cronograma, banco de questões, simulados cronometrados, flashcards com repetição espaçada e resumos gerados a partir do edital.
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { value: '17', label: 'Cursos disponíveis' },
+            { value: '12', label: 'Cargos com curso completo' },
             { value: '24/7', label: 'Mentor IA ativo' },
             { value: '3', label: 'Provedores de IA' },
             { value: '100%', label: 'Foco em concursos' },

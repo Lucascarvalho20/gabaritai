@@ -14,24 +14,21 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Logo size="lg" linkTo="/" />
         </div>
 
+        {/* Só o que dá para conferir: nada de depoimento ou número inventado. */}
         <div className="relative flex-1 flex flex-col justify-center">
-          <blockquote className="space-y-4">
+          <div className="space-y-4">
             <p className="text-2xl font-bold text-white leading-snug">
-              "Em 4 meses usando o GabaritAI passei do zero para aprovado no PMDF. A IA sabia exatamente onde eu precisava melhorar."
+              Quanto o edital pede, quanto tempo você tem, e as provas que a banca já aplicou.
             </p>
-            <footer className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                LM
-              </div>
-              <div>
-                <div className="text-white font-semibold text-sm">Lucas Mendonça</div>
-                <div className="text-green-400 text-xs font-medium">Aprovado — PMDF 2024</div>
-              </div>
-            </footer>
-          </blockquote>
+            <ul className="space-y-2 text-sm text-gray-300">
+              <li>• Calculadora do edital: o tempo que o conteúdo pede, medido na plataforma</li>
+              <li>• Provas oficiais anteriores, com o tempo do edital e o gabarito definitivo</li>
+              <li>• Cronograma com revisões espaçadas e blocos de foco</li>
+            </ul>
+          </div>
 
           <div className="mt-10 grid grid-cols-2 gap-4">
-            {[['17', 'Cursos'], ['94%', 'Satisfação'], ['7 dias', 'Grátis para testar'], ['24/7', 'Mentor IA']].map(([v, l]) => (
+            {[['12', 'Cargos com curso'], ['7 dias', 'Grátis para testar'], ['15 dias', 'De garantia'], ['24/7', 'Mentor IA']].map(([v, l]) => (
               <div key={l} className="bg-white/5 rounded-2xl p-4 border border-white/10">
                 <div className="text-2xl font-black text-white">{v}</div>
                 <div className="text-xs text-gray-400 mt-0.5">{l}</div>

@@ -78,8 +78,8 @@ const COMO_FUNCIONA = [
 const CONCURSOS_DISPONIVEIS = [
   { sigla: 'PF', nome: 'Polícia Federal', cargos: ['Agente', 'Escrivão', 'Delegado', 'Papiloscopista', 'Perito'], pronto: true },
   { sigla: 'PRF', nome: 'Polícia Rodoviária Federal', cargos: ['Policial Rodoviário'], pronto: true },
-  { sigla: 'PMDF', nome: 'PM-DF', cargos: ['Soldado', 'Oficial'], pronto: true },
-  { sigla: 'PMGO', nome: 'PM-GO', cargos: ['Soldado', 'Oficial'], pronto: true },
+  { sigla: 'PMDF', nome: 'PM-DF', cargos: ['Soldado'], pronto: true },
+  { sigla: 'PMGO', nome: 'PM-GO', cargos: ['Soldado'], pronto: true },
   { sigla: 'PCDF', nome: 'Polícia Civil-DF', cargos: ['Agente', 'Escrivão', 'Delegado', 'Perito'], pronto: true },
   { sigla: 'PMMG', nome: 'PM-MG', cargos: ['Soldado', 'Oficial'], pronto: false },
   { sigla: 'PMSC', nome: 'PM-SC', cargos: ['Soldado', 'Oficial'], pronto: false },
