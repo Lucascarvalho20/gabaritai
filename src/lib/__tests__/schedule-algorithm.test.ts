@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { buildSchedule, minutosEfetivosPorDia } from '../schedule-algorithm.ts'
+import { REVISOES } from '../metodo-estudo.ts'
 
 const materias = [
   { id: 'con', name: 'Constitucional', weight: 2 },
@@ -88,13 +89,49 @@ describe('buildSchedule — propriedades do cronograma', () => {
     assert.ok(depois / 30 > antes / diasAntes, 'densidade de simulado maior no fim')
   })
 
-  test('o dia rende só sessões inteiras de 50 min, no mínimo uma', () => {
-    assert.equal(minutosEfetivosPorDia(3), 150)
-    assert.equal(minutosEfetivosPorDia(2.5), 150)
+  // Antes: sessões inteiras de 50 min, sem pausa contada (2,5 h rendiam 150 min).
+  // Agora o dia rende os pomodoros que cabem nas horas declaradas, com as pausas.
+  test('o dia rende os pomodoros que cabem nas horas, com as pausas', () => {
+    assert.equal(minutosEfetivosPorDia(3), 125)
+    assert.equal(minutosEfetivosPorDia(2.5), 100)
     assert.equal(minutosEfetivosPorDia(1), 50)
-    assert.equal(minutosEfetivosPorDia(0.5), 50)
-    assert.equal(minutosEfetivosPorDia(10), 600)
-    assert.equal(buildSchedule({ ...base, endDate: base.startDate }).totalMinAvailable, 150)
+    assert.equal(minutosEfetivosPorDia(0.5), 25)
+    assert.equal(minutosEfetivosPorDia(10), 450)
+    assert.equal(buildSchedule({ ...base, endDate: base.startDate }).totalMinAvailable, 125)
+  })
+
+  test('cada sessão de estudo agenda as revisões da matéria: 1, 7, 15 e 30 dias depois', () => {
+    const todoDia = { ...base, daysPerWeek: [0, 1, 2, 3, 4, 5, 6], includeMocks: false, prePresenceMode: false }
+    const r = buildSchedule(todoDia)
+    const tem = (tipo: string, materia: string, d: Date) =>
+      r.sessions.some((s) => s.type === tipo && s.subjectId === materia && dia(s.date) === dia(d))
+    const estudo = r.sessions.find((s) => s.type === 'ESTUDO' && s.date.getTime() < new Date('2027-02-01').getTime())!
+    for (const rev of REVISOES) {
+      const quando = new Date(estudo.date)
+      quando.setDate(quando.getDate() + rev.diasDepois)
+      assert.ok(tem('REVISAO', estudo.subjectId!, quando), `sem revisão de ${rev.nome} de ${estudo.subjectName} em ${dia(quando)}`)
+    }
+  })
+
+  test('revisão abre o dia e nunca passa de metade do tempo; o dia nunca passa do foco', () => {
+    const r = buildSchedule({ ...base, includeMocks: false, prePresenceMode: false })
+    const porDia = new Map<string, typeof r.sessions>()
+    for (const s of r.sessions) porDia.set(dia(s.date), [...(porDia.get(dia(s.date)) ?? []), s])
+    for (const [d, sessoes] of porDia) {
+      const revisao = sessoes.filter((s) => s.type === 'REVISAO')
+      const total = sessoes.reduce((t, s) => t + s.durationMin, 0)
+      assert.ok(total <= 125, `${d}: ${total} min num dia de 125 de foco`)
+      assert.ok(revisao.reduce((t, s) => t + s.durationMin, 0) <= 62, `${d}: revisão passou da metade`)
+      const primeiraNaoRevisao = sessoes.findIndex((s) => s.type !== 'REVISAO')
+      if (primeiraNaoRevisao >= 0) assert.ok(sessoes.slice(primeiraNaoRevisao).every((s) => s.type !== 'REVISAO'), `${d}: revisão depois do estudo`)
+    }
+  })
+
+  test('as revisões somam ~42% do estudo, a fração do método', () => {
+    const r = buildSchedule({ ...base, daysPerWeek: [0, 1, 2, 3, 4, 5, 6], includeMocks: false, prePresenceMode: false })
+    const soma = (tipo: string) => r.sessions.filter((s) => s.type === tipo).reduce((t, s) => t + s.durationMin, 0)
+    const razao = soma('REVISAO') / soma('ESTUDO')
+    assert.ok(razao > 0.38 && razao < 0.5, `revisão ÷ estudo = ${razao.toFixed(2)}`)
   })
 
   // Antes: 60 h por matéria, iguais para todas. Continua sendo a reserva para

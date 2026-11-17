@@ -14,7 +14,7 @@ import {
  * O tempo de cada concurso vem do banco (GET /api/tempo/concursos): os
  * tópicos do edital, o tamanho do material de cada um e o tempo real dos
  * alunos por questão. A conta com as horas do visitante roda aqui mesmo
- * (cabeNoTempo), com a régua do cronograma: sessões inteiras de 50 min.
+ * (cabeNoTempo), com a régua do cronograma: os pomodoros que cabem nas horas (metodo-estudo.ts).
  */
 
 type Concurso = {
@@ -141,7 +141,7 @@ export function TimeBudgetCalculator() {
                   onChange={(ev) => setHorasPorDia(Number(ev.target.value))} className="w-full accent-brand-500" />
                 {veredito && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Rende {fmtDuracaoDia(veredito.minutosPorDia)} de estudo: {veredito.minutosPorDia / 50} sessões de 50 min, o resto é pausa.
+                    Rende {fmtDuracaoDia(veredito.minutosPorDia)} de foco: {veredito.pomodorosPorDia} pomodoros de 25 min, com pausa de 5 min e uma de 15 a cada 4.
                   </p>
                 )}
               </div>
@@ -274,8 +274,8 @@ export function TimeBudgetCalculator() {
               <ul className="mt-3 space-y-2 text-muted-foreground">
                 <li><strong className="text-foreground">Teoria:</strong> palavras do material de cada tópico ÷ {PALAVRAS_POR_MINUTO} por minuto, ritmo de leitura para memorizar. Subassunto cujo assunto já tem texto não conta de novo; tópico ainda sem material recebe a mediana dos tópicos medidos da matéria.</li>
                 <li><strong className="text-foreground">Questões:</strong> as questões ativas do banco × a mediana do tempo real dos alunos na matéria (com pelo menos {MIN_AMOSTRAS} respostas); com menos, a mediana da plataforma; sem dado, {fmtNum(MIN_POR_QUESTAO_REFERENCIA, 1)} min.</li>
-                <li><strong className="text-foreground">Revisão:</strong> {fmtNum(REVISAO_FRACAO * 100)}% da teoria, a mesma proporção que o cronograma reserva.</li>
-                <li><strong className="text-foreground">Seu tempo:</strong> só sessões inteiras de 50 min contam, como no cronograma. Por isso esta conta e a do cronograma dão o mesmo resultado.</li>
+                <li><strong className="text-foreground">Revisão espaçada:</strong> cada estudo ganha quatro revisões — 24 horas, 7, 15 e 30 dias depois —, cada uma mais curta que a anterior (é mais rápido relembrar do que aprender). Somadas, {fmtNum(REVISAO_FRACAO * 100)}% da teoria, e o cronograma agenda cada uma no dia certo.</li>
+                <li><strong className="text-foreground">Seu tempo:</strong> as horas por dia viram pomodoros — 25 min de foco, 5 de pausa e 15 a cada quatro — e só o foco conta. É a mesma régua do cronograma, então as duas contas dão o mesmo resultado.</li>
               </ul>
             </details>
           </div>

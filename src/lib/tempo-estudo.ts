@@ -12,7 +12,8 @@
  *              palavras ÷ velocidade de leitura de estudo
  *   questões = resolver as questões ativas da matéria no banco
  *              nº de questões × tempo mediano REAL por questão
- *   revisão  = a fração da teoria que o cronograma reserva para revisão
+ *   revisão  = as quatro revisões espaçadas (1, 7, 15 e 30 dias depois),
+ *              42% da teoria — as mesmas que o cronograma agenda (metodo-estudo.ts)
  *
  * MEDIDO × COBERTO × ESTIMADO. Os tópicos formam uma árvore (assunto →
  * subassuntos), e cada um entra de um jeito:
@@ -36,7 +37,9 @@
  * Função pura: sem banco, sem relógio. Os dados chegam por parâmetro
  * (tempo-estudo-dados.ts os carrega), por isso o teste cobre cada caso.
  */
-import { MIX, DEFAULT_SESSION_MIN, minutosEfetivosPorDia } from './schedule-algorithm.ts'
+import { REVISAO_FRACAO, POMODORO, focoPorDia, horasParaFoco } from './metodo-estudo.ts'
+
+export { REVISAO_FRACAO }
 
 /**
  * Leitura de estudo, para memorizar: ~120 palavras por minuto. Pesquisas de
@@ -44,8 +47,6 @@ import { MIX, DEFAULT_SESSION_MIN, minutosEfetivosPorDia } from './schedule-algo
  * leitura corrida; texto de lei é denso, então arredondamos para baixo.
  */
 export const PALAVRAS_POR_MINUTO = 120
-/** Revisão: a mesma proporção que o cronograma dá a ela em relação ao estudo novo. */
-export const REVISAO_FRACAO = MIX.REVISAO / MIX.ESTUDO
 /** Tentativas com tempo necessárias para confiar na mediana de uma matéria (ou da plataforma). */
 export const MIN_AMOSTRAS = 20
 /** Sem nenhuma tentativa com tempo: referência por questão de múltipla escolha. */
@@ -237,8 +238,10 @@ export type Disponibilidade = {
 }
 
 export type Veredito = {
-  /** Minutos de estudo por dia que o cronograma consegue usar (sessões inteiras de 50 min). */
+  /** Minutos de foco por dia: os pomodoros que cabem nas horas declaradas (as pausas ficam fora). */
   minutosPorDia: number
+  /** Pomodoros de 25 min por dia. */
+  pomodorosPorDia: number
   /** Dias corridos até percorrer todo o conteúdo, no ritmo informado. */
   diasParaTerminar: number
   terminaEm: Date
@@ -254,25 +257,24 @@ export type Veredito = {
 
 const DIA_MS = 86_400_000
 
-/** Horas a declarar para o cronograma render `minutos` por dia, no passo de 0,5 h do formulário. */
-export function horasParaRender(minutos: number): number {
-  const sessoes = Math.max(1, Math.ceil(minutos / DEFAULT_SESSION_MIN - 1e-9))
-  return Math.ceil(((sessoes * DEFAULT_SESSION_MIN) / 60) * 2 - 1e-9) / 2
-}
+/** Horas a declarar para render `minutos` de foco por dia, no passo de 0,5 h do formulário (pausas do Pomodoro incluídas). */
+export const horasParaRender = horasParaFoco
 
 /**
- * Cabe até a prova? Usa a mesma régua do cronograma: só sessões inteiras de
- * 50 minutos contam, e a semana tem `diasPorSemana` dias de estudo.
+ * Cabe até a prova? Usa a mesma régua do cronograma: o foco do dia são os
+ * pomodoros que cabem nas horas declaradas, e a semana tem `diasPorSemana`
+ * dias de estudo.
  */
 export function cabeNoTempo(totalMin: number, d: Disponibilidade): Veredito {
   const dias = Math.min(7, Math.max(1, Math.round(d.diasPorSemana) || 1))
-  const minutosPorDia = d.horasPorDia > 0 ? minutosEfetivosPorDia(d.horasPorDia) : 0
+  const minutosPorDia = d.horasPorDia > 0 ? focoPorDia(d.horasPorDia) : 0
   const minPorDiaCorrido = (minutosPorDia * dias) / 7
   const total = Math.max(0, totalMin)
 
   const diasParaTerminar = total === 0 ? 0 : minPorDiaCorrido > 0 ? Math.ceil(total / minPorDiaCorrido) : Infinity
   const v: Veredito = {
     minutosPorDia,
+    pomodorosPorDia: minutosPorDia / POMODORO.focoMin,
     diasParaTerminar,
     terminaEm: new Date(d.hoje.getTime() + (Number.isFinite(diasParaTerminar) ? diasParaTerminar : 0) * DIA_MS),
   }
@@ -286,7 +288,7 @@ export function cabeNoTempo(totalMin: number, d: Disponibilidade): Veredito {
     v.cabe = disponivel >= total - 1e-6
     v.voltas = total > 0 ? Math.floor((disponivel / total) * 10 + 1e-9) / 10 : 0
     v.horasPorDiaNecessarias =
-      total === 0 ? 0 : diasAteProva > 0 ? horasParaRender(total / ((diasAteProva * dias) / 7)) : Infinity
+      total === 0 ? 0 : diasAteProva > 0 ? horasParaFoco(total / ((diasAteProva * dias) / 7)) : Infinity
   }
   return v
 }

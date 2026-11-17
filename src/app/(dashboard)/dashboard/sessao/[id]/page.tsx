@@ -8,6 +8,7 @@ import {
   FileText, Zap, Play, Pause, RotateCcw, ChevronRight, Sparkles, Download, Flame,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { POMODORO } from '@/lib/metodo-estudo'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
@@ -73,10 +74,11 @@ export default function SessaoPage() {
   const [cicloFase, setCicloFase] = useState<'ler' | 'questoes' | 'fixar'>('ler')
   const [erradasNoCiclo, setErradasNoCiclo] = useState(0)
 
-  // Pomodoro state
-  const [pomoMode, setPomoMode] = useState<'estudo' | 'pausa' | 'revisao'>('estudo')
-  const [pomoSeconds, setPomoSeconds] = useState(50 * 60)
+  // Pomodoro clássico (metodo-estudo.ts): 25 de foco, 5 de pausa, 15 a cada 4
+  const [pomoMode, setPomoMode] = useState<'foco' | 'pausa' | 'pausa-longa'>('foco')
+  const [pomoSeconds, setPomoSeconds] = useState(POMODORO.focoMin * 60)
   const [pomoRunning, setPomoRunning] = useState(false)
+  const [pomoFeitos, setPomoFeitos] = useState(0)
 
   useEffect(() => {
     api.get(`/sessao/${params.id}`).then(({ data }) => setData(data)).catch(() => toast.error('Sessão não encontrada')).finally(() => setLoading(false))
@@ -85,19 +87,25 @@ export default function SessaoPage() {
 
   useEffect(() => {
     if (!pomoRunning) return
-    const t = setInterval(() => {
-      setPomoSeconds((s) => {
-        if (s <= 1) {
-          setPomoRunning(false)
-          if (pomoMode === 'estudo') { setPomoMode('pausa'); return 10 * 60 }
-          if (pomoMode === 'pausa') { setPomoMode('revisao'); return 20 * 60 }
-          setPomoMode('estudo'); return 50 * 60
-        }
-        return s - 1
-      })
-    }, 1000)
+    const t = setInterval(() => setPomoSeconds((s) => (s <= 1 ? 0 : s - 1)), 1000)
     return () => clearInterval(t)
-  }, [pomoRunning, pomoMode])
+  }, [pomoRunning])
+
+  // Fim do bloco: foco vira pausa (a longa a cada 4 pomodoros); pausa volta ao foco.
+  useEffect(() => {
+    if (pomoSeconds > 0) return
+    setPomoRunning(false)
+    if (pomoMode === 'foco') {
+      const feitos = pomoFeitos + 1
+      const longa = feitos % POMODORO.blocosAtePausaLonga === 0
+      setPomoFeitos(feitos)
+      setPomoMode(longa ? 'pausa-longa' : 'pausa')
+      setPomoSeconds((longa ? POMODORO.pausaLongaMin : POMODORO.pausaCurtaMin) * 60)
+    } else {
+      setPomoMode('foco')
+      setPomoSeconds(POMODORO.focoMin * 60)
+    }
+  }, [pomoSeconds, pomoMode, pomoFeitos])
 
   async function updateChecklist(field: keyof SessionData['session']['checklist'], value: any) {
     if (!data) return
@@ -476,9 +484,10 @@ export default function SessaoPage() {
           mode={pomoMode}
           seconds={pomoSeconds}
           running={pomoRunning}
+          feitos={pomoFeitos}
           onStart={() => setPomoRunning(true)}
           onPause={() => setPomoRunning(false)}
-          onReset={() => { setPomoRunning(false); setPomoMode('estudo'); setPomoSeconds(50 * 60) }}
+          onReset={() => { setPomoRunning(false); setPomoMode('foco'); setPomoSeconds(POMODORO.focoMin * 60) }}
         />
       )}
       </>
@@ -796,20 +805,16 @@ function FlashcardsPanel({ flashcards, onReview }: { flashcards: any[]; onReview
   )
 }
 
-function PomodoroPanel({ mode, seconds, running, onStart, onPause, onReset }: {
-  mode: 'estudo' | 'pausa' | 'revisao'; seconds: number; running: boolean; onStart: () => void; onPause: () => void; onReset: () => void
+function PomodoroPanel({ mode, seconds, running, feitos, onStart, onPause, onReset }: {
+  mode: 'foco' | 'pausa' | 'pausa-longa'; seconds: number; running: boolean; feitos: number; onStart: () => void; onPause: () => void; onReset: () => void
 }) {
   const min = Math.floor(seconds / 60)
   const sec = seconds % 60
-  const colors = {
-    estudo: 'text-brand-500',
-    pausa: 'text-green-500',
-    revisao: 'text-purple-500',
-  }
+  const colors = { foco: 'text-brand-500', pausa: 'text-green-500', 'pausa-longa': 'text-purple-500' }
   return (
     <div className="card p-8 text-center">
       <div className="text-xs uppercase font-bold tracking-widest text-muted-foreground mb-3">
-        {mode === 'estudo' ? '📚 Estudo focado' : mode === 'pausa' ? '☕ Pausa' : '🔁 Revisão'}
+        {mode === 'foco' ? `🍅 Foco — pomodoro ${feitos + 1}` : mode === 'pausa' ? '☕ Pausa curta' : '🛋 Pausa longa'}
       </div>
       <div className={cn('text-6xl sm:text-7xl font-black font-mono mb-6', colors[mode])}>
         {String(min).padStart(2, '0')}:{String(sec).padStart(2, '0')}
@@ -828,8 +833,9 @@ function PomodoroPanel({ mode, seconds, running, onStart, onPause, onReset }: {
           <RotateCcw className="w-4 h-4" /> Reset
         </button>
       </div>
-      <p className="text-[10px] text-muted-foreground mt-4">
-        Ciclo: 50min estudo → 10min pausa → 20min revisão
+      <p className="text-xs text-muted-foreground mt-4">Pomodoros feitos nesta sessão: <strong className="text-foreground tabular-nums">{feitos}</strong></p>
+      <p className="text-[10px] text-muted-foreground mt-1">
+        {POMODORO.focoMin} min de foco → {POMODORO.pausaCurtaMin} de pausa; a cada {POMODORO.blocosAtePausaLonga} pomodoros, {POMODORO.pausaLongaMin} de pausa. Técnica Pomodoro®, de Francesco Cirillo.
       </p>
     </div>
   )

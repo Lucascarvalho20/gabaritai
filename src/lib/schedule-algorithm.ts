@@ -3,14 +3,18 @@
  *
  * Recebe matérias (com pesos) + janela de tempo + disponibilidade do aluno,
  * e produz um cronograma diário até a data da prova:
+ *   - o dia rende os pomodoros que cabem nas horas declaradas (metodo-estudo.ts)
  *   - distribui o tempo proporcional ao peso de cada matéria
- *   - divide entre ESTUDO / REVISÃO / QUESTÕES (Pomodoro de 50min)
- *   - intercala matérias dia a dia (não cansar)
- *   - adiciona SIMULADO quinzenal
+ *   - cada sessão de ESTUDO agenda as revisões espaçadas da matéria: 1, 7, 15 e
+ *     30 dias depois, cada uma mais curta; as revisões vencidas abrem o dia
+ *   - o resto do dia é ESTUDO e QUESTÕES, em blocos de 2 pomodoros (50 min)
+ *   - intercala matérias (não repete a mesma em sequência)
+ *   - adiciona SIMULADO quinzenal (semanal nos últimos 30 dias)
  *   - calcula se o tempo disponível é suficiente (deficit)
  *
  * NÃO usa IA. Pura matemática + round-robin.
  */
+import { POMODORO, REVISOES, REVISAO_FRACAO, focoPorDia } from './metodo-estudo.ts'
 
 export type ScheduleSubjectInput = {
   id: string
@@ -59,25 +63,31 @@ export type ScheduleResult = {
   sessions: ScheduledSession[]
 }
 
-export const DEFAULT_SESSION_MIN = 50
+export const DEFAULT_SESSION_MIN = 50 // dois pomodoros
 const DEFAULT_MOCK_INTERVAL = 14
 const DEFAULT_RECOMMENDED_HOURS = 60
 const DEFAULT_PRE_PRESENCE_WINDOW = 30
+const DIA_MS = 86_400_000
+/** Revisão que não coube (dia curto) e atrasou mais que isto sai: a próxima revisão da matéria já vem. */
+const ATRASO_MAX_REVISAO_DIAS = 7
 
-// Mix padrão durante o período normal. Exportado porque a estimativa de tempo
-// do edital (tempo-estudo.ts) reserva revisão na MESMA proporção — a conta da
-// home e a do cronograma não podem discordar.
-export const MIX = { ESTUDO: 0.65, REVISAO: 0.2, QUESTOES: 0.15 } as const
-// Mix dos últimos 30 dias (modo intensivo pré-prova): zero ESTUDO novo
-const MIX_PRE_PROVA = { ESTUDO: 0, REVISAO: 0.55, QUESTOES: 0.45 } as const
+// Proporção do tempo no longo prazo. A revisão NÃO é sorteada na fila: nasce
+// de cada sessão de estudo (revisões espaçadas), na fração do método — então
+// REVISAO ÷ ESTUDO = REVISAO_FRACAO (0,42), e a estimativa do edital
+// (tempo-estudo.ts) reserva revisão na mesma proporção. A conta da home e a do
+// cronograma não podem discordar.
+export const MIX = {
+  ESTUDO: 0.6,
+  REVISAO: Math.round(0.6 * REVISAO_FRACAO * 1000) / 1000,
+  QUESTOES: Math.round((1 - 0.6 - 0.6 * REVISAO_FRACAO) * 1000) / 1000,
+} as const
 
 /**
- * Minutos de estudo que cabem num dia: só sessões inteiras (Pomodoro). Com 3 h
- * declaradas, são 3 sessões de 50 min = 150 min; o resto vira pausa. Mínimo de
- * uma sessão, mesmo com menos tempo declarado.
+ * Minutos de foco que cabem num dia: os pomodoros nas horas declaradas (as
+ * pausas ficam fora). 3 h = 5 pomodoros = 125 min de foco.
  */
-export function minutosEfetivosPorDia(hoursPerDay: number, sessionMin = DEFAULT_SESSION_MIN): number {
-  return Math.max(1, Math.floor((hoursPerDay * 60) / sessionMin)) * sessionMin
+export function minutosEfetivosPorDia(hoursPerDay: number): number {
+  return focoPorDia(hoursPerDay)
 }
 
 function startOfDay(d: Date): Date {
@@ -104,81 +114,54 @@ function enumerateStudyDays(start: Date, end: Date, daysPerWeek: number[]): Date
   return days
 }
 
+type ItemFila = { subjectId: string; subjectName: string; type: ScheduledSessionType }
+
 /**
- * Gera a fila de sessões POR MATÉRIA, intercalando tipo (ESTUDO/REVISÃO/QUESTÕES).
- * Retorna mapa { subjectId -> sessions[] }.
+ * A fila de cada matéria, em blocos de um pomodoro: ESTUDO e QUESTÕES. Começa
+ * com estudo (3 sessões de aquecimento); depois, a cada 4 sessões de estudo,
+ * uma de questões — a proporção do MIX. Revisão não entra aqui: nasce de cada
+ * sessão de estudo, com data (revisão espaçada).
  */
 function buildPerSubjectQueue(
   subjects: ScheduleSubjectInput[],
   minutesPerSubject: Record<string, number>,
-  sessionMin: number,
-): Map<string, Array<{ subjectId: string; subjectName: string; type: ScheduledSessionType }>> {
-  const map = new Map<string, Array<{ subjectId: string; subjectName: string; type: ScheduledSessionType }>>()
-
+): Map<string, ItemFila[]> {
+  const bloco = POMODORO.focoMin
+  const map = new Map<string, ItemFila[]>()
   for (const s of subjects) {
     const totalMin = minutesPerSubject[s.id] ?? 0
-    const totalSessions = Math.floor(totalMin / sessionMin)
-    if (totalSessions <= 0) {
+    if (totalMin < bloco) {
       map.set(s.id, [])
       continue
     }
-
-    const nEstudo = Math.max(1, Math.floor(totalSessions * MIX.ESTUDO))
-    const nRevisao = Math.floor(totalSessions * MIX.REVISAO)
-    const nQuestoes = Math.max(0, totalSessions - nEstudo - nRevisao)
-
-    const queue: Array<{ subjectId: string; subjectName: string; type: ScheduledSessionType }> = []
-
-    // Padrão de intercalação: ESTUDO, ESTUDO, REVISAO, ESTUDO, QUESTOES, ...
-    // Primeiro 2 semanas só ESTUDO; depois mistura revisão e questões.
-    let estudoLeft = nEstudo, revisaoLeft = nRevisao, questoesLeft = nQuestoes
-    let i = 0
-    while (estudoLeft + revisaoLeft + questoesLeft > 0) {
-      const inWarmup = i < 6 // primeiras 6 sessões = puro estudo
-      if (inWarmup && estudoLeft > 0) {
-        queue.push({ subjectId: s.id, subjectName: s.name, type: 'ESTUDO' })
-        estudoLeft--
-      } else {
-        // Rotação: 3x ESTUDO, 1x REVISAO, 1x QUESTOES
-        const mod = i % 5
-        if (mod < 3 && estudoLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'ESTUDO' })
-          estudoLeft--
-        } else if (mod === 3 && revisaoLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'REVISAO' })
-          revisaoLeft--
-        } else if (mod === 4 && questoesLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'QUESTOES' })
-          questoesLeft--
-        } else if (estudoLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'ESTUDO' })
-          estudoLeft--
-        } else if (revisaoLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'REVISAO' })
-          revisaoLeft--
-        } else if (questoesLeft > 0) {
-          queue.push({ subjectId: s.id, subjectName: s.name, type: 'QUESTOES' })
-          questoesLeft--
-        }
-      }
-      i++
+    let estudo = Math.max(1, Math.floor((totalMin * MIX.ESTUDO) / bloco))
+    let questoes = Math.floor((totalMin * MIX.QUESTOES) / bloco)
+    const fila: ItemFila[] = []
+    for (let i = 0; estudo + questoes > 0; i++) {
+      // 6 blocos de aquecimento; depois ciclos de 8 blocos de estudo + 2 de questões
+      const vezDeQuestao = i >= 6 && (i - 6) % 10 >= 8
+      const tipo: ScheduledSessionType = (vezDeQuestao && questoes > 0) || estudo === 0 ? 'QUESTOES' : 'ESTUDO'
+      fila.push({ subjectId: s.id, subjectName: s.name, type: tipo })
+      if (tipo === 'ESTUDO') estudo--
+      else questoes--
     }
-    map.set(s.id, queue)
+    map.set(s.id, fila)
   }
   return map
 }
 
 export function buildSchedule(input: ScheduleInput): ScheduleResult {
   const sessionMin = input.sessionDurationMin ?? DEFAULT_SESSION_MIN
+  const bloco = POMODORO.focoMin
+  const blocosPorSessao = Math.max(1, Math.floor(sessionMin / bloco))
   const mockInterval = input.mockEveryNDays ?? DEFAULT_MOCK_INTERVAL
   const recommendedHoursPerSubject = input.hoursPerSubjectRecommended ?? DEFAULT_RECOMMENDED_HOURS
 
-  // 1. Dias úteis (dias que o aluno realmente vai estudar)
+  // 1. Dias úteis (dias que o aluno realmente vai estudar) e o foco de cada um
   const studyDates = enumerateStudyDays(input.startDate, input.endDate, input.daysPerWeek)
   const studyDays = studyDates.length
-
-  const sessionsPerDay = minutosEfetivosPorDia(input.hoursPerDay, sessionMin) / sessionMin
-  const totalMinAvailable = studyDays * sessionsPerDay * sessionMin
+  const focoDia = focoPorDia(input.hoursPerDay)
+  const totalMinAvailable = studyDays * focoDia
 
   // 2. Tempo necessário — usado pra calcular "vai dar tempo?". Cada matéria
   //    traz o tempo medido do seu conteúdo; a de fora usa a reserva fixa.
@@ -197,8 +180,8 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
     minutesPerSubject[s.id] = Math.floor((s.weight / totalWeight) * totalMinAvailable)
   }
 
-  // 4. Fila de sessões por matéria
-  const queues = buildPerSubjectQueue(input.subjects, minutesPerSubject, sessionMin)
+  // 4. Fila de blocos por matéria (estudo e questões)
+  const queues = buildPerSubjectQueue(input.subjects, minutesPerSubject)
 
   // 5. Distribuir entre dias usando WEIGHTED ROUND-ROBIN.
   //    Cada slot escolhe a matéria com menor "uso / peso" — garante intercalação
@@ -231,51 +214,75 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
     return bestId
   }
 
+  // Revisões espaçadas a fazer: geradas por cada sessão de estudo, vencem num dia.
+  type Revisao = { subjectId: string; subjectName: string; minutos: number; vence: number }
+  let revisoes: Revisao[] = []
+  const fimMs = startOfDay(input.endDate).getTime()
+
   for (const date of studyDates) {
+    const hojeMs = startOfDay(date).getTime()
     const slots: ScheduledSession[] = []
-    let lastPicked: string | null = null
-
     mockDayCounter++
-    // Modo pré-prova: simulado mais frequente (a cada 7 dias em vez de 14)
-    const isInPrePresence = (input.prePresenceMode ?? true) && (() => {
-      const window = input.prePresenceWindowDays ?? DEFAULT_PRE_PRESENCE_WINDOW
-      const msToEnd = startOfDay(input.endDate).getTime() - startOfDay(date).getTime()
-      const daysToEnd = Math.floor(msToEnd / 86400000)
-      return daysToEnd >= 0 && daysToEnd <= window
-    })()
-    const effectiveMockInterval = isInPrePresence ? Math.min(7, mockInterval) : mockInterval
+
+    // Modo "30 dias pré-prova": sem estudo novo, e simulado semanal
+    const diasAteProva = Math.floor((fimMs - hojeMs) / DIA_MS)
+    const usePrePresence = (input.prePresenceMode ?? true) && diasAteProva >= 0 &&
+      diasAteProva <= (input.prePresenceWindowDays ?? DEFAULT_PRE_PRESENCE_WINDOW)
+    const effectiveMockInterval = usePrePresence ? Math.min(7, mockInterval) : mockInterval
     const isMockDay = (input.includeMocks ?? true) && mockDayCounter % effectiveMockInterval === 0
-    const effectiveSlots = isMockDay ? Math.max(1, sessionsPerDay - 2) : sessionsPerDay
+    let livre = isMockDay ? Math.max(bloco, focoDia - sessionMin * 2) : focoDia
 
-    // Detecta modo "30 dias pré-prova": substitui tipo ESTUDO por REVISAO/QUESTOES
-    const usePrePresence = (input.prePresenceMode ?? true) && (() => {
-      const window = input.prePresenceWindowDays ?? DEFAULT_PRE_PRESENCE_WINDOW
-      const msToEnd = startOfDay(input.endDate).getTime() - startOfDay(date).getTime()
-      const daysToEnd = Math.floor(msToEnd / 86400000)
-      return daysToEnd >= 0 && daysToEnd <= window
-    })()
+    // 5a. As revisões vencidas abrem o dia (as que caíram em dia sem estudo vêm
+    //     para o próximo), usando no máximo metade do tempo; o que não couber
+    //     tenta de novo amanhã, até 7 dias de atraso.
+    const vencidas = revisoes.filter((r) => r.vence <= hojeMs && hojeMs - r.vence <= ATRASO_MAX_REVISAO_DIAS * DIA_MS)
+    revisoes = revisoes.filter((r) => r.vence > hojeMs)
+    const porMateria = new Map<string, Revisao>()
+    for (const r of vencidas) {
+      const acumulada = porMateria.get(r.subjectId)
+      if (acumulada) acumulada.minutos += r.minutos
+      else porMateria.set(r.subjectId, { ...r })
+    }
+    const tetoRevisao = Math.floor(livre / 2)
+    let emRevisao = 0
+    for (const r of porMateria.values()) {
+      const minutos = Math.max(5, Math.ceil(r.minutos / 5 - 1e-9) * 5)
+      if (emRevisao + minutos > tetoRevisao) {
+        revisoes.push(r)
+        continue
+      }
+      slots.push({ date, subjectId: r.subjectId, subjectName: r.subjectName, durationMin: minutos, type: 'REVISAO', order: slots.length })
+      emRevisao += minutos
+    }
+    livre -= emRevisao
 
-    for (let slotIdx = 0; slotIdx < effectiveSlots; slotIdx++) {
+    // 5b. O resto do dia: estudo e questões, em sessões de até 2 pomodoros.
+    let lastPicked = slots.length ? slots[slots.length - 1].subjectId : null
+    while (livre >= bloco) {
       const sid = pickNextSubject(lastPicked)
       if (!sid) break
       const q = queues.get(sid)!
-      const next = q[cursors[sid]++]
+      const primeiro = q[cursors[sid]++]
+      let blocos = 1
+      while (blocos < blocosPorSessao && livre >= (blocos + 1) * bloco && cursors[sid] < q.length && q[cursors[sid]].type === primeiro.type) {
+        cursors[sid]++
+        blocos++
+      }
+      const duracao = blocos * bloco
+      // Pré-prova: o estudo novo vira revisão geral ou questões (alterna)
+      let tipo: ScheduledSessionType = primeiro.type
+      if (usePrePresence && tipo === 'ESTUDO') tipo = slots.length % 2 === 0 ? 'REVISAO' : 'QUESTOES'
+
+      slots.push({ date, subjectId: primeiro.subjectId, subjectName: primeiro.subjectName, durationMin: duracao, type: tipo, order: slots.length })
+      livre -= duracao
       lastPicked = sid
 
-      // Pré-prova: força tipo REVISAO ou QUESTOES (alterna), mesmo se a fila pediu ESTUDO
-      let effectiveType: ScheduledSessionType = next.type
-      if (usePrePresence && next.type === 'ESTUDO') {
-        effectiveType = slotIdx % 2 === 0 ? 'REVISAO' : 'QUESTOES'
+      if (tipo === 'ESTUDO') {
+        for (const r of REVISOES) {
+          const vence = startOfDay(addDays(date, r.diasDepois)).getTime()
+          if (vence <= fimMs) revisoes.push({ subjectId: sid, subjectName: primeiro.subjectName, minutos: duracao * r.fracao, vence })
+        }
       }
-
-      slots.push({
-        date,
-        subjectId: next.subjectId,
-        subjectName: next.subjectName,
-        durationMin: sessionMin,
-        type: effectiveType,
-        order: slotIdx,
-      })
     }
 
     if (isMockDay) {
@@ -292,16 +299,15 @@ export function buildSchedule(input: ScheduleInput): ScheduleResult {
     allSessions.push(...slots)
   }
 
-  // 6. perSubject summary
+  // 6. perSubject summary: o tempo que cada matéria recebeu (estudo, questões e revisões)
   const perSubject: ScheduleResult['perSubject'] = {}
   for (const s of input.subjects) {
-    const used = (cursors[s.id] ?? 0) * sessionMin
-    perSubject[s.id] = {
-      name: s.name,
-      minutes: used,
-      sessions: cursors[s.id] ?? 0,
-      weight: s.weight,
-    }
+    perSubject[s.id] = { name: s.name, minutes: 0, sessions: 0, weight: s.weight }
+  }
+  for (const sessao of allSessions) {
+    if (!sessao.subjectId || !perSubject[sessao.subjectId]) continue
+    perSubject[sessao.subjectId].minutes += sessao.durationMin
+    perSubject[sessao.subjectId].sessions++
   }
 
   return {

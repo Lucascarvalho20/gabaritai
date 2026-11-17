@@ -24,7 +24,8 @@ describe('estimarEdital — teoria pelo tamanho do material', () => {
   })
 
   test('revisão segue a proporção do cronograma (revisão ÷ estudo novo)', () => {
-    assert.equal(REVISAO_FRACAO, MIX.REVISAO / MIX.ESTUDO)
+    quase(REVISAO_FRACAO, MIX.REVISAO / MIX.ESTUDO)
+    assert.equal(REVISAO_FRACAO, 0.42) // 1, 7, 15 e 30 dias: 20% + 10% + 7% + 5%
     const r = estimarEdital([materia('Penal', [topico(1200), topico(2400)])])
     quase(so(r, 'Penal').revisaoMin, 30 * REVISAO_FRACAO)
   })
@@ -224,34 +225,36 @@ describe('cabeNoTempo — a mesma régua do cronograma', () => {
   const hoje = new Date('2027-01-04T12:00:00Z')
   const emDias = (n: number) => new Date(hoje.getTime() + n * 86_400_000)
 
-  test('3 h declaradas rendem 150 min: só sessões inteiras de 50 min', () => {
-    assert.equal(cabeNoTempo(100, { horasPorDia: 3, diasPorSemana: 7, hoje }).minutosPorDia, 150)
-    assert.equal(cabeNoTempo(100, { horasPorDia: 1.5, diasPorSemana: 7, hoje }).minutosPorDia, 50)
+  test('3 h declaradas rendem 125 min de foco: 5 pomodoros, as pausas ficam fora', () => {
+    const v = cabeNoTempo(100, { horasPorDia: 3, diasPorSemana: 7, hoje })
+    assert.equal(v.minutosPorDia, 125)
+    assert.equal(v.pomodorosPorDia, 5)
+    assert.equal(cabeNoTempo(100, { horasPorDia: 1.5, diasPorSemana: 7, hoje }).minutosPorDia, 75)
   })
 
   test('dias para terminar e data de término', () => {
     const v = cabeNoTempo(1500, { horasPorDia: 3, diasPorSemana: 7, hoje })
-    assert.equal(v.diasParaTerminar, 10)
-    assert.equal(v.terminaEm.getTime(), emDias(10).getTime())
+    assert.equal(v.diasParaTerminar, 12) // 1500 ÷ 125
+    assert.equal(v.terminaEm.getTime(), emDias(12).getTime())
     assert.equal(v.cabe, undefined) // sem data de prova, sem veredito
   })
 
   test('5 dias por semana esticam o prazo na proporção certa', () => {
-    assert.equal(cabeNoTempo(1500, { horasPorDia: 3, diasPorSemana: 5, hoje }).diasParaTerminar, 14)
+    assert.equal(cabeNoTempo(1500, { horasPorDia: 3, diasPorSemana: 5, hoje }).diasParaTerminar, 17)
   })
 
   test('cabe com folga: diz quantas voltas no conteúdo dá para dar', () => {
     const v = cabeNoTempo(1500, { horasPorDia: 3, diasPorSemana: 7, hoje, dataProva: emDias(30) })
     assert.equal(v.cabe, true)
-    assert.equal(v.disponivelMin, 4500)
-    assert.equal(v.voltas, 3)
+    assert.equal(v.disponivelMin, 3750)
+    assert.equal(v.voltas, 2.5)
   })
 
   test('não cabe: diz quantas horas por dia resolveriam', () => {
     const v = cabeNoTempo(6000, { horasPorDia: 3, diasPorSemana: 7, hoje, dataProva: emDias(20) })
     assert.equal(v.cabe, false)
-    assert.equal(v.horasPorDiaNecessarias, 5) // 300 min/dia = 6 sessões = 5 h
-    assert.equal(cabeNoTempo(6000, { horasPorDia: 5, diasPorSemana: 7, hoje, dataProva: emDias(20) }).cabe, true)
+    assert.equal(v.horasPorDiaNecessarias, 6.5) // 300 min/dia = 12 pomodoros, que pedem 6 h 15 com as pausas
+    assert.equal(cabeNoTempo(6000, { horasPorDia: 6.5, diasPorSemana: 7, hoje, dataProva: emDias(20) }).cabe, true)
   })
 
   test('as horas sugeridas sempre bastam, e meia hora a menos nunca basta', () => {
@@ -260,6 +263,11 @@ describe('cabeNoTempo — a mesma régua do cronograma', () => {
         for (const ate of [7, 30, 90, 200]) {
           const base = { diasPorSemana: dias, hoje, dataProva: emDias(ate) }
           const h = cabeNoTempo(total, { ...base, horasPorDia: 1 }).horasPorDiaNecessarias!
+          if (h === Infinity) {
+            // nem o dia inteiro estudando basta: a calculadora não inventa horas
+            assert.equal(cabeNoTempo(total, { ...base, horasPorDia: 24 }).cabe, false, `${total}/${dias}/${ate}: 24 h bastavam`)
+            continue
+          }
           assert.equal(cabeNoTempo(total, { ...base, horasPorDia: h }).cabe, true, `${total}/${dias}/${ate}: ${h} h não bastou`)
           if (h > 1) assert.equal(cabeNoTempo(total, { ...base, horasPorDia: h - 0.5 }).cabe, false, `${total}/${dias}/${ate}: ${h - 0.5} h já bastava`)
         }
@@ -277,8 +285,8 @@ describe('cabeNoTempo — a mesma régua do cronograma', () => {
   })
 
   test('dias por semana fora de 1–7 são ajustados', () => {
-    assert.equal(cabeNoTempo(1050, { horasPorDia: 3, diasPorSemana: 0, hoje }).diasParaTerminar, 49) // 1 dia/semana
-    assert.equal(cabeNoTempo(1050, { horasPorDia: 3, diasPorSemana: 9, hoje }).diasParaTerminar, 7)
+    assert.equal(cabeNoTempo(1050, { horasPorDia: 3, diasPorSemana: 0, hoje }).diasParaTerminar, 59) // 1 dia/semana
+    assert.equal(cabeNoTempo(1050, { horasPorDia: 3, diasPorSemana: 9, hoje }).diasParaTerminar, 9)
   })
 
   test('conteúdo vazio: termina hoje e sempre cabe', () => {
