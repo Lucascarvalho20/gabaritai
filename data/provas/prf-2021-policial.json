@@ -454,7 +454,7 @@
    "enunciado": "No Windows, ainda que seja possível compartilhar configurações — como plano de fundo e histórico de navegação do Internet Explorer — entre computadores que utilizem a mesma conta em outras máquinas com Windows 10, não é permitido, em razão da segurança, o compartilhamento de senhas.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -706,7 +706,7 @@
    "enunciado": "Os arranjos populacionais de Campinas e Ribeirão Preto, no estado de São Paulo, e de Uberlândia, em Minas Gerais, configuram-se como metrópoles em ascensão na rede urbana brasileira e encontram-se no primeiro nível da hierarquia urbana.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -886,7 +886,7 @@
    "enunciado": "É permitido que veículos de passageiros, ônibus, micro-ônibus e caminhões transitem em rodovia com trincas em seus para-brisas, desde que elas estejam dentro do limite previsto em norma específica e não haja fratura de configuração circular.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -910,7 +910,7 @@
    "enunciado": "Em caso de operação de fiscalização do registrador instantâneo e inalterável de velocidade e tempo, o policial rodoviário federal deve identificar-se e assinar o verso do disco ou da fita diagrama, além de mencionar o local, a data e horário em que ocorreu a fiscalização.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -1078,7 +1078,7 @@
    "enunciado": "A impetração de mandado de segurança configura controle judicial de mérito administrativo.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },
@@ -1366,7 +1366,7 @@
    "enunciado": "Caso três pessoas associadas, com divisão de tarefas, subtraiam substância explosiva, estará configurado crime hediondo.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1414,7 +1414,7 @@
    "enunciado": "Conduzir arma de fogo, no exercício de atividade comercial, sem autorização, configura comércio ilegal de arma de fogo.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1438,7 +1438,7 @@
    "enunciado": "A mera intuição de que esteja havendo tráfico de drogas em uma casa não configura justa causa para autorizar o ingresso sem mandado judicial ou sem o consentimento do morador, exceto em caso de flagrante delito.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },

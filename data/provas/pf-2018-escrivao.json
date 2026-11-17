@@ -118,7 +118,7 @@
    "enunciado": "Dado o trecho “à imagem do que Roma fizera” (ℓ. 22 e 23), é correto concluir que Portugal, em sua “expansão de conquistas” (ℓ.22), atuou de forma idêntica à que o Império Romano adotou para conquistar a Península Ibérica.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -226,7 +226,7 @@
    "enunciado": "A coerência textual seria prejudicada se, após “teatro” (ℓ.20), fossem inseridos dois-pontos e o trecho a mecânica exemplar da punição muda as engrenagens, como conclusão das consequências enumeradas, dado o emprego, nesse trecho, de linguagem figurada, incompatível com o gênero do texto.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -646,7 +646,7 @@
    "enunciado": "Escolhendo aleatoriamente uma linha da tabela verdade da proposição P, a probabilidade de que todos os valores dessa linha sejam V é superior a .",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },
@@ -1438,7 +1438,7 @@
    "enunciado": "A tabela de temporalidade é um trabalho multidisciplinar, pois envolve profissionais de várias áreas para definir os prazos de guarda e a destinação final dos documentos, que pode ser a eliminação ou guarda permanente.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },

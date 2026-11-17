@@ -399,7 +399,7 @@
    "enunciado": "Se um terceiro aproximar-se de um autor de um crime que estiver imobilizado pela polícia e acertá-lo com um tiro letal, estará configurada a responsabilidade objetiva do Estado.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -675,7 +675,7 @@
    "enunciado": "A adoção de sistema de vigilância realizado por monitoramento eletrônico, por si só, não torna impossível a configuração do crime de furto.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -759,7 +759,7 @@
    "enunciado": "A conduta humana voluntária é irrelevante para a configuração do crime culposo.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -843,7 +843,7 @@
    "enunciado": "A fuga do réu após a ordem de parada dos policiais para abordagem configura crime de desobediência.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -1119,7 +1119,7 @@
    "enunciado": "Compete à justiça federal processar e julgar o crime de disponibilizar ou adquirir material pornográfico que envolva criança ou adolescente praticado por meio de troca de informações privadas, como, por exemplo, conversas via aplicativos de mensagens ou chat nas redes sociais.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },
@@ -1359,7 +1359,7 @@
    "enunciado": "O crime configurado na situação narrada é crime próprio, de modo que Luzia só poderá ser penalizada na esfera criminal se ficar comprovada sua coautoria ou coparticipação no referido crime.",
    "gabarito": null,
    "anulada": true,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },

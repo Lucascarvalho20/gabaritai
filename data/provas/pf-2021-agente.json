@@ -436,7 +436,7 @@
    "enunciado": "Determinada pessoa foi presa em flagrante delito, porque estava, no território brasileiro, próximo à região de fronteira com determinado país da América do Sul, transportando uma grande quantidade de drogas. Nessa situação, a configuração do tráfico transnacional depende da comprovação da transposição da fronteira, hipótese em que a pena poderá aumentar.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -676,7 +676,7 @@
    "enunciado": "A tabela verdade da proposição condicional associada ao argumento tem menos de dez linhas.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1084,7 +1084,7 @@
    "enunciado": "As aplicações de bigdata caracterizam-se exclusivamente pelo grande volume de dados armazenados em tabelas relacionais.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1096,7 +1096,7 @@
    "enunciado": "Se uma tabela de banco de dados tiver 205 atributos, então isso significa que ela tem 205 registros.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1144,7 +1144,7 @@
    "enunciado": "Uma hiperchave é uma tupla que permite recuperar uma relação de uma tabela.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 9
   },
@@ -1156,7 +1156,7 @@
    "enunciado": "Os dados estruturados diferenciam-se dos dados não estruturados pela rigidez em seu formato e pelo fato de poderem ser armazenados em campos de tabelas de um banco de dados relacional.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 9
   },

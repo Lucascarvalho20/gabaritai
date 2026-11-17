@@ -514,7 +514,7 @@
    "enunciado": "Um indivíduo foi preso e a autoridade judiciária decidiu, de ofício, pela sua identificação criminal, por entender que tal medida seria essencial às investigações policiais. Nessa situação, a identificação criminal é legal e incluirá o processo datiloscópico e o fotográfico, podendo incluir também a coleta de material genético para a obtenção do perfil genético.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -646,7 +646,7 @@
    "enunciado": "Escolhendo aleatoriamente uma linha da tabela verdade da proposição P, a probabilidade de que todos os valores dessa linha sejam F é superior a .",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },
@@ -1234,7 +1234,7 @@
    "enunciado": "Após o prazo de guarda no arquivo intermediário, a tabela de temporalidade define a destinação final, que é diferente para documentos tradicionais (em papel) e documentos digitais.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 7
   },

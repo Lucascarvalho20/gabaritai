@@ -354,7 +354,7 @@
    "enunciado": "Considere que um casal tenha sido preso em flagrante enquanto furtava cabos de energia elétrica em via pública: a mulher encontrava-se ao lado do poste de energia com uma mochila onde estavam armazenados diversos metros de fios já cortados e perto dela havia um facão utilizado para o corte; o homem se encontrava no alto do poste, com o facão em mãos, em plena retirada de novos cabos. Nessa situação, a ausência de laudo pericial sobre o local e os meios utilizados impede, em relação à mulher, a configuração da qualificadora da escalada no crime de furto, ainda que policiais tenham presenciado diretamente a prática delitiva e narrado detalhadamente os fatos.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -786,7 +786,7 @@
    "enunciado": "O Microsoft Remote Desktop e o TeamViewer permitem acesso remoto a computadores, o que possibilita a transferência de arquivos, e os ambientes Microsoft Office e LibreOffice oferecem ferramentas para criação de textos, planilhas e apresentações, garantindo compatibilidade com diversos formatos.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -810,7 +810,7 @@
    "enunciado": "Em distribuições Linux, o comando ipconfig é utilizado para exibir informações de configuração de rede, como endereço IP e máscara de sub-rede; no Windows, o comando ifconfig desempenha a mesma função, permitindo a visualização e configuração de interfaces de rede.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -882,7 +882,7 @@
    "enunciado": "No modelo entidade-relacionamento, a abstração representa o mundo real com entidades, atributos e relacionamentos binários, ternários ou superiores; no modelo relacional, a integridade referencial depende de chaves primárias e estrangeiras, enquanto a análise funcional identifica dependências e normaliza tabelas até a forma normal adequada (3FN, Boyce-Codd ou 4FN), eliminando redundâncias e anomalias.",
    "gabarito": null,
    "anulada": true,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -906,7 +906,7 @@
    "enunciado": "No contexto de banco de dados, dados estruturados são aqueles que não possuem um formato fixo e são armazenados em sistemas como bancos NoSQL, ao passo que dados não estruturados possuem um formato rígido e são armazenados em tabelas relacionais.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -1146,7 +1146,7 @@
    "enunciado": "O comando SELECT mostra que existe uma relação com uma tabela de nome produtos mediante id_produto.",
    "gabarito": null,
    "anulada": true,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },

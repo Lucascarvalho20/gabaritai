@@ -676,7 +676,7 @@
    "enunciado": "A tabela verdade da proposição condicional associada ao argumento tem menos de dez linhas.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1084,7 +1084,7 @@
    "enunciado": "As aplicações de bigdata caracterizam-se exclusivamente pelo grande volume de dados armazenados em tabelas relacionais.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1096,7 +1096,7 @@
    "enunciado": "Se uma tabela de banco de dados tiver 205 atributos, então isso significa que ela tem 205 registros.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1144,7 +1144,7 @@
    "enunciado": "Uma hiperchave é uma tupla que permite recuperar uma relação de uma tabela.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 9
   },
@@ -1156,7 +1156,7 @@
    "enunciado": "Os dados estruturados diferenciam-se dos dados não estruturados pela rigidez em seu formato e pelo fato de poderem ser armazenados em campos de tabelas de um banco de dados relacional.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 9
   },
@@ -1384,7 +1384,7 @@
    "enunciado": "O eletrólito de sódio citado no texto fica no mesmo grupo do átomo neutro, mas se posiciona no segundo período da Tabela Periódica.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 11
   },
@@ -1396,7 +1396,7 @@
    "enunciado": "O suor tem temperatura de ebulição maior que a da água pura.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 11
   },
@@ -1408,7 +1408,7 @@
    "enunciado": "A temperatura da água aumenta com a dissolução de NaCl.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 11
   },

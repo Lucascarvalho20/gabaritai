@@ -478,7 +478,7 @@
    "enunciado": "Brasília é apontada como uma das três metrópoles nacionais mais importantes no Brasil, e sua influência urbana direta estende-se por uma larga porção do território nacional, alcançando os estados de Minas Gerais e de Goiás.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6,
    "explicacao": "Justificativa oficial da banca: CERTO. Brasília é a terceira metrópole nacional, logo depois de São Paulo e Rio de Janeiro, e sua influência urbana estende-se por diversos territórios de estados do país, inclusive, e principalmente, MG e GO, com as cidades da RIDE."
@@ -491,7 +491,7 @@
    "enunciado": "É correto afirmar que, no contexto nacional, Brasília apresenta-se como centro polarizador, considerando-se aspectos como supremacia na gestão pública federal, renda, densidade populacional, grau de urbanização, coesão interna da área (dada pelos deslocamentos da população em função dos serviços) e acesso ao mercado de trabalho.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6,
    "explicacao": "Justificativa oficial da banca: CERTO. Brasília é centro polarizador nacional em virtude de algumas variáveis, entre as quais aquelas listadas no item."
@@ -504,7 +504,7 @@
    "enunciado": "A RIDE foi criada com a finalidade de solucionar os problemas advindos do crescimento desordenado de Brasília e seu entorno.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6,
    "explicacao": "Justificativa oficial da banca: CERTO. As regiões integradas de desenvolvimento constituem um modo de associação entre unidades da federação. Possuem, basicamente, dois objetivos principais: a) acelerar o desenvolvimento econômico da região; b) reduzir as desigualdades sociais. Com base nessas premissas, a Lei Complementar n.º 94, de 1998, instituiu a Região Integrada de Desenvolvimento do Distrito Federal e Entorno (RIDE). Sendo assim, a RIDE tem como objetivo articular e harmonizar as ações administrativas da União, dos estados e dos municípios para a promoção de projetos que visem à dinamização econômica e provisão de infraestruturas necessárias ao desenvolvimento em escala regional. Visa reduzir as desigualdades regionais causadas pela alta concentração urbana decorrente do fluxo migratório entre o Distrito Federal e os municípios vizinhos, que gerou um crescimento desordenado da região. Fazem parte da RIDE o Distrito Federal e alguns municípios pertencentes aos estados de Goiás e Minas Gerais. No sentido de promover o desenvolvimento econômico da RIDE, a lei complementar autoriza o Poder Executivo a instituir um Programa Especial de Desenvolvimento do Entorno do Distrito Federal, o que foi feito em 2018."
@@ -517,7 +517,7 @@
    "enunciado": "No Distrito Federal ocorre um fenômeno hidrográfico de dispersão de águas atípico, pois nele encontram-se nascentes de rios que pertencem a três bacias hidrográficas distintas.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6,
    "explicacao": "Justificativa oficial da banca: ERRADO. O fenômeno hidrográfico encontrado no DF corresponde à dispersão das águas, porém, ocorre quando a água flui, a partir de um mesmo ponto, para lados opostos. Trata-se de águas emendadas. O nome águas emendadas foi atribuído devido ao fato de haver, em seu interior, uma nascente que origina dois córregos que vão a direções opostas. Trata-se dos Córregos Brejinho e Vereda Grande, que têm, respectivamente, suas águas escoando rumo ao Rio Paraná e ao Rio Tocantins. Eles cooperam para a formação das duas maiores bacias hidrográficas da América Latina, que são a Platina e a Amazônica."
@@ -762,7 +762,7 @@
    "enunciado": "Se ficar constatado que o assassinato cometido pelo referido cidadão norte-americano configura o crime de latrocínio, a competência para seu julgamento será do juiz singular.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8,
    "explicacao": "Justificativa oficial da banca: CERTO. A competência para o processo e julgamento de latrocínio é do juiz singular (Súmula n.º 603 do Supremo Tribunal Federal)."
@@ -839,7 +839,7 @@
    "enunciado": "Em processo administrativo disciplinar, a falta de defesa técnica, por advogado, configura desrespeito aos princípios do contraditório e da ampla defesa.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8,
    "explicacao": "Justificativa oficial da banca: ERRADO. A falta de defesa técnica por advogado não agride o contraditório e a ampla defesa, conforme já reconhecido de forma pacífica pelo STF a partir da edição da Súmula Vinculante n.º 5."
@@ -942,7 +942,7 @@
    "enunciado": "Configura crime de desobediência a oposição à execução de ato legal, emanado por funcionário público, mediante atitude negativa, sendo a pena privativa de liberdade prevista para tal crime mais branda que a prevista para o crime de resistência.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 9,
    "explicacao": "Justificativa oficial da banca: CERTO. A resistência passiva é figura típica distinta do crime de resistência ativa. Em se tratando deste último, há emprego de violência ou grave ameaça para se opor à execução de ato legal, enquanto a desobediência se configura com a inexecução do ato sem o uso de vis compulsiva ou vil corporalis, de modo a receber a nomenclatura de “atitude ghândica” ou mediante uma conduta negativa. Em razão da ausência de violência ou grave ameaça, a pena do crime de desobediência é inferior à do crime de resistência. Código Penal, arts. 329 e 330."
@@ -980,7 +980,7 @@
    "enunciado": "O crime de lesão corporal leve cometido em situação de violência doméstica não configura um tipo penal autônomo, mas uma qualificadora do delito de lesão corporal, em decorrência da relação havida entre os sujeitos ativo e passivo do delito.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 10,
    "explicacao": "Justificativa oficial da banca: CERTO. O crime de lesão corporal leve em situação de violência doméstica não é autônomo, e a circunstância é qualificadora do delito de lesão corporal, e não uma majorante. As circunstâncias qualificadoras do delito referem-se às relações domésticas ou familiares, de modo a alterar a pena abstrata no tipo penal do art. 129 do Código Penal."
@@ -1305,7 +1305,7 @@
    "enunciado": "Por meio de configurações do IMAP e do SMTP, é possível ler as mensagens do Gmail em aplicativos tais como o Apple Mail e o Microsoft Outlook.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 12,
    "explicacao": "Justificativa oficial da banca: CERTO. Configurar o IMAP e alterar as configurações de SMTP permite ler as mensagens do Gmail em outros clientes de email, como o Microsoft Outlook e o Apple Mail."
@@ -1409,7 +1409,7 @@
    "enunciado": "PPP ( point to point protocol ) é um protocolo de comunicação que permite a configuração de um endereço de rede temporário para conexão à Internet.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 13,
    "explicacao": "Justificativa oficial da banca: CERTO. O PPP ( point to point protocol ) fornece a configuração do endereço de rede. Isso é particularmente útil quando um usuário doméstico precisa de um endereço de rede temporário para se conectar à Internet."

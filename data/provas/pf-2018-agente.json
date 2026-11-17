@@ -820,7 +820,7 @@
    "enunciado": "A despeito das configurações dos ativos de segurança corporativos e do serviço de firewall instalado na estação de trabalho, Marta poderá acessar remotamente sua estação de trabalho usando a Conexão de Área de Trabalho Remota , a partir de outra estação conectada à Internet.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -892,7 +892,7 @@
    "enunciado": "Para o armazenamento de dados de trabalho dos colaboradores desse órgão público, incluindo-se documentos, imagens e planilhas, e para o uso de recursos de rede compartilhados, como impressoras e computadores, seria adequado contratar o modelo de computação em nuvem denominado infraestrutura como um serviço (IaaS).",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -964,7 +964,7 @@
    "enunciado": "Na versão 2013 do PowerPoint do Microsoft Office Professional, é possível abrir arquivos no formato .odp, do Impress do BrOffice; contudo, não é possível exportar ou salvar arquivos .pptx originais do PowerPoint como arquivos .odp.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -976,7 +976,7 @@
    "enunciado": "Considere que um designer que habitualmente utiliza o software Microsoft Visio, da Microsoft Office, necessite realizar um trabalho de editoração de gráficos vetoriais e diagramação em um computador no qual esteja instalada apenas a plataforma BrOffice. Nessa situação, para essa tarefa, seria adequada a utilização do software Draw, da plataforma BrOffice, levando-se em conta a semelhança das funcionalidades dos dois softwares.",
    "gabarito": null,
    "anulada": true,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1036,7 +1036,7 @@
    "enunciado": "Situação hipotética: Ao analisar o modelo ER em questão, Paulo verificou que há duas chaves identificadas com o mesmo nome: código — em tipo de produto e em produto. Paulo sabe que o conceito de chaves é básico para estabelecer relações entre linhas de tabelas de um banco de dados relacional e que as chaves primárias devem ser únicas. Assertiva: Nessa situação, Paulo deve invalidar o modelo ER em questão, pois ele está semanticamente errado, já que não pode haver chaves primárias com nomes iguais, ainda que em entidades distintas.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 7
   },

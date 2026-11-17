@@ -504,7 +504,7 @@
    "enunciado": "Quando ampliada, a imagem raster, predominantemente utilizada em registros fotográficos periciais, pode sofrer o processo de pixelização, que compromete a nitidez e os detalhes da imagem da cena.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -756,7 +756,7 @@
    "enunciado": "Nos sistemas de gerenciamento de banco de dados relacionais, o modelo lógico descreve como os dados são organizados em tabelas, relacionamentos e restrições, independentemente da forma como são fisicamente armazenados no disco.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -768,7 +768,7 @@
    "enunciado": "O SQLite exige configuração prévia de usuários e permissões de acesso nativas para garantir controle de acesso a dados.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -792,7 +792,7 @@
    "enunciado": "Em SQL, as junções externas (LEFT OUTER JOIN, RIGHT OUTER JOIN e FULL OUTER JOIN) permitem incluir registros de uma ou de ambas as tabelas, mesmo quando não há correspondência entre as chaves de junção.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -840,7 +840,7 @@
    "enunciado": "O control flow flattening implementado no firmware pode ser eficientemente revertido por meio de técnicas de análise estática de descompiladores que utilizam algoritmos de reconhecimento de padrões baseados em grafos de fluxo de controle, restaurando o fluxo de execução original sem a necessidade de taint analysis ou execução simbólica.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -852,7 +852,7 @@
    "enunciado": "A utilização de uma ISA extension customizada requer que o descompilador possua um processador específico (ou uma extensão) que compreenda as novas instruções; desse modo, deve-se criar ou adaptar o processador do descompilador, para evitar que a descompilação resulte em pseudocódigo incoerente ou em erros na interpretação de blocos inteiros.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 1
   },
@@ -1104,7 +1104,7 @@
    "enunciado": "O dispositivo responsável por fazer o NAT importa uma tabela de endereços do servidor DHCP, que, por sua vez, é o responsável por associar endereços internos com conexões externas.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -1260,7 +1260,7 @@
    "enunciado": "No Android, a UID (user identifier) é utilizada para configurar um sandbox de aplicativo, no entanto, por questão de segurança, o sandbox não se estende ao código nativo e aos apps e bibliotecas do Android, os quais são executados em área de memória protegida, com acesso somente pelo kernel.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -1392,7 +1392,7 @@
    "enunciado": "Arquivos de configuração são irrelevantes para a análise de incidentes em nuvem.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -1488,7 +1488,7 @@
    "enunciado": "A duplicação forense de um disco virtual pode ser feita sem necessidade de validação por hash, uma vez que a imagem original está preservada.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },

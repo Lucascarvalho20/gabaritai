@@ -462,7 +462,7 @@
    "enunciado": "A pretensão de reparação de danos decorrentes de liminar concedida e posteriormente revogada configura hipótese de responsabilidade extracontratual, sujeitando-se ao prazo prescricional de três anos.",
    "gabarito": null,
    "anulada": true,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -474,7 +474,7 @@
    "enunciado": "A configuração do nexo de causalidade, necessária à responsabilização civil do agente, exige a comprovação de uma conduta comissiva ou omissiva que tenha contribuído, de forma direta ou indireta, para a ocorrência do dano.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -822,7 +822,7 @@
    "enunciado": "No crime de falsificação de documento público, na situação em que o documento seja fabricado pelo sujeito ativo, exige-se como requisito para a configuração do delito a imitatio veri, sem a qual a conduta não terá aptidão para lesionar a fé pública.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -858,7 +858,7 @@
    "enunciado": "De acordo com o STJ, a exploração não autorizada de ouro caracteriza uma extração criminosa de recursos minerais de propriedade da União e, consequentemente, configura crime contra o patrimônio tipificado na Lei n.º 8.176/1991.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 4
   },
@@ -1242,7 +1242,7 @@
    "enunciado": "Como expressão do modelo restaurador, a justiça restaurativa caracteriza-se pelo formalismo procedimental e pela transferência da responsabilidade pela solução do conflito à figura do mediador, que exerce função decisória.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },

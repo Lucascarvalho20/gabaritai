@@ -322,7 +322,7 @@
    "enunciado": "O padrão apresentado pela referida sequência indica que os números podem corresponder, na ordem em que aparecem, a ordenadas de pontos do gráfico de uma função afim de inclinação positiva.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 2
   },
@@ -454,7 +454,7 @@
    "enunciado": "No acesso a uma página web que contenha o código de um vírus de script , pode ocorrer a execução automática desse vírus, conforme as configurações do navegador.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 3
   },
@@ -838,7 +838,7 @@
    "enunciado": "Márcio conduzia seu veículo automotor produzindo fumaça em níveis superiores aos legalmente permitidos. Nessa situação, conforme o nível de fumaça exalada, a conduta de Márcio pode configurar tanto infração administrativa com o crime de trânsito.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 5
   },
@@ -1018,7 +1018,7 @@
    "enunciado": "O condutor em questão não ultrapassou o tempo máximo ininterrupto de direção previsto na legislação de trânsito para o tipo de veículo referido.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1030,7 +1030,7 @@
    "enunciado": "Nessa situação, apesar de o disco-diagrama não se prestar para exame, não cabe a aplicação de penalidade decorrente do defeito no aparelho registrador , já que foi possível a fiscalização do tempo de direção do motorista por meio da verificação da ficha de trabalho do autônomo.",
    "gabarito": "E",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1042,7 +1042,7 @@
    "enunciado": "Haja vista o horário e o local da vistoria, bem como as condições de transporte do veículo, o policial rodoviário federal deverá lavrar auto de infração pelo descumprimento da restrição de tráfego, cabendo a aplicação de penalidades previstas no CTB.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 6
   },
@@ -1174,7 +1174,7 @@
    "enunciado": "Tanto a inexistência da matéria de fato quanto a sua inadequação jurídica podem configurar o vício de motivo de um ato administrativo.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1282,7 +1282,7 @@
    "enunciado": "A conduta do motorista configura crime de descaminho em sua forma consumada , ainda que não tenha havido constituição definitiva do crédito tributário e a ocorrência de efetivo prejuízo ao erário.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
@@ -1306,7 +1306,7 @@
    "enunciado": "De acordo com a classificação doutrinária dominante, a situação configura hipótese de flagrante presumido ou ficto.",
    "gabarito": "C",
    "anulada": false,
-   "figura": true,
+   "figura": false,
    "formula": false,
    "pagina": 8
   },
