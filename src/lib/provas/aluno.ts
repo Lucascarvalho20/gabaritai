@@ -10,11 +10,13 @@
  *  - As respostas são salvas enquanto o aluno marca; recarregar a página não perde nada.
  *  - O prazo é do servidor. Depois dele há 2 minutos de tolerância (rede lenta);
  *    passou disso, valem as respostas que já estavam salvas.
+ *  - Cada tentativa pode ter uma anotação do aluno; só o dono lê e escreve.
  */
 import { prisma } from '../prisma'
 import { hasAccessToCourse } from '../plan-access'
 import { corrigir, materiasEmBranco, normalizarResposta, prioridadesDeRevisao, type DesempenhoMateria } from './correcao'
 import { cadernoDoItem } from './cadernos'
+import { limparAnotacao } from './anotacao'
 
 export const TOLERANCIA_MS = 2 * 60_000
 
@@ -84,7 +86,7 @@ export async function provasDoCurso(userId: string, courseSlug: string) {
       tentativas: {
         where: { userId },
         orderBy: { iniciadaEm: 'desc' },
-        select: { id: true, status: true, pontos: true, pontosMax: true, iniciadaEm: true, entregueEm: true, expiraEm: true },
+        select: { id: true, status: true, pontos: true, pontosMax: true, iniciadaEm: true, entregueEm: true, expiraEm: true, tempoMs: true, anotacao: true },
       },
     },
   })
@@ -97,7 +99,9 @@ export async function provasDoCurso(userId: string, courseSlug: string) {
         id: p.id, titulo: p.titulo, ano: p.ano, cargo: p.cargo, banca: p.banca?.name ?? null, itens: p._count.questions,
         duracaoMin: p.duracaoMin, incluiaDiscursiva: p.incluiaDiscursiva, formato: p.examFormat,
         emAndamento: emAndamento?.id ?? null,
-        tentativas: entregues.map((t) => ({ id: t.id, pontos: t.pontos, pontosMax: t.pontosMax, entregueEm: t.entregueEm ?? t.expiraEm })),
+        tentativas: entregues.map((t) => ({
+          id: t.id, pontos: t.pontos, pontosMax: t.pontosMax, entregueEm: t.entregueEm ?? t.expiraEm, tempoMs: t.tempoMs, anotacao: t.anotacao,
+        })),
         melhor: entregues.length ? Math.max(...entregues.map((t) => t.pontos)) : null,
       }
     }),
@@ -274,7 +278,7 @@ export async function resultadoDaTentativa(userId: string, tentativaId: string) 
     tentativa: {
       id: t.id, status: t.status, iniciadaEm: t.iniciadaEm, entregueEm: t.entregueEm, tempoMs: t.tempoMs, duracaoMin: t.duracaoMin,
       acertos: t.acertos, erros: t.erros, brancos: t.brancos, anuladas: t.anuladas, pontos: t.pontos, pontosMax: t.pontosMax,
-      porMateria, revisar: prioridadesDeRevisao(porMateria), emBranco: materiasEmBranco(porMateria),
+      porMateria, revisar: prioridadesDeRevisao(porMateria), emBranco: materiasEmBranco(porMateria), anotacao: t.anotacao,
     },
     anterior: anterior ? { pontos: anterior.pontos, pontosMax: anterior.pontosMax } : null,
     itens: gab.itens.map((i) => {
@@ -283,6 +287,14 @@ export async function resultadoDaTentativa(userId: string, tentativaId: string) 
       return { ...i, resposta, situacao }
     }),
   }
+}
+
+/** A anotação do aluno numa tentativa dele (vazio apaga). Tentativa de outro: 404, como se não existisse. */
+export async function anotarTentativa(userId: string, tentativaId: string, texto: unknown) {
+  const t = await tentativaDoAluno(userId, tentativaId)
+  const anotacao = limparAnotacao(texto)
+  await prisma.provaTentativa.update({ where: { id: t.id }, data: { anotacao } })
+  return { id: t.id, anotacao }
 }
 
 /**

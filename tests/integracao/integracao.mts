@@ -508,6 +508,26 @@ await caso('desempenho somado nas provas: aponta a matéria a revisar', async ()
   exigir(d.tentativas.length === 4, `tentativas ${d.tentativas.length}`)
   exigir(d.revisar.some((m: any) => m.materia === 'Língua Portuguesa'), JSON.stringify(d.revisar.map((m: any) => m.materia)))
 })
+await caso('anotação da tentativa: o aluno escreve, lê no resultado e no histórico; vazio apaga', async () => {
+  const r: any = await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, '  fui mediano:\u0007 errei crase  \n\n\n\nna próxima, Penal primeiro  ')
+  exigir(r.anotacao === 'fui mediano: errei crase\n\nna próxima, Penal primeiro', JSON.stringify(r.anotacao))
+  const res: any = await provasAluno.resultadoDaTentativa('ens-aluno-pf', tentativa1)
+  exigir(res.tentativa.anotacao === r.anotacao, 'o resultado não traz a anotação')
+  const lista: any = await provasAluno.provasDoCurso('ens-aluno-pf', 'pf-agente')
+  const t1 = lista.provas.flatMap((p: any) => p.tentativas).find((t: any) => t.id === tentativa1)
+  exigir(t1?.anotacao === r.anotacao && typeof t1.tempoMs === 'number', JSON.stringify(t1))
+  const longa: any = await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, 'x'.repeat(900))
+  exigir(longa.anotacao.length === 500, `tamanho ${longa.anotacao.length}`)
+  const vazia: any = await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, '   ')
+  exigir(vazia.anotacao === null && (await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } }))?.anotacao === null, 'vazio deveria apagar')
+})
+await caso('anotação na tentativa de OUTRO aluno: 404, como se não existisse, e nada muda', async () => {
+  await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, 'minha anotação')
+  let status = 0
+  try { await provasAluno.anotarTentativa('ens-outro', tentativa1, 'invasão') } catch (e: any) { status = e.status }
+  exigir(status === 404, `status ${status}`)
+  exigir((await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } }))?.anotacao === 'minha anotação', 'a anotação mudou')
+})
 
 console.log('\nPROVA DE MÚLTIPLA ESCOLHA (PMDF 2023 de verdade)')
 {

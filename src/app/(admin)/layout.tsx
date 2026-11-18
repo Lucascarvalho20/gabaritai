@@ -6,12 +6,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth'
 import {
   LayoutDashboard, Users, BookOpen, DollarSign, BarChart3,
-  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database, FileText, Megaphone, Mail
+  Sparkles, LogOut, Sun, Moon, Menu, X, ChevronRight, Database, FileText, Megaphone, Mail, Loader2, ClipboardList
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { api } from '@/lib/api'
 
 const NAV = [
   { href: '/admin',            label: 'Visão Geral',     icon: LayoutDashboard, exact: true },
@@ -25,6 +26,7 @@ const NAV = [
   { href: '/admin/materials',  label: 'Materiais',       icon: BookOpen },
   { href: '/admin/conteudo',   label: 'Conteúdo do Site',icon: Sparkles },
   { href: '/admin/banco-questoes', label: 'Banco de questões', icon: Database },
+  { href: '/admin/provas',     label: 'Provas anteriores', icon: ClipboardList },
   { href: '/admin/broadcast',  label: 'Broadcast',       icon: Megaphone },
   { href: '/admin/chat',       label: 'Mensagens',       icon: Megaphone },
   { href: '/admin/test-email', label: 'Teste de Email',  icon: Mail },
@@ -48,8 +50,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const { logout } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Só admin vê o painel. As rotas já negam no servidor; sem isto, quem não é
+  // admin via a casca do painel com "Acesso negado" em cada tela.
+  const [liberado, setLiberado] = useState(false)
 
   useEffect(() => { setSidebarOpen(false) }, [pathname])
+
+  useEffect(() => {
+    let vivo = true
+    api.get('/auth/me')
+      .then(({ data }) => {
+        if (!vivo) return
+        if (data?.role === 'ADMIN') return setLiberado(true)
+        toast.error('Esta área é só para administradores.')
+        router.replace('/dashboard')
+      })
+      .catch(() => {}) // sem sessão: o interceptor do api já leva para o login
+    return () => { vivo = false }
+  }, [router])
 
   function handleLogout() {
     logout()
@@ -100,6 +118,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     </div>
   )
+
+  if (!liberado) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">

@@ -728,6 +728,7 @@ model ProvaTentativa {
   pontosMax  Int       @default(0)
   porMateria Json? // [{ materia, total, acertos, erros, brancos, anuladas, pontos }]
   tempoMs    Int?
+  anotacao   String?   @db.Text // do aluno: "fui mal em Português porque…" (até 500 caracteres)
 
   @@index([userId, provaId, iniciadaEm])
   @@map("prova_tentativas")

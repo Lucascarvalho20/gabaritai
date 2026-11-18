@@ -22,6 +22,7 @@ docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/
 # O SQL das provas roda por cima do schema do Prisma, como vai rodar no
 # Supabase: prova que ele é idempotente e que grava o registro de migrações.
 docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/sql/2026-11-14-provas-anteriores.sql >/dev/null 2>&1
+docker exec -i "$NOME" psql -U postgres -d teste -q -v ON_ERROR_STOP=1 < prisma/sql/2026-11-18-anotacao-tentativa.sql >/dev/null
 
 INTEGRACAO_DATABASE_URL="$URL" node --experimental-transform-types --no-warnings \
   --import ./scripts/alias/registrar.mjs ./tests/integracao/integracao.mts

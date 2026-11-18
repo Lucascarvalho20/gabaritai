@@ -12,7 +12,7 @@ import type { DesempenhoMateria } from '@/lib/provas/correcao'
 type Prova = {
   id: string; titulo: string; ano: number; cargo: string | null; banca: string | null; itens: number
   duracaoMin: number | null; incluiaDiscursiva: boolean; formato: string | null; emAndamento: string | null
-  tentativas: Array<{ id: string; pontos: number; pontosMax: number; entregueEm: string }>
+  tentativas: Array<{ id: string; pontos: number; pontosMax: number; entregueEm: string; tempoMs: number | null; anotacao: string | null }>
   melhor: number | null
 }
 type Dados = {
@@ -105,13 +105,15 @@ export default function ProvasDoCursoPage() {
                   <p className="text-muted-foreground">
                     {p.tentativas.length} tentativa{p.tentativas.length === 1 ? '' : 's'} · melhor <strong className="text-foreground tabular-nums">{fmtNum(p.melhor ?? 0)}</strong> de {p.tentativas[0].pontosMax}
                   </p>
-                  <ul className="flex flex-wrap gap-2">
+                  <ul className="space-y-1">
                     {p.tentativas.slice(0, 6).map((t, i) => (
                       <li key={t.id}>
                         <Link href={`/dashboard/provas/${courseSlug}/${p.id}/resultado/${t.id}`}
-                          className={cn('inline-flex gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs hover:bg-muted tabular-nums', i === 0 && 'border-brand-500/40')}>
-                          <span className="text-muted-foreground">{fmtData(t.entregueEm)}</span>
-                          <strong>{fmtNum(t.pontos)}</strong>
+                          className={cn('flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-border px-2.5 py-1.5 text-xs hover:bg-muted', i === 0 && 'border-brand-500/40')}>
+                          <span className="text-muted-foreground tabular-nums">{fmtData(t.entregueEm)}</span>
+                          <strong className="tabular-nums">{fmtNum(t.pontos)} de {t.pontosMax}</strong>
+                          {t.tempoMs != null && <span className="text-muted-foreground">· usou {fmtDuracao(Math.max(1, Math.round(t.tempoMs / 60_000)))}</span>}
+                          {t.anotacao && <span className="basis-full text-muted-foreground italic truncate">“{t.anotacao}”</span>}
                         </Link>
                       </li>
                     ))}

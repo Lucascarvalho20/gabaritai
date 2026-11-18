@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ChevronLeft, Loader2, RotateCcw, TrendingDown, TrendingUp } from 'lucide-react'
+import { Check, ChevronLeft, Loader2, NotebookPen, RotateCcw, TrendingDown, TrendingUp } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { AvisoOriginal, ListaAlternativas, TextoFormatado, fmtDuracao, fmtPct, type ItemTela } from '@/components/provas/comum'
 import type { DesempenhoMateria } from '@/lib/provas/correcao'
+import { MAX_ANOTACAO } from '@/lib/provas/anotacao'
 
 type ItemResultado = ItemTela & { gabarito: string | null; explicacao: string | null; resposta: string | null; situacao: 'certo' | 'errado' | 'branco' | 'anulada' }
 type Resultado = {
@@ -16,6 +17,7 @@ type Resultado = {
     status: string; entregueEm: string | null; tempoMs: number | null; duracaoMin: number
     acertos: number; erros: number; brancos: number; anuladas: number; pontos: number; pontosMax: number
     porMateria: DesempenhoMateria[]; revisar: DesempenhoMateria[]; emBranco: string[]
+    anotacao: string | null
   }
   anterior: { pontos: number; pontosMax: number } | null
   itens: ItemResultado[]
@@ -85,6 +87,8 @@ export default function ResultadoProvaPage() {
           {r.prova.erradaAnulaCerta && <p className="text-xs text-muted-foreground">Certos menos errados, mais os anulados (o ponto do item anulado vale para todos).</p>}
         </div>
       </div>
+
+      <Anotacao tentativaId={tentativaId} inicial={t.anotacao} />
 
       {t.emBranco.length > 0 && (
         <p className="text-sm text-muted-foreground">
@@ -172,3 +176,47 @@ export default function ResultadoProvaPage() {
     </div>
   )
 }
+
+/** A anotação do aluno nesta tentativa: o porquê da nota, para ler na próxima vez. */
+function Anotacao({ tentativaId, inicial }: { tentativaId: string; inicial: string | null }) {
+  const [texto, setTexto] = useState(inicial ?? '')
+  const [guardado, setGuardado] = useState(inicial ?? '')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+  const mudou = texto.trim() !== guardado.trim()
+
+  async function salvar() {
+    setSalvando(true)
+    setErro('')
+    try {
+      const { data } = await api.put(`/me/provas/tentativas/${tentativaId}/anotacao`, { anotacao: texto })
+      setTexto(data.anotacao ?? '')
+      setGuardado(data.anotacao ?? '')
+    } catch (e: any) {
+      setErro(e.response?.data?.message ?? 'Não foi possível salvar. Tente de novo.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <div className="card p-5 space-y-2">
+      <label htmlFor="anotacao" className="font-semibold text-sm inline-flex items-center gap-2">
+        <NotebookPen className="w-4 h-4 text-muted-foreground" /> Sua anotação sobre esta tentativa
+      </label>
+      <textarea id="anotacao" rows={3} maxLength={MAX_ANOTACAO} value={texto} onChange={(ev) => setTexto(ev.target.value)}
+        placeholder="Ex.: fui mediano porque errei as de crase e deixei Informática em branco. Na próxima, começar por Penal."
+        className="input min-h-[5rem] py-2" />
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={salvar} disabled={salvando || !mudou} className="btn-primary btn-sm">
+          {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Salvar anotação
+        </button>
+        {!mudou && guardado && <span className="text-xs text-success-600 inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Salva</span>}
+        <span className="text-xs text-muted-foreground tabular-nums ml-auto">{texto.length}/{MAX_ANOTACAO}</span>
+      </div>
+      {erro && <p role="alert" className="text-sm text-danger-600">{erro}</p>}
+      <p className="text-xs text-muted-foreground">Só você vê. Ela aparece também no histórico das provas do curso.</p>
+    </div>
+  )
+}
+
