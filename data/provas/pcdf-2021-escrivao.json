@@ -15,7 +15,7 @@
   "pagina": "https://www.cebraspe.org.br/concursos/PC_DF_19_ESCRIVAO",
   "caderno": "https://cdn.cebraspe.org.br/concursos/PC_DF_19_ESCRIVAO/arquivos/MATRIZ_519_PCDF_001_00_BONECA_COMJUSTIFICATIVA.PDF",
   "gabarito": "https://cdn.cebraspe.org.br/concursos/PC_DF_19_ESCRIVAO/arquivos/GAB_DEFINITIVO_MATRIZ_519_PCDF_001_00.PDF",
-  "aviso": "Prova e gabaritos definitivos oficiais — Cebraspe, PCDF Escrivão (edital 2019, aplicada em 2021), publicados no site da banca na versão com a justificativa de cada item, que aparece aqui como comentário. Reproduzidos para fins didáticos, com a fonte citada."
+  "aviso": "Prova e gabaritos definitivos oficiais — Cebraspe, PCDF Escrivão (edital 2019, aplicada em 2021), publicados no site da banca na versão com a justificativa de cada item, que aparece aqui como comentário; nos 10 itens que a banca alterou ou anulou depois dos recursos, o comentário é a justificativa oficial da alteração. Reproduzidos para fins didáticos, com a fonte citada."
  },
  "textos": [
   {
@@ -118,7 +118,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 2
+   "pagina": 2,
+   "explicacao": "Justificativa oficial da banca: ANULADO. A substituição de “implementação” por “implantação” prejudicou o julgamento objetivo do item."
   },
   {
    "numero": 6,
@@ -247,7 +248,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 3
+   "pagina": 3,
+   "explicacao": "Justificativa oficial da banca: ANULADO. A análise da oração “que a nominação de seu desaparecimento seja uma operação de resistência” como subordinada subjetiva é correta, mas não é a única."
   },
   {
    "numero": 16,
@@ -727,7 +729,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 8
+   "pagina": 8,
+   "explicacao": "Justificativa oficial da banca: ANULADO. O uso do termo “não” tornou sem sentido a cobrança do item, prejudicando, assim, seu julgamento objetivo."
   },
   {
    "numero": 53,
@@ -739,7 +742,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 8
+   "pagina": 8,
+   "explicacao": "Justificativa oficial da banca: ANULADO. A cobrança do item envolve legislação não constante do conteúdo programático previsto no edital do certame."
   },
   {
    "numero": 54,
@@ -803,7 +807,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 8
+   "pagina": 8,
+   "explicacao": "Justificativa oficial da banca: ANULADO. O item extrapola os objetos de avaliação previstos no edital de abertura do certame."
   },
   {
    "numero": 59,
@@ -854,7 +859,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 9
+   "pagina": 9,
+   "explicacao": "Justificativa oficial da banca: ANULADO. Uma vez que há quem faça a distinção entre os institutos, colocando o princípio da irretroatividade como decorrente do princípio da anterioridade, prejudicou-se o julgamento objetivo do item."
   },
   {
    "numero": 63,
@@ -957,7 +963,8 @@
    "anulada": false,
    "figura": false,
    "formula": false,
-   "pagina": 9
+   "pagina": 9,
+   "explicacao": "Justificativa oficial da banca: ERRADO (gabarito alterado depois dos recursos). Enquanto não ocorrer a violência ou grave ameaça, estar-se-á diante do furto, não se consumando o crime de roubo impróprio."
   },
   {
    "numero": 71,
@@ -1450,7 +1457,8 @@
    "anulada": true,
    "figura": false,
    "formula": false,
-   "pagina": 13
+   "pagina": 13,
+   "explicacao": "Justificativa oficial da banca: ANULADO. A utilização do termo “tráfico” em vez de tráfego prejudicou o julgamento objetivo do item."
   },
   {
    "numero": 109,
@@ -1488,7 +1496,8 @@
    "anulada": true,
    "figura": false,
    "formula": true,
-   "pagina": 14
+   "pagina": 14,
+   "explicacao": "Justificativa oficial da banca: ANULADO. Prejudicou-se o julgamento objetivo do item, pois não está claro o domínio de variação da variável P, se de zero a um ou se de zero a 100."
   },
   {
    "numero": 112,
@@ -1513,7 +1522,8 @@
    "anulada": true,
    "figura": false,
    "formula": true,
-   "pagina": 14
+   "pagina": 14,
+   "explicacao": "Justificativa oficial da banca: ANULADO. As informações constantes do item possibilitam mais de uma interpretação, prejudicando seu julgamento objetivo."
   },
   {
    "numero": 114,
@@ -1532,7 +1542,7 @@
    "numero": 115,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "= R$ 110. Logo, o ganho líquido foi de R$ 90. Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
+   "comando": "Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
    "enunciado": "A proposição “Se Paulo está mentindo, então Maria não está mentindo” é equivalente à proposição “Se Maria está mentindo, então Paulo não está mentindo”.",
    "gabarito": "C",
    "anulada": false,
@@ -1545,7 +1555,7 @@
    "numero": 116,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "= R$ 110. Logo, o ganho líquido foi de R$ 90. Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
+   "comando": "Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
    "enunciado": "A proposição [p ∧ q] → [p ∨ (~q)], em que (~q) denota a negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa.",
    "gabarito": "E",
    "anulada": false,
@@ -1558,7 +1568,7 @@
    "numero": 117,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "negação da proposição q, só apresenta resultado verdadeiro quando a proposição p for verdadeira e a proposição q for falsa. JUSTIFICATIVA - ERRADO. A tabela verdade a seguir mostra que, independentemente do valor das proposições, o resultado será sempre verdadeiro.",
+   "comando": "Com relação a estruturas lógicas, lógica de argumentação e lógica proposicional, julgue os itens subsequentes.",
    "enunciado": "A negação da proposição “Todos são iguais perante a lei” é “Todos são diferentes perante a lei”.",
    "gabarito": "E",
    "anulada": false,
@@ -1571,7 +1581,7 @@
    "numero": 118,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "Seis pessoas devem se reunir em uma mesa redonda, mas duas delas não podem se sentar uma ao lado da outra. Nessa situação, a quantidade de maneiras distintas de essas seis pessoas sentarem em torno dessa mesa é superior a 400.",
    "gabarito": "C",
    "anulada": false,
@@ -1584,7 +1594,7 @@
    "numero": 119,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "No processo de investigação de um crime, os suspeitos foram separados em três grupos, conforme mostra a tabela a seguir. Os grupos A e C têm elemento em comum e todos os indivíduos do grupo B também estão no grupo C. Nessa situação, é correto concluir que A e B têm algum elemento em comum.",
    "gabarito": "E",
    "anulada": false,
@@ -1597,7 +1607,7 @@
    "numero": 120,
    "materia": "Matemática e Raciocínio Lógico",
    "texto": null,
-   "comando": "“Todos são diferentes perante a lei”. JUSTIFICATIVA - ERRADO. A negação de “Todos são iguais perante a lei” é “Nem todos são iguais perante a lei” ou, ainda, “Existem indivíduos que são diferentes perante a lei”. Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
+   "comando": "Em cada um dos itens a seguir, é apresentada uma situação hipotética seguida de uma assertiva a ser julgada.",
    "enunciado": "Um foragido da justiça, que gostava de se exibir perante seus comparsas e conhecia um pouco de matemática, ligou para a polícia e passou as seguintes informações: “em 30 minutos, eu estarei na rua Alfa, em uma casa, do lado direito da rua, cujo número tem as seguintes características: é inferior a 1.000, o algarismo das centenas é igual ao número de diagonais de um retângulo e, além disso, a parte do número formada só pelos algarismos das dezenas e das unidades é múltiplo de 7”. Uma viatura foi deslocada para o intervalo de casas da rua Alfa correspondente ao algarismo das centenas revelado. Lá chegando, os policiais verificaram que, nesse trecho da rua Alfa, os números das casas tinham as seguintes características: os algarismos das dezenas e das unidades começavam de 01 e de uma casa para a próxima eram acrescentadas 8 unidades. Nessa situação, o número da casa informado pelo foragido é inferior a 250.",
    "gabarito": "C",
    "anulada": false,
