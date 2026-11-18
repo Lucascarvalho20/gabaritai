@@ -68,3 +68,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   await registrar('USER_UPDATED_BY_ADMIN', { acao, courseId })
   return NextResponse.json({ ok: true })
 }
+
+/** DELETE — apaga uma conta de teste (com as tentativas, matrículas e o resto dela, em cascata). Só conta de teste de aluno. */
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireAdmin(req)
+  if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
+  const conta = await prisma.user.findUnique({ where: { id: params.id }, select: { id: true, email: true, role: true } })
+  if (!ehContaDeTeste(conta)) return NextResponse.json({ message: 'Conta de teste não encontrada.' }, { status: 404 })
+  await prisma.user.delete({ where: { id: conta!.id } })
+  await audit({
+    actorId: auth.user.id, targetId: conta!.id, action: 'USER_DEACTIVATED',
+    ip: getClientIp(req), userAgent: req.headers.get('user-agent'), metadata: { contaDeTeste: true, apagada: true, email: conta!.email },
+  })
+  return NextResponse.json({ ok: true })
+}
+

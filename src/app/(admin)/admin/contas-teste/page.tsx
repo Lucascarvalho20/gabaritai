@@ -32,6 +32,7 @@ export default function ContasTestePage() {
   const [cursos, setCursos] = useState<Curso[]>([])
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [nome, setNome] = useState('')
+  const [apagar, setApagar] = useState<string | null>(null) // conta esperando a confirmação
 
   const carregar = useCallback(async () => {
     try {
@@ -68,6 +69,20 @@ export default function ContasTestePage() {
       router.push('/dashboard')
     } catch (e: any) {
       toast.error(e.response?.data?.message ?? 'Não foi possível entrar')
+      setOcupado(null)
+    }
+  }
+
+  async function apagarConta(conta: Conta) {
+    setOcupado(`apagar:${conta.id}`)
+    try {
+      await api.delete(`/admin/contas-teste/${conta.id}`)
+      setApagar(null)
+      await carregar()
+      toast.success('Conta de teste apagada')
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Não foi possível apagar')
+    } finally {
       setOcupado(null)
     }
   }
@@ -168,6 +183,22 @@ export default function ContasTestePage() {
                     )}
                   </>
                 )}
+
+                <div className="pt-2 border-t border-border flex flex-wrap items-center gap-2 text-xs">
+                  {apagar === c.id ? (
+                    <>
+                      <span className="flex-1 min-w-[10rem]">Apagar esta conta, com as tentativas, anotações e matrículas dela?</span>
+                      <button type="button" onClick={() => setApagar(null)} disabled={!!ocupado} className="btn-ghost btn-sm">Cancelar</button>
+                      <button type="button" onClick={() => apagarConta(c)} disabled={!!ocupado} className="btn-sm rounded-lg bg-danger-600 hover:bg-danger-700 text-white px-3">
+                        {ocupado === `apagar:${c.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Sim, apagar'}
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setApagar(c.id)} disabled={!!ocupado} className="text-muted-foreground hover:text-danger-600 inline-flex items-center gap-1">
+                      <Trash2 className="w-3.5 h-3.5" /> Apagar conta
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { signToken } from '@/lib/jwt'
 import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
+import { cadastroDeTeste, ehContaDeTeste } from '@/lib/contas-teste'
 
 /** O token de "entrar como" vale o mesmo que o cookie dele: 1 hora (antes, 30 dias). */
 const IMPERSONACAO_VALIDADE = '1h'
@@ -18,11 +19,17 @@ export async function POST(req: NextRequest, { params }: { params: { userId: str
 
   const target = await prisma.user.findUnique({
     where: { id: params.userId },
-    select: { id: true, name: true, email: true, username: true, role: true, plan: true, hasFullAccess: true, profile: true },
+    select: { id: true, name: true, email: true, username: true, role: true, plan: true, hasFullAccess: true, profile: true, cpfHash: true },
   })
   if (!target) return NextResponse.json({ message: 'Usuário não encontrado' }, { status: 404 })
   if (target.role === 'ADMIN' && target.id !== auth.user.id) {
     return NextResponse.json({ message: 'Não é permitido impersonar outro admin' }, { status: 403 })
+  }
+
+  // Conta de teste criada antes dos marcadores de cadastro cairia no "completar
+  // cadastro", que exige CPF e telefone de verdade (contas-teste.ts).
+  if (ehContaDeTeste(target) && !target.cpfHash) {
+    await prisma.user.update({ where: { id: target.id }, data: cadastroDeTeste() })
   }
 
   const token = await signToken({
