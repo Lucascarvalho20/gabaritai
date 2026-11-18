@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
   const local = ollamaConfig()
   if (local) {
     try {
-      const r = await callOpenAICompat(message, history, systemPrompt, 'ollama', local.url, local.modelo, OLLAMA_TIMEOUT_MS)
+      const r = await callOpenAICompat(message, history, systemPrompt, local.chave, local.url, local.modelo, OLLAMA_TIMEOUT_MS)
       return persistAndRespond(r, 'ollama', detectCronogramaUpdate(message, r))
     } catch (e) { console.error('[Ollama]', e) }
   }

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Calendar, BookOpen, Zap, Target, Brain,
   TrendingUp, Settings, LogOut, Menu, X,
   Bell, Sun, Moon, Users, DollarSign, BarChart3, Sparkles, FileText, Trophy,
-  MessageCircle, Gift, Clock, Lock,
+  MessageCircle, Gift, Clock, Lock, Calculator,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/store/auth'
@@ -30,6 +30,7 @@ const NAV_ALUNO = [
   { href: '/dashboard/meus-cursos', label: 'Meus Cursos', icon: BookOpen },
   { href: '/dashboard/diagnostico', label: 'Diagnóstico inicial', icon: Brain, badge: 'IA', lockFree: true },
   { href: '/dashboard/cronograma', label: 'Cronograma', icon: Calendar },
+  { href: '/dashboard/calculadora', label: 'Calculadora de tempo', icon: Calculator },
   { href: '/dashboard/questoes', label: 'Questões', icon: BookOpen, lockFree: true },
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Zap, lockFree: true },
   { href: '/dashboard/simulados', label: 'Simulados', icon: Target, lockFree: true },

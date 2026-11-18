@@ -23,7 +23,7 @@ const STEPS: Step[] = [
   {
     icon: Calendar,
     title: '1. Monte seu cronograma',
-    description: 'Em "Meus Cursos" você escolhe o concurso; no "Cronograma", a IA distribui as matérias por dia até a data da prova. É o coração da plataforma — e é grátis pra sempre.',
+    description: 'Na "Calculadora de tempo" você vê se dá tempo até a prova (vale até mandar o PDF do edital). No "Cronograma", as matérias viram um plano dia a dia até a data da prova. É o coração da plataforma — e é grátis pra sempre.',
   },
   {
     icon: ListChecks,

@@ -766,6 +766,162 @@ console.log('\nMENTOR NA SESSÃO DE ESTUDO (busca pela matéria + modelo local)'
   }
 }
 
+console.log('\nCALCULADORA DE TEMPO (cursos do aluno + edital em PDF)')
+{
+  const { NextRequest } = await import('next/server')
+  const { signToken } = await import(W + 'jwt.ts')
+  const { similaridade, juntar } = await import(W + 'calculadora.ts')
+  const rCalc = await import(new URL('../../src/app/api/me/calculadora/route.ts', import.meta.url).href)
+  const rEdital = await import(new URL('../../src/app/api/me/calculadora/edital/route.ts', import.meta.url).href)
+
+  // Um curso irmão (mesmas matérias do ens-curso) e um distante (só Contabilidade).
+  await prisma.course.create({ data: { id: 'calc-irmao', slug: 'calc-irmao', name: 'Curso Irmão' } })
+  await prisma.edital.create({ data: { courseId: 'calc-irmao', ano: 2027, titulo: 'Edital Irmão', isActive: true,
+    subjects: { create: [{ subjectId: 'ens-penal', weight: 15, expectedQuestions: 15 }, { subjectId: 'ens-port', weight: 10, expectedQuestions: 10 }] } } })
+  await prisma.course.create({ data: { id: 'calc-distante', slug: 'calc-distante', name: 'Curso Distante' } })
+  await prisma.edital.create({ data: { courseId: 'calc-distante', ano: 2027, titulo: 'Edital Distante', isActive: true,
+    subjects: { create: [{ subjectId: 'ens-contab', weight: 20 }] } } })
+  // O robô de editais achou um edital mais novo do ens-curso, ainda em revisão.
+  await prisma.edital.create({ data: { courseId: 'ens-curso', ano: 2028, titulo: 'Edital Ensaio 2028 (rascunho)', isActive: false } })
+
+  const em5dias = new Date(Date.now() + 5 * 864e5)
+  await prisma.user.create({ data: { id: 'calc-livre', name: 'Conta Gratuita', password: 'x', email: 'calc-livre@teste.local' } })
+  await prisma.userCourseEnrollment.create({ data: { userId: 'calc-livre', courseId: 'ens-curso', isPrimary: true, isActive: true } })
+  await prisma.user.create({ data: { id: 'calc-pago', name: 'Aluno de Três Cursos', password: 'x', email: 'calc-pago@teste.local' } })
+  await prisma.trialPeriod.create({ data: { userId: 'calc-pago', endsAt: em5dias } })
+  for (const [courseId, isPrimary] of [['calc-irmao', false], ['ens-curso', true], ['calc-distante', false]] as const)
+    await prisma.userCourseEnrollment.create({ data: { userId: 'calc-pago', courseId, isPrimary, isActive: true } })
+  await prisma.user.create({ data: { id: 'calc-um', name: 'Aluno de Um Curso', password: 'x', email: 'calc-um@teste.local' } })
+  await prisma.trialPeriod.create({ data: { userId: 'calc-um', endsAt: em5dias } })
+  await prisma.userCourseEnrollment.create({ data: { userId: 'calc-um', courseId: 'calc-irmao', isPrimary: true, isActive: true } })
+
+  const cabecalho = async (sub: string) => ({ authorization: `Bearer ${await signToken({ sub })}` })
+  const cursosDe = async (sub: string) => {
+    const r = await rCalc.GET(new NextRequest('http://localhost/api/me/calculadora', { headers: await cabecalho(sub) }))
+    return { status: r.status, d: await r.json() }
+  }
+
+  await caso('conta gratuita: só o edital em PDF — a conta pelo conteúdo do curso é do plano pago', async () => {
+    const { status, d } = await cursosDe('calc-livre')
+    exigir(status === 200 && d.modo === 'gratuito' && d.cursos.length === 0, JSON.stringify(d))
+  })
+  await caso('plano pago: só os cursos do aluno, o principal primeiro, com estimativa e o edital novo avisado', async () => {
+    const { status, d } = await cursosDe('calc-pago')
+    exigir(status === 200 && d.modo === 'pago', `${status} ${d.modo}`)
+    exigir(d.cursos.map((c: any) => c.courseId).join() === 'ens-curso,calc-distante,calc-irmao', d.cursos.map((c: any) => c.courseId).join())
+    const ens = d.cursos[0]
+    exigir(ens.principal && ens.estimativa.totalMin > 0 && ens.editalNovoEmRevisao?.ano === 2028, JSON.stringify({ p: ens.principal, t: ens.estimativa.totalMin, n: ens.editalNovoEmRevisao }))
+    const irmao = d.cursos.find((c: any) => c.courseId === 'calc-irmao')
+    exigir(irmao.editalNovoEmRevisao === null, 'o irmão não tem edital novo')
+    exigir(irmao.estimativa.materias.find((m: any) => m.id === 'ens-penal').questoesNaProva === 15, 'questões da matéria na prova')
+  })
+  await caso('dois cursos parecidos juntam (matéria comum uma vez); o distante não', async () => {
+    const { d } = await cursosDe('calc-pago')
+    const [ens, distante, irmao] = d.cursos
+    exigir(similaridade(ens.estimativa, irmao.estimativa).parecidos, 'irmão deveria ser parecido')
+    exigir(!similaridade(ens.estimativa, distante.estimativa).parecidos, 'distante não deveria ser parecido')
+    const j = juntar(ens.estimativa, irmao.estimativa)
+    exigir(j.materias.length === 2 && j.totalMin < ens.estimativa.totalMin + irmao.estimativa.totalMin, `${j.materias.length} ${j.totalMin}`)
+  })
+  await caso('aluno de um curso não vê o curso de outro aluno', async () => {
+    const { d } = await cursosDe('calc-um')
+    exigir(d.modo === 'pago' && d.cursos.length === 1 && d.cursos[0].courseId === 'calc-irmao', JSON.stringify(d.cursos.map((c: any) => c.courseId)))
+  })
+
+  // A "IA": responde no formato do Gemini, com o JSON que estiver em `resposta`.
+  let resposta: unknown = null
+  let chamadasIA = 0
+  const fetchAntes = globalThis.fetch
+  globalThis.fetch = (async (url: any, init?: any) => {
+    if (String(url).includes(':generateContent')) {
+      chamadasIA++
+      return Response.json({ candidates: [{ content: { parts: [{ text: '```json\n' + JSON.stringify(resposta) + '\n```' }] } }] })
+    }
+    return fetchAntes(url, init)
+  }) as typeof fetch
+  const editalValido = {
+    editalGeral: { orgao: 'Polícia Ensaio', banca: 'Cebraspe', ano: 2027, dataProva: '2027-08-15' },
+    cargos: [{ nome: 'Agente', totalQuestoes: 120, materias: [
+      { nome: 'Noções de Direito Penal Ensaio', qtdQuestoes: 20, peso: 1, topicos: [{ nome: 'Prescrição', subtopicos: [] }, { nome: 'Tentativa', subtopicos: ['Idônea', 'Inidônea'] }] },
+      { nome: 'Geografia do DF', qtdQuestoes: 5, peso: null, topicos: [{ nome: 'Relevo', subtopicos: [] }] },
+    ] }],
+  }
+  const pdf = (marca: string, tamanho = 0) => Buffer.concat([Buffer.from(`%PDF-1.7\n${marca}\n`), Buffer.alloc(tamanho)])
+  // Cada envio de um IP diferente: o limite por IP tem caso próprio, no fim.
+  let ipSeq = 0
+  const enviar = async (sub: string | null, arquivo: Buffer, ip = `198.51.100.${++ipSeq}`) => {
+    const fd = new FormData()
+    fd.append('pdf', new Blob([arquivo], { type: 'application/pdf' }), 'edital.pdf')
+    const r = await rEdital.POST(new NextRequest('http://localhost/api/me/calculadora/edital', {
+      method: 'POST', body: fd, headers: { ...(sub ? await cabecalho(sub) : {}), 'x-forwarded-for': ip },
+    }))
+    return { status: r.status, d: await r.json() }
+  }
+  const cota = async (userId: string) =>
+    (await prisma.dailyAIQuota.findMany({ where: { userId, kind: 'edital_aluno' } })).reduce((s: number, q: any) => s + q.count, 0)
+
+  try {
+    await caso('sem login: as duas rotas recusam (401)', async () => {
+      const r1 = await rCalc.GET(new NextRequest('http://localhost/api/me/calculadora'))
+      const { status } = await enviar(null, pdf('x'))
+      exigir(r1.status === 401 && status === 401 && chamadasIA === 0, `${r1.status} ${status}`)
+    })
+    await caso('PDF da conta gratuita: a IA lê, e a matéria do site dá o tempo por tópico', async () => {
+      resposta = editalValido
+      const { status, d } = await enviar('calc-livre', pdf('edital-a'))
+      exigir(status === 200 && !d.doCache && chamadasIA === 1, `${status} ${JSON.stringify(d).slice(0, 200)}`)
+      exigir(d.edital.orgao === 'Polícia Ensaio' && d.edital.dataProva === '2027-08-15', JSON.stringify(d.edital))
+      const est = d.cargos[0].estimativa
+      const penal = est.materias.find((m: any) => m.nome === 'Noções de Direito Penal Ensaio')
+      exigir(penal.topicos === 3 && penal.base === 'materia' && penal.materiaDoSite === 'Direito Penal Ensaio' && penal.pontos === 20, JSON.stringify(penal))
+      const geo = est.materias.find((m: any) => m.nome === 'Geografia do DF')
+      exigir(geo.base === 'plataforma' && geo.pontos === 5, JSON.stringify(geo))
+      exigir(await cota('calc-livre') === 1, 'a leitura conta 1 na cota')
+    })
+    await caso('o mesmo PDF de novo sai do cache: a IA não trabalha e a cota não gasta', async () => {
+      const { status, d } = await enviar('calc-pago', pdf('edital-a'))
+      exigir(status === 200 && d.doCache && chamadasIA === 1 && await cota('calc-pago') === 0, `${status} cache=${d.doCache} ia=${chamadasIA}`)
+      const guardado = await prisma.aIGenerationCache.findFirst({ where: { kind: 'edital_aluno' } })
+      exigir(!JSON.stringify(guardado?.content).includes('%PDF'), 'o arquivo não pode ficar guardado')
+    })
+    await caso('arquivo que não é PDF: 400; PDF acima de 4 MB: 413 — sem chamar a IA', async () => {
+      const falso = await enviar('calc-livre', Buffer.from('<html>oi</html>'))
+      const grande = await enviar('calc-livre', pdf('grande', 4 * 1024 * 1024))
+      exigir(falso.status === 400 && grande.status === 413 && chamadasIA === 1, `${falso.status} ${grande.status} ia=${chamadasIA}`)
+    })
+    await caso('documento que não é edital: 422 com a explicação — e conta na cota (a IA trabalhou)', async () => {
+      resposta = { erro: 'é um boleto bancário' }
+      const { status, d } = await enviar('calc-livre', pdf('boleto'))
+      exigir(status === 422 && /boleto/.test(d.message) && await cota('calc-livre') === 2, `${status} ${d.message}`)
+      exigir(!(await prisma.aIGenerationCache.findMany({ where: { kind: 'edital_aluno' } })).some((c: any) => JSON.stringify(c.content).includes('boleto')), 'erro não vai para o cache')
+    })
+    await caso('texto colado: a mesma leitura, pelo texto', async () => {
+      resposta = editalValido
+      const r = await rEdital.POST(new NextRequest('http://localhost/api/me/calculadora/edital', {
+        method: 'POST', headers: { ...(await cabecalho('calc-livre')), 'content-type': 'application/json', 'x-forwarded-for': '198.51.100.200' },
+        body: JSON.stringify({ texto: 'EDITAL Nº 1. Data da prova 15/08/2027. CONTEÚDO PROGRAMÁTICO: ' + 'Direito Penal: prescrição, tentativa. '.repeat(20) }),
+      }))
+      const d = await r.json()
+      exigir(r.status === 200 && d.cargos[0].estimativa.materias.length === 2 && await cota('calc-livre') === 3, `${r.status} ${JSON.stringify(d).slice(0, 160)}`)
+    })
+    await caso('cota diária: no limite, 429 sem chamar a IA', async () => {
+      for (const marca of ['b', 'c']) exigir((await enviar('calc-livre', pdf(marca))).status === 200, `envio ${marca}`)
+      const antes = chamadasIA
+      const { status, d } = await enviar('calc-livre', pdf('d'))
+      exigir(status === 429 && chamadasIA === antes && /amanhã/i.test(d.message), `${status} ia=${chamadasIA - antes} ${d.message}`)
+    })
+    await caso('muitos envios do mesmo IP num minuto: 429 antes de qualquer leitura', async () => {
+      const respostas = []
+      for (let i = 0; i < 7; i++) respostas.push(await enviar('calc-pago', pdf('edital-a'), '203.0.113.9'))
+      const ultimo = respostas[6]
+      exigir(respostas.slice(0, 6).every((r) => r.status === 200) && ultimo.status === 429 && /Muitos envios/.test(ultimo.d.message),
+        respostas.map((r) => r.status).join())
+    })
+  } finally {
+    globalThis.fetch = fetchAntes
+  }
+}
+
 console.log('\nVIGIA DOS CRONS')
 process.env.TELEGRAM_BOT_TOKEN = 'token-falso-do-ensaio'
 process.env.TELEGRAM_CHAT_ID = '1'

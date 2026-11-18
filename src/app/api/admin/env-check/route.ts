@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
     // Modelo local (lib/ollama.ts): só no computador de quem desenvolve, nunca na Vercel.
     'OLLAMA_URL',
     'OLLAMA_MODEL',
+    'OLLAMA_API_KEY',
     'MERCADOPAGO_ACCESS_TOKEN',
     'MERCADOPAGO_PUBLIC_KEY',
     'MERCADOPAGO_SANDBOX',

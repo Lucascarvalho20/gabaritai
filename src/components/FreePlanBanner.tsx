@@ -31,7 +31,7 @@ export function FreePlanBanner() {
       <div className="flex-1 min-w-0">
         <div className="font-bold text-sm">Você está no plano gratuito</div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Cronograma, edital e cronômetro são livres pra sempre. Material, questões, flashcards,
+          Cronograma, calculadora de tempo, edital e cronômetro são livres pra sempre. Material, questões, flashcards,
           simulados e mentor fazem parte dos planos pagos.
         </p>
       </div>

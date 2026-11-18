@@ -5,12 +5,13 @@ import { materiaDoPedido } from '../rag/escopo-pedido.ts'
 
 describe('Ollama — só entra quando configurado', () => {
   const com = (env: Record<string, string | undefined>, f: () => void) => {
-    const antes = { url: process.env.OLLAMA_URL, modelo: process.env.OLLAMA_MODEL }
+    const nomes = ['OLLAMA_URL', 'OLLAMA_MODEL', 'OLLAMA_API_KEY']
+    const antes = Object.fromEntries(nomes.map((n) => [n, process.env[n]]))
+    for (const n of nomes) if (!(n in env)) delete process.env[n]
     Object.assign(process.env, env)
     for (const [k, v] of Object.entries(env)) if (v === undefined) delete process.env[k]
     try { f() } finally {
-      if (antes.url === undefined) delete process.env.OLLAMA_URL; else process.env.OLLAMA_URL = antes.url
-      if (antes.modelo === undefined) delete process.env.OLLAMA_MODEL; else process.env.OLLAMA_MODEL = antes.modelo
+      for (const n of nomes) if (antes[n] === undefined) delete process.env[n]; else process.env[n] = antes[n]
     }
   }
 
@@ -18,11 +19,20 @@ describe('Ollama — só entra quando configurado', () => {
 
   test('com OLLAMA_URL, monta o endereço no formato da OpenAI e usa o modelo padrão', () =>
     com({ OLLAMA_URL: 'http://localhost:11434/', OLLAMA_MODEL: undefined }, () =>
-      assert.deepEqual(ollamaConfig(), { url: 'http://localhost:11434/v1/chat/completions', modelo: OLLAMA_MODELO_PADRAO })))
+      assert.deepEqual(ollamaConfig(), { url: 'http://localhost:11434/v1/chat/completions', modelo: OLLAMA_MODELO_PADRAO, chave: 'ollama' })))
 
   test('o modelo escolhido vence o padrão', () =>
     com({ OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'llama3.1:8b' }, () =>
       assert.equal(ollamaConfig()?.modelo, 'llama3.1:8b')))
+
+  test('servidor próprio: a chave vai no cabeçalho, por https', () =>
+    com({ OLLAMA_URL: 'https://ia.exemplo.com.br', OLLAMA_API_KEY: 'segredo-longo' }, () =>
+      assert.deepEqual(ollamaConfig(), { url: 'https://ia.exemplo.com.br/v1/chat/completions', modelo: OLLAMA_MODELO_PADRAO, chave: 'segredo-longo' })))
+
+  test('chave por http aberto para outra máquina: recusado (vazaria no caminho); no próprio computador, pode', () => {
+    com({ OLLAMA_URL: 'http://203.0.113.7:11434', OLLAMA_API_KEY: 'segredo-longo' }, () => assert.equal(ollamaConfig(), null))
+    com({ OLLAMA_URL: 'http://localhost:11434', OLLAMA_API_KEY: 'segredo-longo' }, () => assert.equal(ollamaConfig()?.chave, 'segredo-longo'))
+  })
 
   test('endereço inválido ou de outro protocolo não liga nada', () => {
     for (const url of ['localhost:11434', 'file:///etc/passwd', 'javascript:alert(1)', 'nada'])

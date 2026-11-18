@@ -149,9 +149,19 @@ function CreatePlanForm({ onCreated }: { onCreated: () => void }) {
   const [previewing, setPreviewing] = useState(false)
 
   useEffect(() => {
+    // Vindo da calculadora de tempo: curso, horas, dias e data da prova já escolhidos lá.
+    const q = new URLSearchParams(window.location.search)
+    const horas = Number(q.get('horas'))
+    if (horas >= 1 && horas <= 12) setHoursPerDay(Math.round(horas * 2) / 2)
+    const dias = (q.get('dias') ?? '').split(',').map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+    if (dias.length) setDaysPerWeek([...new Set(dias)].sort())
+    const prova = q.get('prova') ?? ''
+    if (/^\d{4}-\d{2}-\d{2}$/.test(prova) && prova > toIsoDay(new Date())) setEndDate(prova)
     api.get<{ courses: Course[] }>('/courses').then(({ data }) => {
       setCourses(data.courses)
-      if (data.courses.length > 0) setCourseId(data.courses[0].id)
+      const pedido = data.courses.find((c) => c.id === q.get('curso'))
+      if (pedido) setCourseId(pedido.id)
+      else if (data.courses.length > 0) setCourseId(data.courses[0].id)
     })
   }, [])
 

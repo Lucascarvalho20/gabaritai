@@ -66,7 +66,7 @@ async function callOllama(prompt: string, maxTokens: number, temperature: number
   try {
     const res = await fetch(cfg.url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.chave}` },
       body: JSON.stringify({ model: cfg.modelo, max_tokens: maxTokens, temperature, messages: [{ role: 'user', content: prompt }] }),
       signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
     })

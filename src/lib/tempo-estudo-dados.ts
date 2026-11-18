@@ -17,7 +17,7 @@ import {
 export const TEMPO_QUESTAO_MIN_MS = 5_000
 export const TEMPO_QUESTAO_MAX_MS = 15 * 60_000
 
-type MateriaDoEdital = { id: string; nome: string; peso: number }
+type MateriaDoEdital = { id: string; nome: string; peso: number; questoesNaProva?: number | null }
 
 export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoEdital[]>): Promise<{
   porEdital: Map<string, MateriaConteudo[]>
@@ -106,19 +106,20 @@ export async function carregarConteudo(materiasPorEdital: Map<string, MateriaDoE
 export async function estimativaDoEdital(editalId: string): Promise<EstimativaEdital | null> {
   const subjects = await prisma.editalSubject.findMany({
     where: { editalId },
-    select: { subjectId: true, weight: true, subject: { select: { name: true } } },
+    select: { subjectId: true, weight: true, expectedQuestions: true, subject: { select: { name: true } } },
   })
   if (!subjects.length) return null
   const { porEdital, tempoQuestaoGeral } = await carregarConteudo(
-    new Map([[editalId, subjects.map((s) => ({ id: s.subjectId, nome: s.subject.name, peso: s.weight }))]]),
+    new Map([[editalId, subjects.map((s) => ({ id: s.subjectId, nome: s.subject.name, peso: s.weight, questoesNaProva: s.expectedQuestions }))]]),
   )
   return estimarEdital(porEdital.get(editalId)!, tempoQuestaoGeral)
 }
 
 export type ConcursoComEstimativa = {
+  courseId: string
   slug: string
   nome: string
-  edital: { titulo: string; ano: number; banca: string | null; dataProva: string | null }
+  edital: { id: string; titulo: string; ano: number; banca: string | null; dataProva: string | null }
   estimativa: EstimativaEdital
 }
 
@@ -131,7 +132,7 @@ export async function estimativasDosConcursos(): Promise<ConcursoComEstimativa[]
       id: true, titulo: true, ano: true, dataProva: true,
       banca: { select: { name: true } },
       course: { select: { id: true, slug: true, name: true } },
-      subjects: { orderBy: { order: 'asc' }, select: { subjectId: true, weight: true, subject: { select: { name: true } } } },
+      subjects: { orderBy: { order: 'asc' }, select: { subjectId: true, weight: true, expectedQuestions: true, subject: { select: { name: true } } } },
     },
   })
   // Um edital por curso — o mais recente, a mesma regra de getActiveEditalForCourse.
@@ -139,14 +140,15 @@ export async function estimativasDosConcursos(): Promise<ConcursoComEstimativa[]
   const unicos = editais.filter((e) => e.subjects.length > 0 && !vistos.has(e.course.id) && vistos.add(e.course.id))
 
   const { porEdital, tempoQuestaoGeral } = await carregarConteudo(new Map(unicos.map((e) => [
-    e.id, e.subjects.map((s) => ({ id: s.subjectId, nome: s.subject.name, peso: s.weight })),
+    e.id, e.subjects.map((s) => ({ id: s.subjectId, nome: s.subject.name, peso: s.weight, questoesNaProva: s.expectedQuestions })),
   ])))
 
   return unicos
     .map((e) => ({
+      courseId: e.course.id,
       slug: e.course.slug,
       nome: e.course.name,
-      edital: { titulo: e.titulo, ano: e.ano, banca: e.banca?.name ?? null, dataProva: e.dataProva?.toISOString() ?? null },
+      edital: { id: e.id, titulo: e.titulo, ano: e.ano, banca: e.banca?.name ?? null, dataProva: e.dataProva?.toISOString() ?? null },
       estimativa: estimarEdital(porEdital.get(e.id)!, tempoQuestaoGeral),
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))

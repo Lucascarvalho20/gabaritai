@@ -23,7 +23,7 @@ function provedores(): Provedor[] {
   // Modelo local primeiro, quando configurado (lib/ollama.ts). Ferramentas exigem
   // um modelo que as suporte — qwen2.5 e llama3.1 suportam.
   const local = ollamaConfig()
-  if (local) lista.push({ nome: `ollama:${local.modelo}`, url: local.url, chave: 'ollama', modelo: local.modelo })
+  if (local) lista.push({ nome: `ollama:${local.modelo}`, url: local.url, chave: local.chave, modelo: local.modelo })
   const groq = process.env.GROQ_API_KEY
   if (groq) {
     lista.push({ nome: 'groq', url: 'https://api.groq.com/openai/v1/chat/completions', chave: groq, modelo: GROQ_MODELS[0] })

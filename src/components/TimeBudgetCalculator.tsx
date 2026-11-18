@@ -280,6 +280,12 @@ export function TimeBudgetCalculator() {
             </details>
           </div>
         )}
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Seu concurso não está na lista?{' '}
+          <Link href="/dashboard/calculadora" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">Mande o PDF do edital</Link>{' '}
+          — a calculadora lê as matérias e faz a mesma conta (precisa de conta grátis).
+        </p>
       </div>
     </section>
   )

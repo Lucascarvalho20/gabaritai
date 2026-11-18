@@ -11,6 +11,7 @@
  *   - mentor_chat:   50 mensagens / dia
  *   - mapa_mental:   5 / dia
  *   - explicacao_ia: 30 / dia (só conta quando gera; explicação em cache é grátis)
+ *   - edital_aluno:  5 / dia (PDF do edital na calculadora; edital já lido por alguém é grátis)
  *
  * Aluno hasFullAccess + admin: limites 10x maiores (testes).
  */
@@ -27,6 +28,7 @@ export type QuotaKind =
   | 'mentor_chat'
   | 'mapa_mental'
   | 'explicacao_ia'
+  | 'edital_aluno'
 
 const DEFAULT_LIMITS: Record<QuotaKind, { value: number; period: 'day' | 'week' }> = {
   simulado_ia:   { value: 5,  period: 'day' },
@@ -38,6 +40,7 @@ const DEFAULT_LIMITS: Record<QuotaKind, { value: number; period: 'day' | 'week' 
   mentor_chat:   { value: 50, period: 'day' },
   mapa_mental:   { value: 5,  period: 'day' },
   explicacao_ia: { value: 30, period: 'day' },
+  edital_aluno:  { value: 5,  period: 'day' },
 }
 
 function getLimit(kind: QuotaKind, hasFullAccess: boolean): { value: number; period: 'day' | 'week' } {

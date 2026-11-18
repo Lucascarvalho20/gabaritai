@@ -70,6 +70,8 @@ export type MateriaConteudo = {
   id: string
   nome: string
   peso: number
+  /** Questões da matéria na prova, segundo o edital (null quando o edital não diz). */
+  questoesNaProva?: number | null
   topicos: TopicoConteudo[]
   questoes: number
   /** Mediana real do tempo por questão nesta matéria. */
@@ -82,6 +84,7 @@ export type EstimativaMateria = {
   id: string
   nome: string
   peso: number
+  questoesNaProva?: number | null
   teoriaMin: number
   questoesMin: number
   revisaoMin: number
@@ -192,6 +195,7 @@ export function estimarEdital(
       id: c.m.id,
       nome: c.m.nome,
       peso: c.m.peso,
+      questoesNaProva: c.m.questoesNaProva ?? null,
       teoriaMin: arred(teoria),
       questoesMin: arred(questoesMin),
       revisaoMin: arred(revisao),
@@ -212,6 +216,15 @@ export function estimarEdital(
     }
   })
 
+  return consolidar(estimadas)
+}
+
+/**
+ * Os totais do edital a partir das matérias já estimadas. Separado de
+ * estimarEdital para que a calculadora some dois cursos (a matéria comum uma
+ * vez só) com a mesma conta.
+ */
+export function consolidar(estimadas: EstimativaMateria[]): EstimativaEdital {
   const soma = (f: (m: EstimativaMateria) => number) => estimadas.reduce((s, m) => s + f(m), 0)
   const totalMin = soma((m) => m.totalMin)
   return {
