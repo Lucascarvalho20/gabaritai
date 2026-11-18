@@ -14,6 +14,7 @@ import toast from 'react-hot-toast'
 export function ImpersonationBanner() {
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
+  const user = useAuthStore((s) => s.user)
   const [impersonator, setImpersonator] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,7 +29,9 @@ export function ImpersonationBanner() {
       localStorage.setItem('gabaritai_token', data.token)
       setUser(data.user)
       toast.success('Voltou pro admin')
-      router.push('/admin/usuarios')
+      let volta = '/admin/usuarios'
+      try { volta = sessionStorage.getItem('gabaritai:voltar-admin') || volta } catch { /* sem armazenamento */ }
+      router.push(volta.startsWith('/admin') ? volta : '/admin/usuarios')
     } catch {
       toast.error('Erro ao sair da impersonação')
     }
@@ -40,7 +43,10 @@ export function ImpersonationBanner() {
     <div className="bg-amber-500 text-amber-950 text-sm font-semibold px-4 py-2 flex items-center justify-between gap-3 sticky top-0 z-50">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-4 h-4" />
-        <span>Você está logado como outro usuário (impersonação por <code className="font-mono text-xs">{impersonator}</code>)</span>
+        <span>
+          Você está vendo o site como <strong>{user?.name ?? 'outro usuário'}</strong>
+          <span className="font-normal"> · entrou pelo admin <code className="font-mono text-xs">{impersonator}</code></span>
+        </span>
       </div>
       <button
         onClick={stop}

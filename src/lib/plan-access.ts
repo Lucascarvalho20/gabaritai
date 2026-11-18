@@ -31,6 +31,14 @@ export const TRIAL_LIMITS = {
   allowRedacao: false, // correção de redação só após assinar
 } as const
 
+/**
+ * Matrícula liberada pelo admin sem pagamento ("cortesia por curso"): as
+ * contas de teste do painel "Contas de teste", ou um curso de presente.
+ * Vale como plano pago DAQUELES cursos e só deles — só o servidor grava esta
+ * origem (as do aluno são SELF_ACTIVATED; as do checkout, as do pagamento).
+ */
+export const FONTE_CORTESIA = 'CORTESIA'
+
 export type PlanLimits = {
   hasPlan: boolean
   planSlug: string | null
@@ -97,6 +105,25 @@ export async function getUserPlanLimits(userId: string): Promise<PlanLimits> {
   })
 
   if (!payment) {
+    // Cortesia por curso: plano dos cursos que o admin liberou (FONTE_CORTESIA).
+    const cortesias = await prisma.userCourseEnrollment.count({
+      where: { userId, source: FONTE_CORTESIA, isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    })
+    if (cortesias > 0) {
+      return {
+        hasPlan: true,
+        planSlug: 'cortesia',
+        planName: 'Cortesia',
+        coverageType: 'SPECIFIC',
+        maxCourses: cortesias,
+        expiresAt: null,
+        isBypassed: false,
+        isTrial: false,
+        isFree: false,
+        reason: `Cortesia: ${cortesias} curso(s) liberado(s) pelo admin`,
+      }
+    }
+
     // Sem pagamento ativo → verifica se há um TrialPeriod ainda válido.
     // O cadastro (registro/Google/leads) cria um TrialPeriod, não um Payment.
     // Sem este fallback, o aluno recém-cadastrado aparecia como "sem plano"
@@ -424,7 +451,13 @@ export async function hasAccessToCourse(
   // SPECIFIC/AREA: precisa estar enrolled E ativo
   const enrollment = await prisma.userCourseEnrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
-    select: { isActive: true },
+    select: { isActive: true, source: true, expiresAt: true },
   })
-  return enrollment?.isActive ?? false
+  if (!enrollment?.isActive) return false
+  // Cortesia vale só para o curso liberado: outra matrícula da mesma conta
+  // (o curso escolhido no cadastro, por exemplo) não ganha acesso de carona.
+  if (limits.planSlug === 'cortesia') {
+    return enrollment.source === FONTE_CORTESIA && (!enrollment.expiresAt || enrollment.expiresAt > new Date())
+  }
+  return true
 }

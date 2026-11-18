@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth-server'
 import { getClientIp, rateLimit } from '@/lib/rate-limit'
-import { resultadoDaTentativa, salvarRespostas } from '@/lib/provas/aluno'
+import { descartarTentativa, resultadoDaTentativa, salvarRespostas } from '@/lib/provas/aluno'
 import { respostaDeErro } from '@/lib/provas/http'
 
 export const dynamic = 'force-dynamic'
@@ -28,5 +28,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { tentativaI
     return NextResponse.json(await salvarRespostas(auth.user.id, params.tentativaId, respostas))
   } catch (err) {
     return respostaDeErro(err, 'provas-salvar')
+  }
+}
+
+/** DELETE — desistir da tentativa em andamento: ela some, sem ir para o histórico. Entregue: 409. */
+export async function DELETE(req: NextRequest, { params }: { params: { tentativaId: string } }) {
+  const auth = await requireUser(req)
+  if (!auth.user) return NextResponse.json({ message: auth.message }, { status: auth.status })
+  try {
+    return NextResponse.json(await descartarTentativa(auth.user.id, params.tentativaId))
+  } catch (err) {
+    return respostaDeErro(err, 'provas-descartar')
   }
 }

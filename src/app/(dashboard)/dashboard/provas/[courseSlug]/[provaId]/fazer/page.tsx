@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ChevronLeft, CloudOff, ListChecks, Loader2, Send, X } from 'lucide-react'
+import { ChevronLeft, CloudOff, Eye, ListChecks, Loader2, Play, Send, Timer, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
@@ -20,7 +20,17 @@ import { TextoMarcado } from '@/components/TextoMarcado'
  * - Cada marcação é guardada no aparelho na hora e no servidor 1,5 s depois:
  *   recarregar, fechar a aba ou perder a conexão não perde respostas.
  * - Em zero, a prova é entregue sozinha.
+ * - Abrir a página não liga o cronômetro: primeiro o aluno vê a prova, o tempo
+ *   e a regra, e escolhe começar, só ver com gabarito ou voltar. Desistir (antes
+ *   de entregar) apaga a tentativa — não entra no histórico.
  */
+
+type Antes = {
+  agora: string
+  prova: Inicio['prova']
+  itens: number
+  emAndamento: { id: string; iniciadaEm: string; expiraEm: string; marcadas: number; vencida: boolean } | null
+}
 
 type Inicio = {
   agora: string
@@ -52,24 +62,60 @@ export default function FazerProvaPage() {
   const [confirmar, setConfirmar] = useState(false)
   const [entregando, setEntregando] = useState(false)
   const [folha, setFolha] = useState(false)
+  const [antes, setAntes] = useState<Antes | null>(null)
+  const [comecando, setComecando] = useState(false)
+  const [desistir, setDesistir] = useState<string | null>(null) // id da tentativa a apagar (pede confirmação)
+  const [desistindo, setDesistindo] = useState(false)
   const diferencaRelogio = useRef(0)
   const espera = useRef<ReturnType<typeof setTimeout>>()
   const carregou = useRef(false)
 
-  useEffect(() => {
-    api.post(`/me/provas/${provaId}/tentativas`)
-      .then(({ data }: { data: Inicio }) => {
-        diferencaRelogio.current = new Date(data.agora).getTime() - Date.now()
-        let r = data.tentativa.respostas ?? {}
-        try {
-          const local = localStorage.getItem(`gabaritai:prova:${data.tentativa.id}`)
-          if (local) r = { ...r, ...JSON.parse(local) }
-        } catch { /* armazenamento indisponível: vale o que veio do servidor */ }
-        setRespostas(r)
-        setDados(data)
-      })
-      .catch((e) => setErro(e.response?.data?.message ?? 'Não foi possível abrir a prova.'))
-  }, [provaId])
+  const voltar = `/dashboard/provas/${courseSlug}`
+  const carregarAntes = () => api.get(`/me/provas/${provaId}/tentativas`)
+    .then(({ data }: { data: Antes }) => setAntes(data))
+    .catch((e) => setErro(e.response?.data?.message ?? 'Não foi possível abrir a prova.'))
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { carregarAntes() }, [provaId])
+
+  async function comecar() {
+    setComecando(true)
+    setErro(null)
+    try {
+      const { data }: { data: Inicio } = await api.post(`/me/provas/${provaId}/tentativas`)
+      diferencaRelogio.current = new Date(data.agora).getTime() - Date.now()
+      let r = data.tentativa.respostas ?? {}
+      try {
+        const local = localStorage.getItem(`gabaritai:prova:${data.tentativa.id}`)
+        if (local) r = { ...r, ...JSON.parse(local) }
+      } catch { /* armazenamento indisponível: vale o que veio do servidor */ }
+      setRespostas(r)
+      setDados(data)
+    } catch (e: any) {
+      setErro(e.response?.data?.message ?? 'Não foi possível abrir a prova.')
+    } finally {
+      setComecando(false)
+    }
+  }
+
+  async function confirmarDesistencia() {
+    if (!desistir) return
+    setDesistindo(true)
+    clearTimeout(espera.current)
+    try {
+      await api.delete(`/me/provas/tentativas/${desistir}`)
+      try { localStorage.removeItem(`gabaritai:prova:${desistir}`) } catch { /* nada a limpar */ }
+      if (dados) return router.replace(voltar) // estava fazendo: volta à lista
+      setDesistir(null)
+      setAntes(null)
+      await carregarAntes() // estava na tela de início: segue nela, sem a tentativa
+    } catch (e: any) {
+      setDesistir(null)
+      setErro(e.response?.data?.message ?? 'Não foi possível desistir agora. Tente de novo.')
+    } finally {
+      setDesistindo(false)
+    }
+  }
 
   useEffect(() => {
     if (!dados) return
@@ -118,15 +164,71 @@ export default function FazerProvaPage() {
   const textos = useMemo(() => new Map((dados?.textos ?? []).map((t) => [t.id, t])), [dados])
   const ce = dados?.prova.formato === 'CE'
 
-  if (erro && !dados) {
+  const avisoDesistir = desistir && (
+    <ConfirmarDesistencia ocupado={desistindo} onVoltar={() => setDesistir(null)} onDesistir={confirmarDesistencia} />
+  )
+
+  if (erro && !dados && !antes) {
     return (
       <div className="max-w-xl mx-auto card p-6 space-y-3 text-sm">
         <p>{erro}</p>
-        <Link href={`/dashboard/provas/${courseSlug}`} className="btn-ghost btn-sm">Voltar às provas</Link>
+        <Link href={voltar} className="btn-ghost btn-sm">Voltar às provas</Link>
       </div>
     )
   }
-  if (!dados) return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
+  if (!dados) {
+    if (!antes) return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
+    const aberta = antes.emAndamento
+    const quando = (iso: string) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    return (
+      <div className="max-w-xl mx-auto space-y-4">
+        <Link href={voltar} className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <ChevronLeft className="w-3 h-3" /> Provas anteriores
+        </Link>
+        <div className="card p-6 space-y-4">
+          <div>
+            <h1 className="text-xl font-bold">{antes.prova.titulo}</h1>
+            <p className="text-sm text-muted-foreground">
+              {[antes.prova.banca, `${antes.itens} itens`, antes.prova.duracaoMin ? fmtDuracao(antes.prova.duracaoMin) : null].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          <ul className="text-sm space-y-1.5 text-muted-foreground list-disc pl-5">
+            <li>
+              O cronômetro só começa quando você clicar em <strong className="text-foreground">Começar a prova</strong>, com o tempo do
+              edital{antes.prova.duracaoMin ? `: ${fmtDuracao(antes.prova.duracaoMin)}` : ''}
+              {antes.prova.incluiaDiscursiva ? ' (na prova real, esse tempo incluía a redação; aqui são só as questões)' : ''}.
+            </li>
+            {antes.prova.erradaAnulaCerta && <li>Cada item errado anula um certo; em branco vale zero.</li>}
+            <li>As marcações ficam salvas: dá para fechar a aba e continuar depois, dentro do tempo.</li>
+            <li>Mudou de ideia no meio? <strong className="text-foreground">Desistir</strong> apaga a tentativa — ela não entra no seu histórico.</li>
+          </ul>
+          {aberta && (
+            <p className="rounded-lg bg-warning-50 dark:bg-warning-600/15 p-3 text-sm">
+              {aberta.vencida
+                ? <>O tempo da tentativa que você começou em {quando(aberta.iniciadaEm)} acabou sem entrega. Se começar de novo, ela entra no histórico com as {aberta.marcadas} marcações — ou desista dela.</>
+                : <>Você começou esta prova em {quando(aberta.iniciadaEm)} e marcou {aberta.marcadas} {aberta.marcadas === 1 ? 'item' : 'itens'}. Restam {relogio(new Date(aberta.expiraEm).getTime() - new Date(antes.agora).getTime())}.</>}
+            </p>
+          )}
+          {erro && <p role="alert" className="text-sm text-danger-600">{erro}</p>}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={comecar} disabled={comecando} className="btn-primary btn-md">
+              {comecando ? <Loader2 className="w-4 h-4 animate-spin" /> : aberta && !aberta.vencida ? <Play className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
+              {aberta && !aberta.vencida ? 'Continuar a prova' : 'Começar a prova'}
+            </button>
+            {aberta && (
+              <button type="button" onClick={() => setDesistir(aberta.id)} className="btn-ghost btn-md text-danger-600">
+                <X className="w-4 h-4" /> {aberta.vencida ? 'Desistir da tentativa anterior' : 'Desistir desta tentativa'}
+              </button>
+            )}
+            <Link href={`/dashboard/provas/${courseSlug}/${provaId}/gabarito`} className="btn-ghost btn-md">
+              <Eye className="w-4 h-4" /> Só ver a prova com gabarito
+            </Link>
+          </div>
+        </div>
+        {avisoDesistir}
+      </div>
+    )
+  }
 
   const respondiveis = dados.itens.filter((i) => !i.anulada)
   const respondidas = respondiveis.filter((i) => respostas[i.id]).length
@@ -178,6 +280,9 @@ export default function FazerProvaPage() {
         </span>
         <button type="button" onClick={() => setFolha((f) => !f)} className="lg:hidden btn-ghost btn-sm" aria-expanded={folha}>
           <ListChecks className="w-4 h-4" /><span className="sr-only">Folha de respostas</span>
+        </button>
+        <button type="button" onClick={() => setDesistir(dados.tentativa.id)} className="btn-ghost btn-sm text-danger-600" title="Apaga esta tentativa: não entra no histórico">
+          <X className="w-3.5 h-3.5" /><span className="hidden sm:inline">Desistir</span>
         </button>
         <button type="button" onClick={() => setConfirmar(true)} className="btn-primary btn-sm">
           <Send className="w-3.5 h-3.5" /> Entregar
@@ -269,6 +374,8 @@ export default function FazerProvaPage() {
         <div role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 card px-4 py-3 text-sm max-w-md">{erro}</div>
       )}
 
+      {avisoDesistir}
+
       {(confirmar || entregando) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-entrega">
           <div className="card p-6 max-w-sm w-full space-y-4">
@@ -294,3 +401,25 @@ export default function FazerProvaPage() {
     </div>
   )
 }
+
+/** Desistir apaga: confirmação antes, porque não tem volta. */
+function ConfirmarDesistencia({ ocupado, onVoltar, onDesistir }: { ocupado: boolean; onVoltar: () => void; onDesistir: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-desistir">
+      <div className="card p-6 max-w-sm w-full space-y-4">
+        <h2 id="titulo-desistir" className="font-bold">Desistir desta tentativa?</h2>
+        <p className="text-sm text-muted-foreground">
+          As marcações e o tempo somem: esta tentativa não entra no seu histórico nem no seu desempenho. Você pode começar a
+          prova de novo quando quiser.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onVoltar} disabled={ocupado} className="btn-ghost btn-sm">Voltar</button>
+          <button type="button" onClick={onDesistir} disabled={ocupado} className="btn-primary btn-sm bg-danger-600 hover:bg-danger-700">
+            {ocupado ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Desistir
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+

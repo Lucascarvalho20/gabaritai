@@ -10,7 +10,7 @@ import { getClientIp } from '@/lib/rate-limit'
  *
  * Defesa em camadas:
  * 1. JWT precisa ser válido (signature ok) — só nosso /start gera impersonatorId
- * 2. Verifica que existe AuditLog recente (24h) de ADMIN_IMPERSONATION pra esse par admin↔aluno
+ * 2. Verifica que existe AuditLog recente (2h — o token dura 1h) de ADMIN_IMPERSONATION pra esse par admin↔aluno
  * 3. Verifica que o admin ainda está ativo e tem role=ADMIN
  */
 export async function POST(req: NextRequest) {
@@ -27,13 +27,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Não está impersonando' }, { status: 400 })
   }
 
-  // Verifica que houve uma sessão de impersonação registrada recentemente
-  // (24h). Se não houver, é tentativa de uso de token roubado/forjado.
+  // Verifica que houve uma sessão de impersonação registrada recentemente,
+  // deste admin para ESTA conta. Antes a consulta não filtrava o alvo: qualquer
+  // entrada do admin nas últimas 24 h servia para qualquer token.
   const recentImpersonation = await prisma.auditLog.findFirst({
     where: {
       action: 'ADMIN_IMPERSONATION',
       actorId: String(impersonatorId),
-      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      targetId: String(impersonatedId),
+      createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
     },
     select: { id: true },
   })

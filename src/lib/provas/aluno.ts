@@ -11,6 +11,9 @@
  *  - O prazo é do servidor. Depois dele há 2 minutos de tolerância (rede lenta);
  *    passou disso, valem as respostas que já estavam salvas.
  *  - Cada tentativa pode ter uma anotação do aluno; só o dono lê e escreve.
+ *  - Abrir a página não liga o cronômetro: o aluno vê antes o que vai fazer
+ *    (antesDeComecar) e escolhe começar. Desistir de uma tentativa em andamento
+ *    apaga ela — não entra no histórico; a entregue nunca se apaga.
  */
 import { prisma } from '../prisma'
 import { hasAccessToCourse } from '../plan-access'
@@ -120,6 +123,42 @@ export async function gabaritoDaProva(userId: string, provaId: string) {
     prova: cabecalho(prova), textos,
     itens: itens.map((i) => ({ ...i, gabarito: i.anulada ? null : (resp.get(i.id)?.gabaritoOficial ?? resp.get(i.id)?.gabarito ?? null), explicacao: resp.get(i.id)?.explicacao || null })),
   }
+}
+
+/** Antes de começar: a prova, quantos itens, e a tentativa em andamento (se houver). Não cria nada. */
+export async function antesDeComecar(userId: string, provaId: string) {
+  const prova = await provaComAcesso(userId, provaId)
+  const [itens, aberta] = await Promise.all([
+    prisma.question.count({ where: { provaId, active: true } }),
+    prisma.provaTentativa.findFirst({
+      where: { userId, provaId, status: 'EM_ANDAMENTO' }, orderBy: { iniciadaEm: 'desc' },
+      select: { id: true, iniciadaEm: true, expiraEm: true, respostas: true },
+    }),
+  ])
+  return {
+    agora: new Date().toISOString(),
+    prova: cabecalho(prova),
+    itens,
+    emAndamento: aberta && {
+      id: aberta.id, iniciadaEm: aberta.iniciadaEm, expiraEm: aberta.expiraEm,
+      marcadas: Object.keys((aberta.respostas as Record<string, string>) ?? {}).length,
+      // Passou do prazo e da tolerância: ao começar de novo, ela é entregue como está.
+      vencida: aberta.expiraEm.getTime() + TOLERANCIA_MS < Date.now(),
+    },
+  }
+}
+
+/**
+ * Desistir de uma tentativa em andamento: ela some, com as marcações — não vai
+ * para o histórico nem para o desempenho. A entregue fica (o histórico tem de
+ * ser o que aconteceu). Um DELETE com o status no filtro: se a entrega chegar
+ * ao mesmo tempo, só uma das duas vence.
+ */
+export async function descartarTentativa(userId: string, tentativaId: string) {
+  await tentativaDoAluno(userId, tentativaId)
+  const { count } = await prisma.provaTentativa.deleteMany({ where: { id: tentativaId, userId, status: 'EM_ANDAMENTO' } })
+  if (!count) throw new ErroProva('Esta tentativa já foi entregue: ela fica no histórico.', 409)
+  return { id: tentativaId, descartada: true }
 }
 
 /**

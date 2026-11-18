@@ -12,10 +12,11 @@ const SECRET = new TextEncoder().encode(
   rawSecret ?? 'gabaritai-demo-secret-change-in-production-2024'
 )
 
-export async function signToken(payload: Record<string, unknown>): Promise<string> {
+/** `validade` no formato do jose ('30d', '1h'). Login normal: 30 dias; entrar como aluno: 1 hora. */
+export async function signToken(payload: Record<string, unknown>, validade = '30d'): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('30d')
+    .setExpirationTime(validade)
     .setIssuedAt()
     .sign(SECRET)
 }

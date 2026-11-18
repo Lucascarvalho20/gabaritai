@@ -521,6 +521,32 @@ await caso('anotação da tentativa: o aluno escreve, lê no resultado e no hist
   const vazia: any = await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, '   ')
   exigir(vazia.anotacao === null && (await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } }))?.anotacao === null, 'vazio deveria apagar')
 })
+await caso('antes de começar: mostra a prova sem criar tentativa nem ligar o cronômetro', async () => {
+  const antes = await prisma.provaTentativa.count({ where: { userId: 'ens-aluno-pf', provaId: provaPf } })
+  const r: any = await provasAluno.antesDeComecar('ens-aluno-pf', provaPf)
+  exigir(r.itens === 120 && r.prova.duracaoMin > 0 && r.emAndamento === null, JSON.stringify({ itens: r.itens, em: r.emAndamento }))
+  exigir(await prisma.provaTentativa.count({ where: { userId: 'ens-aluno-pf', provaId: provaPf } }) === antes, 'criou tentativa só por abrir')
+})
+await caso('desistir: a tentativa em andamento some e não entra no histórico; a entregue fica (409)', async () => {
+  const historicoAntes = (await provasAluno.provasDoCurso('ens-aluno-pf', 'pf-agente')).provas.flatMap((p: any) => p.tentativas).length
+  const r: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  await provasAluno.salvarRespostas('ens-aluno-pf', r.tentativa.id, { [r.itens[0].id]: 'C' })
+  const vista: any = await provasAluno.antesDeComecar('ens-aluno-pf', provaPf)
+  exigir(vista.emAndamento?.id === r.tentativa.id && vista.emAndamento.marcadas === 1 && !vista.emAndamento.vencida, JSON.stringify(vista.emAndamento))
+  let status = 0
+  try { await provasAluno.descartarTentativa('ens-outro', r.tentativa.id) } catch (e: any) { status = e.status }
+  exigir(status === 404, `outro aluno desistindo: ${status}`)
+  const d: any = await provasAluno.descartarTentativa('ens-aluno-pf', r.tentativa.id)
+  exigir(d.descartada && !(await prisma.provaTentativa.findUnique({ where: { id: r.tentativa.id } })), 'a tentativa continua no banco')
+  const historicoDepois = (await provasAluno.provasDoCurso('ens-aluno-pf', 'pf-agente')).provas.flatMap((p: any) => p.tentativas).length
+  exigir(historicoDepois === historicoAntes, `histórico ${historicoAntes} → ${historicoDepois}`)
+  status = 0
+  try { await provasAluno.descartarTentativa('ens-aluno-pf', tentativa1) } catch (e: any) { status = e.status }
+  exigir(status === 409 && !!(await prisma.provaTentativa.findUnique({ where: { id: tentativa1 } })), `entregue: ${status}`)
+  const nova: any = await provasAluno.iniciarTentativa('ens-aluno-pf', provaPf)
+  exigir(!nova.retomada && nova.tentativa.id !== r.tentativa.id, 'depois de desistir, começa uma nova')
+  await provasAluno.descartarTentativa('ens-aluno-pf', nova.tentativa.id)
+})
 await caso('anotação na tentativa de OUTRO aluno: 404, como se não existisse, e nada muda', async () => {
   await provasAluno.anotarTentativa('ens-aluno-pf', tentativa1, 'minha anotação')
   let status = 0
@@ -940,6 +966,86 @@ console.log('\nCALCULADORA DE TEMPO (cursos do aluno + edital em PDF)')
   } finally {
     globalThis.fetch = fetchAntes
   }
+}
+
+console.log('\nCONTAS DE TESTE, CORTESIA POR CURSO E ENTRAR COMO')
+{
+  const { NextRequest } = await import('next/server')
+  const { signToken, verifyToken } = await import(W + 'jwt.ts')
+  const { hasAccessToCourse, getUserPlanLimits, FONTE_CORTESIA } = await import(W + 'plan-access.ts')
+  const { getUserContentMode } = await import(W + 'trial-content.ts')
+  const rContas = await import(new URL('../../src/app/api/admin/contas-teste/route.ts', import.meta.url).href)
+  const rConta = await import(new URL('../../src/app/api/admin/contas-teste/[id]/route.ts', import.meta.url).href)
+  const rEntrar = await import(new URL('../../src/app/api/admin/impersonate/[userId]/route.ts', import.meta.url).href)
+  const rVoltar = await import(new URL('../../src/app/api/admin/impersonate/stop/route.ts', import.meta.url).href)
+
+  await prisma.user.create({ data: { id: 'ct-admin', name: 'Admin', password: 'x', email: 'admin-ct@teste.local', role: 'ADMIN' } })
+  await prisma.user.create({ data: { id: 'ct-real', name: 'Aluno de verdade', password: 'x', email: 'real@teste.local' } })
+  await prisma.user.create({ data: { id: 'ct-cortesia', name: 'Cortesia', password: 'x', email: 'cortesia@teste.local' } })
+  // Um curso por cortesia e, de carona, uma matrícula comum (o curso escolhido no cadastro): esta não pode ganhar acesso.
+  await prisma.userCourseEnrollment.create({ data: { userId: 'ct-cortesia', courseId: 'ens-pf-agente', source: FONTE_CORTESIA, isActive: true, isPrimary: true } })
+  await prisma.userCourseEnrollment.create({ data: { userId: 'ct-cortesia', courseId: 'ens-pmdf', source: 'SELF_ACTIVATED', isActive: true } })
+  const comToken = async (sub: string, extra: Record<string, unknown> = {}) => ({ authorization: `Bearer ${await signToken({ sub, ...extra })}`, 'content-type': 'application/json' })
+  const patch = async (sub: string, id: string, corpo: object) => {
+    const r = await rConta.PATCH(new NextRequest(`http://localhost/api/admin/contas-teste/${id}`, { method: 'PATCH', headers: await comToken(sub), body: JSON.stringify(corpo) }), { params: { id } })
+    return r.status
+  }
+
+  await caso('cortesia por curso: vale como plano pago SÓ do curso liberado (a matrícula de carona não ganha acesso)', async () => {
+    const limites = await getUserPlanLimits('ct-cortesia')
+    exigir(limites.planSlug === 'cortesia' && limites.maxCourses === 1 && !limites.isFree, JSON.stringify(limites))
+    exigir(await getUserContentMode('ct-cortesia') === 'FULL_ACCESS', 'modo de conteúdo')
+    exigir(await hasAccessToCourse('ct-cortesia', 'ens-pf-agente'), 'sem acesso ao curso liberado')
+    exigir(!(await hasAccessToCourse('ct-cortesia', 'ens-pmdf')), 'a matrícula comum ganhou acesso de carona')
+    exigir(!(await hasAccessToCourse('ct-cortesia', 'ens-curso')), 'acesso a curso sem matrícula')
+  })
+  await caso('cortesia pausada ou vencida: o acesso some (e a conta volta a ser gratuita)', async () => {
+    await prisma.userCourseEnrollment.updateMany({ where: { userId: 'ct-cortesia', courseId: 'ens-pf-agente' }, data: { isActive: false } })
+    exigir(!(await hasAccessToCourse('ct-cortesia', 'ens-pf-agente')) && (await getUserPlanLimits('ct-cortesia')).isFree, 'pausada')
+    await prisma.userCourseEnrollment.updateMany({ where: { userId: 'ct-cortesia', courseId: 'ens-pf-agente' }, data: { isActive: true, expiresAt: new Date(Date.now() - 1000) } })
+    exigir(!(await hasAccessToCourse('ct-cortesia', 'ens-pf-agente')), 'vencida')
+  })
+
+  let contaId = ''
+  await caso('admin cria conta de teste (@exemplo.invalid, aluno); quem não é admin não cria (403)', async () => {
+    const naoAdmin = await rContas.POST(new NextRequest('http://localhost/api/admin/contas-teste', { method: 'POST', headers: await comToken('ct-real'), body: JSON.stringify({ nome: 'Intruso' }) }))
+    exigir(naoAdmin.status === 403, `não admin: ${naoAdmin.status}`)
+    const r = await rContas.POST(new NextRequest('http://localhost/api/admin/contas-teste', { method: 'POST', headers: await comToken('ct-admin'), body: JSON.stringify({ nome: 'Aluno teste — 1 curso' }) }))
+    const d = await r.json()
+    contaId = d.conta?.id
+    const u = await prisma.user.findUnique({ where: { id: contaId } })
+    exigir(r.status === 200 && u?.email?.endsWith('@exemplo.invalid') && u.role === 'STUDENT', JSON.stringify(d))
+    // Cadastro completo com marcadores que não são CPF nem telefone: não cai no "completar cadastro".
+    exigir(!!u?.cpfHash?.startsWith('teste:') && !!u.phoneHash?.startsWith('teste:') && !!u.phone, 'a conta de teste nasceu sem cadastro completo')
+  })
+  await caso('liberar, pausar (stand-by), reativar e tirar um curso mudam o acesso na hora', async () => {
+    exigir(await patch('ct-admin', contaId, { acao: 'liberar', courseId: 'ens-pf-agente' }) === 200 && await hasAccessToCourse(contaId, 'ens-pf-agente'), 'liberar')
+    exigir(await patch('ct-admin', contaId, { acao: 'pausar', courseId: 'ens-pf-agente' }) === 200 && !(await hasAccessToCourse(contaId, 'ens-pf-agente')), 'pausar')
+    exigir(await patch('ct-admin', contaId, { acao: 'reativar', courseId: 'ens-pf-agente' }) === 200 && await hasAccessToCourse(contaId, 'ens-pf-agente'), 'reativar')
+    exigir(await patch('ct-admin', contaId, { acao: 'tirar', courseId: 'ens-pf-agente' }) === 200 && !(await prisma.userCourseEnrollment.count({ where: { userId: contaId } })), 'tirar')
+    exigir(await patch('ct-admin', contaId, { acao: 'todos', ligado: true }) === 200 && await hasAccessToCourse(contaId, 'ens-curso'), 'todos ligado')
+    exigir(await patch('ct-admin', contaId, { acao: 'todos', ligado: false }) === 200 && !(await hasAccessToCourse(contaId, 'ens-curso')) && !(await prisma.userCourseEnrollment.count({ where: { userId: contaId } })), 'todos desligado')
+  })
+  await caso('o painel não mexe em aluno real nem lista ele: 404, e nada muda', async () => {
+    exigir(await patch('ct-admin', 'ct-real', { acao: 'liberar', courseId: 'ens-pf-agente' }) === 404, 'liberou curso para aluno real')
+    exigir(await patch('ct-admin', 'ct-real', { acao: 'todos', ligado: true }) === 404, 'deu acesso a todos para aluno real')
+    const real = await prisma.user.findUnique({ where: { id: 'ct-real' }, select: { hasFullAccess: true, enrollments: true } })
+    exigir(!real?.hasFullAccess && real?.enrollments.length === 0, 'o aluno real mudou')
+    const lista = await (await rContas.GET(new NextRequest('http://localhost/api/admin/contas-teste', { headers: await comToken('ct-admin') }))).json()
+    exigir(lista.contas.every((c: any) => c.email.endsWith('@exemplo.invalid')) && lista.contas.some((c: any) => c.id === contaId), JSON.stringify(lista.contas.map((c: any) => c.email)))
+  })
+  await caso('entrar como: o token vale 1 hora; voltar ao admin exige o par admin↔conta registrado', async () => {
+    const r = await rEntrar.POST(new NextRequest(`http://localhost/api/admin/impersonate/${contaId}`, { method: 'POST', headers: await comToken('ct-admin') }), { params: { userId: contaId } })
+    const { token } = await r.json()
+    const p: any = await verifyToken(token)
+    exigir(r.status === 200 && p.impersonatorId === 'ct-admin' && p.exp - p.iat === 3600, `status ${r.status} validade ${p?.exp - p?.iat}`)
+    const volta = await rVoltar.POST(new NextRequest('http://localhost/api/admin/impersonate/stop', { method: 'POST', headers: { authorization: `Bearer ${token}` } }))
+    exigir(volta.status === 200 && (await verifyToken((await volta.json()).token))?.sub === 'ct-admin', `voltar: ${volta.status}`)
+    // Um token "como o aluno real" que o admin nunca abriu (nenhum registro do par): não vira sessão de admin.
+    const forjado = await signToken({ sub: 'ct-real', impersonatorId: 'ct-admin' }, '1h')
+    const tentativa = await rVoltar.POST(new NextRequest('http://localhost/api/admin/impersonate/stop', { method: 'POST', headers: { authorization: `Bearer ${forjado}` } }))
+    exigir(tentativa.status === 403, `par sem registro: ${tentativa.status}`)
+  })
 }
 
 console.log('\nVIGIA DOS CRONS')

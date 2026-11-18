@@ -5,6 +5,9 @@ import { signToken } from '@/lib/jwt'
 import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
 
+/** O token de "entrar como" vale o mesmo que o cookie dele: 1 hora (antes, 30 dias). */
+const IMPERSONACAO_VALIDADE = '1h'
+
 /**
  * Gera token JWT pra admin logar COMO outro user.
  * O token carrega `impersonatorId` no payload, permitindo retornar depois.
@@ -30,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { userId: str
     plan: target.plan,
     impersonatorId: auth.user.id,
     impersonatorEmail: auth.user.email,
-  })
+  }, IMPERSONACAO_VALIDADE)
 
   await audit({
     actorId: auth.user.id,
