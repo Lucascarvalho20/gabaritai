@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Eye, Loader2, LogIn, Pause, Play, Plus, Trash2, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
@@ -26,10 +25,10 @@ type Conta = {
 type Curso = { id: string; name: string; slug: string }
 
 export default function ContasTestePage() {
-  const router = useRouter()
   const setAuthUser = useAuthStore((s) => s.setUser)
   const [contas, setContas] = useState<Conta[] | null>(null)
   const [cursos, setCursos] = useState<Curso[]>([])
+  const [padraoFaltando, setPadraoFaltando] = useState(0)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [nome, setNome] = useState('')
   const [apagar, setApagar] = useState<string | null>(null) // conta esperando a confirmação
@@ -39,6 +38,7 @@ export default function ContasTestePage() {
       const { data } = await api.get('/admin/contas-teste')
       setContas(data.contas)
       setCursos(data.cursos)
+      setPadraoFaltando(data.padraoFaltando ?? 0)
     } catch (e: any) {
       toast.error(e.response?.data?.message ?? 'Erro ao carregar as contas de teste')
     }
@@ -65,8 +65,8 @@ export default function ContasTestePage() {
       localStorage.setItem('gabaritai_token', data.token)
       try { sessionStorage.setItem('gabaritai:voltar-admin', '/admin/contas-teste') } catch { /* sem armazenamento */ }
       setAuthUser(data.user)
-      toast.success(`Você está vendo o site como ${conta.name}`)
-      router.push('/dashboard')
+      // Recarrega tudo: cada tela busca os dados de novo, já como a conta de teste.
+      window.location.href = '/dashboard'
     } catch (e: any) {
       toast.error(e.response?.data?.message ?? 'Não foi possível entrar')
       setOcupado(null)
@@ -82,6 +82,19 @@ export default function ContasTestePage() {
       toast.success('Conta de teste apagada')
     } catch (e: any) {
       toast.error(e.response?.data?.message ?? 'Não foi possível apagar')
+    } finally {
+      setOcupado(null)
+    }
+  }
+
+  async function criarPadrao() {
+    setOcupado('padrao')
+    try {
+      const { data } = await api.post('/admin/contas-teste/padrao')
+      await carregar()
+      toast.success(`${data.criadas.length} ${data.criadas.length === 1 ? 'conta criada' : 'contas criadas'}`)
+    } catch (e: any) {
+      toast.error(e.response?.data?.message ?? 'Não foi possível criar')
     } finally {
       setOcupado(null)
     }
@@ -118,6 +131,22 @@ export default function ContasTestePage() {
         <span className="flex-1 min-w-[12rem]">Quer o painel do aluno com a sua própria conta de admin (acesso a tudo)?</span>
         <Link href="/dashboard" className="btn-ghost btn-sm">Ver como aluno (admin)</Link>
       </div>
+
+      {padraoFaltando > 0 && (
+        <div className="card p-5 flex flex-wrap items-center gap-3 border-brand-500/40">
+          <div className="flex-1 min-w-[14rem]">
+            <p className="font-semibold">Criar as contas padrão</p>
+            <p className="text-sm text-muted-foreground">
+              Um aluno de 1 curso (PF Agente), um de 2 cursos parecidos (PF Agente e PF Escrivão), um com todos os
+              cursos e uma conta gratuita — prontos para "Entrar como".
+            </p>
+          </div>
+          <button type="button" onClick={criarPadrao} disabled={!!ocupado} className="btn-primary btn-md">
+            {ocupado === 'padrao' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            Criar {padraoFaltando === 4 ? 'as 4 contas' : `as ${padraoFaltando} que faltam`}
+          </button>
+        </div>
+      )}
 
       {!contas ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>

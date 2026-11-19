@@ -3,32 +3,27 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { FileText, Loader2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { FileText, Loader2, ChevronRight, ChevronLeft, Lock } from 'lucide-react'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
 
-type Course = { id: string; slug: string; name: string; cargo: string | null; orgao: string | null }
+// GET /api/me/provas: os cursos com prova oficial que a conta vê (admin e plano completo: todos).
+type Curso = { slug: string; nome: string; provas: number; acesso: boolean }
 
 export default function ProvasIndexPage() {
   const router = useRouter()
-  const [courses, setCourses] = useState<Course[]>([])
+  const [cursos, setCursos] = useState<Curso[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/me/cursos')
+    api.get('/me/provas')
       .then(({ data }) => {
-        const ativos = (data.enrollments ?? []).filter((e: any) => e.isActive).map((e: any) => e.course)
-        setCourses(ativos)
-        // Se só tem 1 curso ativo, redireciona direto
-        if (ativos.length === 1) {
-          router.replace(`/dashboard/provas/${ativos[0].slug}`)
-        }
+        const lista: Curso[] = data.cursos ?? []
+        setCursos(lista)
+        // Um curso só: vai direto para as provas dele
+        if (lista.length === 1) router.replace(`/dashboard/provas/${lista[0].slug}`)
       })
-      .catch(() => {
-        // Fallback: lista todos cursos
-        api.get('/courses?all=true').then(({ data }) => setCourses(data.courses ?? []))
-          .catch((err) => toast.error(err.response?.data?.message ?? 'Erro ao carregar cursos'))
-      })
+      .catch((err) => toast.error(err.response?.data?.message ?? 'Erro ao carregar as provas'))
       .finally(() => setLoading(false))
   }, [router])
 
@@ -50,25 +45,26 @@ export default function ProvasIndexPage() {
         </p>
       </div>
 
-      {courses.length === 0 ? (
+      {cursos.length === 0 ? (
         <div className="card p-8 text-center text-sm text-muted-foreground">
-          Você ainda não tem cursos ativos. <Link href="/dashboard/meus-cursos" className="text-brand-500 hover:underline">Escolher um agora</Link>.
+          Nenhum curso seu tem prova oficial ainda. <Link href="/dashboard/meus-cursos" className="text-brand-500 hover:underline">Ver meus cursos</Link>.
         </div>
       ) : (
         <div className="space-y-2">
-          {courses.map((c) => (
+          {cursos.map((c) => (
             <Link
-              key={c.id}
+              key={c.slug}
               href={`/dashboard/provas/${c.slug}`}
-              className="card p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+              className="card p-4 flex items-center justify-between gap-3 hover:bg-muted/30 transition-colors"
             >
-              <div>
-                <div className="font-bold text-sm">{c.name}</div>
+              <div className="min-w-0">
+                <div className="font-bold text-sm">{c.nome}</div>
                 <div className="text-xs text-muted-foreground">
-                  {c.cargo}{c.orgao ? ` · ${c.orgao}` : ''}
+                  {c.provas} {c.provas === 1 ? 'prova oficial' : 'provas oficiais'}
+                  {!c.acesso && ' · disponível no plano do curso'}
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              {c.acesso ? <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" /> : <Lock className="w-4 h-4 text-muted-foreground shrink-0" />}
             </Link>
           ))}
         </div>

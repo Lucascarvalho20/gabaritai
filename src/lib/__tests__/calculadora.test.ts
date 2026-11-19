@@ -4,6 +4,7 @@ import { estimarEdital, type MateriaConteudo, type TopicoConteudo } from '../tem
 import {
   similaridade, juntar, pontosDaMateria, etapasDeDuasProvas, avaliarEtapas, prioridadePorPontos,
   contarTopicos, normalizarMateria, casarMateria, estimarPrograma, referenciasPorTopico, diasDaSemana,
+  fraseVoltas, percentualCoberto, daquiAMeses,
   SIMILARIDADE_MINIMA, MIN_TOPICO_REFERENCIA,
 } from '../calculadora.ts'
 
@@ -206,3 +207,23 @@ test('dias por semana viram os dias do cronograma, de segunda em diante', () => 
   assert.deepEqual(diasDaSemana(0), [1])
   assert.deepEqual(diasDaSemana(99), [0, 1, 2, 3, 4, 5, 6])
 })
+
+test('quantas vezes zera, como o aluno fala: 1 vez, 1,5 vez, 2 vezes, 3,5 vezes', () => {
+  assert.equal(fraseVoltas(1), '1 vez')
+  assert.equal(fraseVoltas(1.56), '1,5 vez') // arredonda para baixo: não prometer mais do que cabe
+  assert.equal(fraseVoltas(2), '2 vezes')
+  assert.equal(fraseVoltas(3.54), '3,5 vezes')
+})
+
+test('quanto do conteúdo cabe: de 0 a 1, e conteúdo vazio cabe inteiro', () => {
+  assert.equal(percentualCoberto(600, 1000), 0.6)
+  assert.equal(percentualCoberto(5000, 1000), 1)
+  assert.equal(percentualCoberto(-5, 1000), 0)
+  assert.equal(percentualCoberto(10, 0), 1)
+})
+
+test('prazo rápido: 3, 6 e 12 meses a partir de hoje', () => {
+  assert.equal(daquiAMeses(new Date('2026-11-19T12:00:00'), 3), '2027-02-19')
+  assert.equal(daquiAMeses(new Date('2026-11-19T12:00:00'), 12), '2027-11-19')
+})
+

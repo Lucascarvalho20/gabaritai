@@ -7,6 +7,7 @@ import { audit } from '@/lib/audit-log'
 import { getClientIp } from '@/lib/rate-limit'
 import { getUserPlanLimits } from '@/lib/plan-access'
 import { cadastroDeTeste, DOMINIO_CONTA_TESTE, emailDeTeste, situacaoDaConta } from '@/lib/contas-teste'
+import { CONTAS_PADRAO } from '@/lib/contas-teste-padrao'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,10 +29,14 @@ export async function GET(req: NextRequest) {
     }),
     prisma.course.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true, slug: true } }),
   ])
+  const ordemPadrao = new Map<string, number>(CONTAS_PADRAO.map((p, i) => [p.email, i]))
   const comSituacao = await Promise.all(contas.map(async (c) => ({
     ...c, situacao: situacaoDaConta(await getUserPlanLimits(c.id)),
+    // Posição entre as 4 contas padrão (1 curso, 2 cursos, todos, gratuita); null nas outras.
+    padrao: ordemPadrao.get(c.email ?? '') ?? null,
   })))
-  return NextResponse.json({ contas: comSituacao, cursos })
+  const padraoFaltando = CONTAS_PADRAO.filter((p) => !contas.some((c) => c.email === p.email)).length
+  return NextResponse.json({ contas: comSituacao, cursos, padraoFaltando })
 }
 
 /** POST { nome } — nova conta de teste. A senha é aleatória e ninguém a conhece: só se entra pelo "entrar como". */

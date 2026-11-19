@@ -19,6 +19,7 @@ import { StudyTimerWidget } from '@/components/study/study-timer-widget'
 import { EnrollmentGate } from '@/components/EnrollmentGate'
 import { EmailVerificationBanner } from '@/components/EmailVerificationBanner'
 import { FreePlanBanner } from '@/components/FreePlanBanner'
+import { AdminVerComo } from '@/components/AdminVerComo'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import toast from 'react-hot-toast'
@@ -404,6 +405,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Page content (com gate de enrollment — força aluno a ter curso) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
           <div className="mb-4"><EmailVerificationBanner /></div>
+          <AdminVerComo />
           <div className="mb-4"><FreePlanBanner /></div>
           <EnrollmentGate>{children}</EnrollmentGate>
         </main>

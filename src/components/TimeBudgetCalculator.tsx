@@ -7,6 +7,7 @@ import {
   cabeNoTempo, PALAVRAS_POR_MINUTO, REVISAO_FRACAO, MIN_AMOSTRAS, MIN_POR_QUESTAO_REFERENCIA,
   type EstimativaEdital,
 } from '@/lib/tempo-estudo'
+import { daquiAMeses, fraseVoltas, percentualCoberto } from '@/lib/calculadora'
 
 /**
  * "Dá tempo de estudar o edital até a prova?" — a calculadora da home.
@@ -159,10 +160,17 @@ export function TimeBudgetCalculator() {
                 <label htmlFor="calc-prova" className="label">Data da prova</label>
                 <input id="calc-prova" type="date" className="input" value={dataProva} min={hojeInput()}
                   onChange={(ev) => setDataProva(ev.target.value)} />
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <span className="text-xs text-muted-foreground">Prazo rápido:</span>
+                  {([[3, '3 meses'], [6, '6 meses'], [12, '1 ano']] as const).map(([m, rot]) => (
+                    <button key={m} type="button" onClick={() => setDataProva(daquiAMeses(doInput(hojeInput())!, m))}
+                      className="rounded-md border border-border px-2 py-0.5 text-xs hover:bg-muted">{rot}</button>
+                  ))}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {dataProva && dataProva === atual?.edital.dataProva?.slice(0, 10)
                     ? 'Data do edital. Pode mudar.'
-                    : 'Opcional. Sem data, mostramos só quanto tempo leva.'}
+                    : 'Até quando você vai estudar: a data da prova, ou um prazo seu.'}
                 </p>
               </div>
             </div>
@@ -190,21 +198,25 @@ export function TimeBudgetCalculator() {
                       : 'Com zero hora por dia, não termina.'}
                   </p>
 
+                  {veredito.cabe === undefined && (
+                    <p className="mt-4 rounded-lg border border-dashed border-brand-500/50 p-3 text-sm">
+                      <strong>Até quando você vai estudar?</strong> Ponha a data da prova (ou um prazo rápido) para ver se dá para zerar o conteúdo — e quantas vezes.
+                    </p>
+                  )}
                   {veredito.cabe !== undefined && (
                     veredito.diasAteProva === 0 ? (
                       <p className="mt-4 rounded-lg bg-muted/60 p-3 text-sm">A prova é hoje ou já passou. Escolha outra data.</p>
                     ) : veredito.cabe ? (
                       <p className="mt-4 rounded-lg bg-success-50 dark:bg-success-600/15 p-3 text-sm">
-                        <strong className="text-success-600 dark:text-success-400">Cabe até a prova.</strong>{' '}
-                        Em {fmtNum(veredito.diasAteProva!)} dias dá para percorrer o conteúdo inteiro{' '}
-                        {veredito.voltas! >= 2 ? <>{fmtNum(veredito.voltas!, 1)} vezes.</> : <>uma vez, com {fmtHoras(veredito.disponivelMin! - e.totalMin)} de folga.</>}
+                        <strong className="text-success-600 dark:text-success-400">Dá para zerar o conteúdo {fraseVoltas(veredito.voltas!)}.</strong>{' '}
+                        São {fmtNum(veredito.diasAteProva!)} dias até a prova{veredito.voltas! < 2 ? <>, com {fmtHoras(veredito.disponivelMin! - e.totalMin)} de folga</> : null}.
                       </p>
                     ) : (
                       <p className="mt-4 rounded-lg bg-warning-50 dark:bg-warning-600/15 p-3 text-sm">
-                        <strong className="text-warning-600 dark:text-warning-400">Não cabe até a prova.</strong>{' '}
-                        Faltam {fmtHoras(e.totalMin - veredito.disponivelMin!)}.{' '}
+                        <strong className="text-warning-600 dark:text-warning-400">Não dá para zerar até a prova.</strong>{' '}
+                        No seu ritmo, você percorre {fmtNum(percentualCoberto(veredito.disponivelMin!, e.totalMin) * 100)}% do conteúdo.{' '}
                         {veredito.horasPorDiaNecessarias! <= 12
-                          ? <>Com {fmtNum(veredito.horasPorDiaNecessarias!, 1)} h por dia, caberia.</>
+                          ? <>Para zerar, estude no mínimo {fmtNum(veredito.horasPorDiaNecessarias!, 1)} h por dia.</>
                           : 'Nem com 12 h por dia: vale mirar a próxima prova.'}
                       </p>
                     )
@@ -225,7 +237,7 @@ export function TimeBudgetCalculator() {
                     </div>
                   </dl>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {fmtNum(e.percentualMedido * 100)}% medido no banco; o resto é estimado.
+                    O conteúdo ainda está sendo escrito: {fmtNum(e.percentualMedido * 100)}% deste tempo vem do material pronto; o resto é uma suposição pelos tópicos do edital.
                   </p>
 
                   <Link href="/planos" className="btn-primary btn-md mt-5 group">

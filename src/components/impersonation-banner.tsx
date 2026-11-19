@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { LogOut, AlertTriangle } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
@@ -12,7 +11,6 @@ import toast from 'react-hot-toast'
  * Lê o cookie `gabaritai_impersonating` (não httpOnly) pra detectar.
  */
 export function ImpersonationBanner() {
-  const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
   const user = useAuthStore((s) => s.user)
   const [impersonator, setImpersonator] = useState<string | null>(null)
@@ -31,7 +29,8 @@ export function ImpersonationBanner() {
       toast.success('Voltou pro admin')
       let volta = '/admin/usuarios'
       try { volta = sessionStorage.getItem('gabaritai:voltar-admin') || volta } catch { /* sem armazenamento */ }
-      router.push(volta.startsWith('/admin') ? volta : '/admin/usuarios')
+      // Recarrega tudo, para cada tela buscar os dados de novo já como admin.
+      window.location.href = volta.startsWith('/admin') || volta.startsWith('/dashboard') ? volta : '/admin/usuarios'
     } catch {
       toast.error('Erro ao sair da impersonação')
     }

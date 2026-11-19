@@ -56,8 +56,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // O gabarito entra na chave: se a banca trocar o gabarito, a explicação velha não volta.
       extra: `questao:${questao.id}:${questao.gabarito.trim().toUpperCase()}:v1`,
       prompt: promptDeExplicacao({ ...questao, materia: questao.subject?.name ?? null, textoBase: questao.provaTexto }),
-      aiTask: 'generate',
-      maxTokens: 900,
+      // O aluno espera na tela: a fila rápida (Groq primeiro, raciocínio curto, tempo-limite).
+      aiTask: 'rapida',
+      maxTokens: 700,
       temperature: 0.3,
       // Confere a cota antes de chamar a IA, mas só desconta se a geração der
       // certo: IA fora do ar não pode comer a cota do aluno.

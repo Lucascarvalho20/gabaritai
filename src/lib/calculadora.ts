@@ -295,6 +295,32 @@ export function referenciasPorTopico(estimativas: EstimativaEdital[]): { porMate
   return { porMateria, geral: mediana(porMateria.map((r) => r.minPorTopico)) }
 }
 
+// ─── Como dizer o resultado ──────────────────────────────────────────────────
+
+/**
+ * Quantas vezes dá para percorrer o conteúdo até a prova, como o aluno fala:
+ * "1 vez", "1,5 vez", "2 vezes", "3,5 vezes" (na norma, abaixo de 2 é "vez").
+ * Abaixo de 1 não é "vez": é a parte do conteúdo que dá para cobrir (ver percentualCoberto).
+ */
+export function fraseVoltas(voltas: number): string {
+  const v = Math.floor(Math.max(0, voltas) * 10) / 10
+  const numero = v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+  return `${numero} ${v < 2 ? 'vez' : 'vezes'}`
+}
+
+/** Parte do conteúdo que cabe no tempo disponível, de 0 a 1 (1 = zera). */
+export function percentualCoberto(disponivelMin: number, totalMin: number): number {
+  if (!(totalMin > 0)) return 1
+  return Math.min(1, Math.max(0, disponivelMin / totalMin))
+}
+
+/** Uma data a `meses` de hoje (aaaa-mm-dd), para o "prazo rápido" do formulário. */
+export function daquiAMeses(hoje: Date, meses: number): string {
+  const d = new Date(hoje)
+  d.setMonth(d.getMonth() + meses)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // ─── Do formulário para o cronograma ─────────────────────────────────────────
 
 /** "5 dias por semana" para os dias do cronograma (0 = domingo): de segunda em diante, domingo por último. */

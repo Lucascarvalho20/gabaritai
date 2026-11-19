@@ -7,8 +7,8 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { EstimativaEdital } from '@/lib/tempo-estudo'
 import {
-  avaliarEtapas, diasDaSemana, etapasDeDuasProvas, juntar, pontosDaMateria, prioridadePorPontos, similaridade,
-  MAX_CURSOS_JUNTOS, SIMILARIDADE_MINIMA,
+  avaliarEtapas, daquiAMeses, diasDaSemana, etapasDeDuasProvas, fraseVoltas, juntar, percentualCoberto, pontosDaMateria,
+  prioridadePorPontos, similaridade, MAX_CURSOS_JUNTOS, SIMILARIDADE_MINIMA,
   type Etapa, type EstimativaPrograma, type MateriaPrograma,
 } from '@/lib/calculadora'
 import { POMODORO, REVISOES } from '@/lib/metodo-estudo'
@@ -193,8 +193,15 @@ function CampoData({ id, rotulo, valor, doEdital, onChange }: { id: string; rotu
     <div>
       <label htmlFor={id} className="label">{rotulo}</label>
       <input id={id} type="date" className="input" value={valor} min={hojeInput()} onChange={(ev) => onChange(ev.target.value)} />
+      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+        <span className="text-xs text-muted-foreground">Prazo rápido:</span>
+        {([[3, '3 meses'], [6, '6 meses'], [12, '1 ano']] as const).map(([m, rot]) => (
+          <button key={m} type="button" onClick={() => onChange(daquiAMeses(doInput(hojeInput())!, m))}
+            className="rounded-md border border-border px-2 py-0.5 text-xs hover:bg-muted">{rot}</button>
+        ))}
+      </div>
       <p className="text-xs text-muted-foreground mt-1">
-        {valor && valor === doEdital ? 'Data do edital. Pode mudar.' : 'Sem data, mostramos só quando você termina.'}
+        {valor && valor === doEdital ? 'Data do edital. Pode mudar.' : 'Até quando você vai estudar: a data da prova, ou um prazo seu.'}
       </p>
     </div>
   )
@@ -306,7 +313,7 @@ function MeusCursos({ cursos, disp, datas, mudarData, controles }: {
         etapas={etapas}
         materias={materias}
         disp={disp}
-        nota={`${fmtNum(estimativa.percentualMedido * 100)}% medido no conteúdo do site; o resto é estimado pela mediana dos tópicos medidos.`}
+        nota={`O conteúdo do site ainda está sendo escrito: ${fmtNum(estimativa.percentualMedido * 100)}% deste tempo vem do material pronto; o resto é uma suposição pelos tópicos do edital (cada tópico sem material vale a mediana dos que já têm).`}
         cronogramaHref={cronograma}
         rodape={segundo ? `${fmtHoras(principal.estimativa.totalMin + segundo.estimativa.totalMin - estimativa.totalMin)} economizadas estudando a matéria comum uma vez.` : undefined}
       />
@@ -525,6 +532,17 @@ function Resultado({ totalMin, etapas, materias, disp, nota, cronogramaHref, rod
           : 'Com zero hora por dia, não termina.'}
       </p>
 
+      {r.cabe === undefined && (
+        <p className="mt-3 rounded-lg border border-dashed border-brand-500/50 p-3 text-sm">
+          <strong>Até quando você vai estudar?</strong> Ponha a data da prova (ou use um prazo rápido) para ver se dá
+          para zerar o conteúdo — e quantas vezes.
+        </p>
+      )}
+
+      {unica && unica.veredito.cabe !== undefined && unica.veredito.diasAteProva! > 0 && (
+        <MedidorVoltas voltas={unica.veredito.disponivelMin! / Math.max(1, unica.totalMin)} />
+      )}
+
       {r.etapas.filter((e) => e.veredito.cabe !== undefined).map((e, i) => (
         e.veredito.diasAteProva === 0 ? (
           <p key={i} className="mt-3 rounded-lg bg-muted/60 p-3 text-sm">A prova {r.etapas.length > 1 ? `de ${e.rotulo} ` : ''}é hoje ou já passou. Escolha outra data.</p>
@@ -532,17 +550,19 @@ function Resultado({ totalMin, etapas, materias, disp, nota, cronogramaHref, rod
           <p key={i} className="mt-3 rounded-lg bg-success-50 dark:bg-success-600/15 p-3 text-sm flex gap-2">
             <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-success-600 dark:text-success-400" />
             <span>
-              <strong className="text-success-600 dark:text-success-400">Cabe até a prova{r.etapas.length > 1 ? ` (${e.rotulo})` : ''}.</strong>{' '}
-              Em {fmtNum(e.veredito.diasAteProva!)} dias dá para percorrer {r.etapas.length > 1 && i === 0 ? 'o conteúdo dela' : 'tudo'}{' '}
-              {e.veredito.voltas! >= 2 ? <>{fmtNum(e.veredito.voltas!, 1)} vezes.</> : <>uma vez, com {fmtHoras(e.veredito.disponivelMin! - e.totalMin)} de folga.</>}
+              <strong className="text-success-600 dark:text-success-400">
+                Dá para zerar {r.etapas.length > 1 && i === 0 ? 'o conteúdo dela' : 'o conteúdo'} {fraseVoltas(e.veredito.voltas!)}
+                {r.etapas.length > 1 ? ` (${e.rotulo})` : ''}.
+              </strong>{' '}
+              São {fmtNum(e.veredito.diasAteProva!)} dias até a prova{e.veredito.voltas! < 2 ? <>, com {fmtHoras(e.veredito.disponivelMin! - e.totalMin)} de folga</> : null}.
             </span>
           </p>
         ) : (
           <p key={i} className="mt-3 rounded-lg bg-warning-50 dark:bg-warning-600/15 p-3 text-sm flex gap-2">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-600 dark:text-warning-400" />
             <span>
-              <strong className="text-warning-600 dark:text-warning-400">Não cabe até a prova{r.etapas.length > 1 ? ` (${e.rotulo})` : ''}.</strong>{' '}
-              Faltam {fmtHoras(e.totalMin - e.veredito.disponivelMin!)}.
+              <strong className="text-warning-600 dark:text-warning-400">Não dá para zerar até a prova{r.etapas.length > 1 ? ` (${e.rotulo})` : ''}.</strong>{' '}
+              No seu ritmo, você percorre {fmtNum(percentualCoberto(e.veredito.disponivelMin!, e.totalMin) * 100)}% do conteúdo; faltam {fmtHoras(e.totalMin - e.veredito.disponivelMin!)}.
             </span>
           </p>
         )
@@ -551,7 +571,7 @@ function Resultado({ totalMin, etapas, materias, disp, nota, cronogramaHref, rod
       {r.cabe === false && r.horasPorDiaNecessarias !== undefined && (
         <p className="mt-3 text-sm font-semibold">
           {r.horasPorDiaNecessarias <= 12
-            ? <>Para caber, estude no mínimo {fmtNum(r.horasPorDiaNecessarias, 1)} h por dia, {disp.diasPorSemana} {disp.diasPorSemana === 1 ? 'dia' : 'dias'} por semana, até a prova.</>
+            ? <>Para zerar, estude no mínimo {fmtNum(r.horasPorDiaNecessarias, 1)} h por dia, {disp.diasPorSemana} {disp.diasPorSemana === 1 ? 'dia' : 'dias'} por semana, até a prova.</>
             : 'Nem com 12 h por dia cabe tudo: priorize as matérias abaixo ou mire a próxima prova.'}
         </p>
       )}
@@ -605,3 +625,21 @@ function Resultado({ totalMin, etapas, materias, disp, nota, cronogramaHref, rod
     </div>
   )
 }
+
+/** Quantas vezes o conteúdo cabe até a prova, numa régua de 0 a 3 vezes. */
+function MedidorVoltas({ voltas }: { voltas: number }) {
+  const v = Math.max(0, voltas)
+  const largura = Math.min(v, 3) / 3 * 100
+  return (
+    <div className="mt-4" aria-hidden="true">
+      <div className="relative h-2.5 rounded-full bg-muted overflow-hidden">
+        <div className={cn('absolute inset-y-0 left-0 rounded-full', v >= 1 ? 'bg-success-500' : 'bg-warning-500')} style={{ width: `${largura}%` }} />
+        {[1, 2].map((n) => <span key={n} className="absolute inset-y-0 w-px bg-background" style={{ left: `${(n / 3) * 100}%` }} />)}
+      </div>
+      <div className="flex justify-between text-[11px] text-muted-foreground mt-1 tabular-nums">
+        <span>0</span><span>1×</span><span>2×</span><span>3×{v > 3 ? '+' : ''}</span>
+      </div>
+    </div>
+  )
+}
+

@@ -16,7 +16,7 @@
  *    apaga ela — não entra no histórico; a entregue nunca se apaga.
  */
 import { prisma } from '../prisma'
-import { hasAccessToCourse } from '../plan-access'
+import { getUserPlanLimits, hasAccessToCourse } from '../plan-access'
 import { corrigir, materiasEmBranco, normalizarResposta, prioridadesDeRevisao, type DesempenhoMateria } from './correcao'
 import { cadernoDoItem } from './cadernos'
 import { limparAnotacao } from './anotacao'
@@ -73,6 +73,28 @@ async function itensETextos(provaId: string, fonte: unknown) {
       anulada: q.anulada, caderno: cadernoDoItem(fonte, q.numeroQuestao),
     })),
   }
+}
+
+/**
+ * A porta de entrada das provas: os cursos que têm prova oficial, quantas, e
+ * se a conta tem acesso. Aluno vê os cursos em que está matriculado; quem tem
+ * acesso a tudo (admin, plano completo) vê todos.
+ */
+export async function cursosComProvas(userId: string) {
+  const [limites, matriculas, cursos] = await Promise.all([
+    getUserPlanLimits(userId),
+    prisma.userCourseEnrollment.findMany({ where: { userId, isActive: true }, select: { courseId: true } }),
+    prisma.course.findMany({
+      where: { active: true, provas: { some: { questions: { some: { active: true } } } } },
+      orderBy: { name: 'asc' },
+      select: { id: true, slug: true, name: true, _count: { select: { provas: { where: { questions: { some: { active: true } } } } } } },
+    }),
+  ])
+  const meus = new Set(matriculas.map((m) => m.courseId))
+  const visiveis = cursos.filter((c) => limites.isBypassed || meus.has(c.id))
+  return Promise.all(visiveis.map(async (c) => ({
+    slug: c.slug, nome: c.name, provas: c._count.provas, acesso: await hasAccessToCourse(userId, c.id),
+  })))
 }
 
 /** Lista as provas do curso, com as tentativas do aluno. Sem acesso, lista com cadeado. */

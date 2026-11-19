@@ -43,7 +43,7 @@ export function geminiEndpoint(model: string = GEMINI_MODEL): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 }
 
-export type AITask = 'extract' | 'generate' | 'quality'
+export type AITask = 'extract' | 'generate' | 'quality' | 'rapida'
 
 type AIOpts = {
   maxTokens?: number
@@ -57,7 +57,13 @@ const TASK_ROUTING: Record<AITask, Array<Exclude<Provedor, 'ollama'>>> = {
   extract: ['groq', 'gemini', 'openai', 'claude'],     // mais barato primeiro
   generate: ['gemini', 'claude', 'openai', 'groq'],     // balanceado
   quality: ['claude', 'openai', 'gemini', 'groq'],      // melhor primeiro
+  // O aluno está esperando a resposta na tela (o "Por que?" da questão): o mais
+  // rápido primeiro, e cada provedor com raciocínio curto e tempo-limite.
+  rapida: ['groq', 'gemini', 'openai', 'claude'],
 }
+
+/** Tempo-limite de cada chamada: curto quando o aluno espera na tela; longo para geração em lote. */
+const LIMITE_MS = { rapida: 20_000, normal: 60_000 }
 
 /** Modelo local (Ollama), no formato da OpenAI. Só existe com OLLAMA_URL — ver lib/ollama.ts. */
 async function callOllama(prompt: string, maxTokens: number, temperature: number): Promise<string | null> {
@@ -105,31 +111,37 @@ async function callClaude(prompt: string, maxTokens: number, temperature: number
   }
 }
 
-async function callGroq(prompt: string, maxTokens: number, temperature: number): Promise<string | null> {
+async function callGroq(prompt: string, maxTokens: number, temperature: number, rapida = false): Promise<string | null> {
   const key = process.env.GROQ_API_KEY
   if (!key) return null
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: GROQ_MODELS[0],
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: maxTokens,
-        temperature,
-      }),
-    })
-    const data = await res.json()
-    if (res.ok && data.choices?.[0]?.message?.content) return data.choices[0].message.content
-    console.warn('[ai] groq:', data.error?.message ?? 'falhou')
-    return null
-  } catch (err) {
-    console.warn('[ai] groq exception:', err)
-    return null
+  for (const model of GROQ_MODELS) {
+    try {
+      // Os gpt-oss raciocinam antes de responder, e o raciocínio sai do mesmo
+      // orçamento de tokens. Na tarefa rápida, raciocínio curto e fora da resposta.
+      const gptOss = model.startsWith('openai/gpt-oss')
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: maxTokens,
+          temperature,
+          ...(gptOss ? { include_reasoning: false, ...(rapida ? { reasoning_effort: 'low' } : {}) } : {}),
+        }),
+        signal: AbortSignal.timeout(rapida ? LIMITE_MS.rapida : LIMITE_MS.normal),
+      })
+      const data = await res.json()
+      if (res.ok && data.choices?.[0]?.message?.content) return data.choices[0].message.content
+      console.warn(`[ai] groq ${model}:`, data.error?.message ?? 'falhou')
+    } catch (err) {
+      console.warn(`[ai] groq ${model} exception:`, err)
+    }
   }
+  return null
 }
 
-async function callGemini(prompt: string, maxTokens: number, temperature: number): Promise<string | null> {
+async function callGemini(prompt: string, maxTokens: number, temperature: number, rapida = false): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GEMINI_API_KEY
   if (!key) return null
   try {
@@ -140,8 +152,15 @@ async function callGemini(prompt: string, maxTokens: number, temperature: number
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: maxTokens, temperature },
+          // O Gemini 3 pensa antes de responder (nível médio por padrão), e o
+          // pensamento conta no maxOutputTokens: com teto curto, a resposta pode
+          // voltar vazia depois de segundos pensando. Na tarefa rápida, pensamento
+          // baixo e folga no teto.
+          generationConfig: rapida
+            ? { maxOutputTokens: maxTokens + 1024, temperature, thinkingConfig: { thinkingLevel: 'low' } }
+            : { maxOutputTokens: maxTokens, temperature },
         }),
+        signal: AbortSignal.timeout(rapida ? LIMITE_MS.rapida : LIMITE_MS.normal),
       },
     )
     const data = await res.json()
@@ -200,11 +219,13 @@ export async function callAI(prompt: string, opts: AIOpts = {}): Promise<string>
   const chain = cadeiaDaTarefa(task)
 
   for (const provider of chain) {
-    const result = await PROVIDER_MAP[provider](prompt, maxTokens, temperature)
+    const inicio = Date.now()
+    const result = await PROVIDER_MAP[provider](prompt, maxTokens, temperature, task === 'rapida')
     if (result) {
-      console.log(`[ai] ✓ used ${provider} for task=${task}`)
+      console.log(`[ai] ✓ used ${provider} for task=${task} em ${Date.now() - inicio} ms`)
       return result
     }
+    console.warn(`[ai] ✗ ${provider} para task=${task} (${Date.now() - inicio} ms)`)
   }
   throw new Error(`Nenhum provider de IA disponível pra task=${task}. Configure ANTHROPIC_API_KEY, GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY (ou OLLAMA_URL, para um modelo local).`)
 }
