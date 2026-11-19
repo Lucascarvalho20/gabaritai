@@ -116,9 +116,11 @@ export default function DashboardPage() {
       <div className="max-w-3xl mx-auto py-16 text-center space-y-3">
         <h1 className="text-2xl font-black">Painel do aluno</h1>
         <p className="text-muted-foreground text-sm">
-          Você está logado como <strong>admin</strong>. Esse dashboard é a visão do aluno.
+          Você está logado como <strong>admin</strong>, com acesso a tudo. Para ver o site como um aluno vê, escolha
+          na faixa <strong>Ver como</strong> acima: aluno de 1 curso, de 2 cursos ou com todos os cursos.
         </p>
-        <div className="flex justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
+          <Link href="/dashboard/provas" className="btn-ghost btn-md">Provas anteriores</Link>
           <Link href="/admin" className="btn-primary btn-md">Ir pro painel admin</Link>
         </div>
       </div>

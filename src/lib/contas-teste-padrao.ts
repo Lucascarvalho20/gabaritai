@@ -3,6 +3,10 @@
  * de 1 curso, um de 2 cursos parecidos, um com todos os cursos e uma conta
  * gratuita. E-mails fixos: rodar de novo não duplica, e o que o admin mudou
  * numa conta que já existe fica como está.
+ *
+ * Têm usuário curto (aluno1, aluno2, aluno3) para entrar pela tela de login,
+ * como um aluno entra. A senha NÃO fica no código (o repositório é público):
+ * a conta nasce com senha aleatória e quem define a senha é o dono do site.
  */
 import { randomBytes } from 'node:crypto'
 import bcrypt from 'bcryptjs'
@@ -11,10 +15,10 @@ import { FONTE_CORTESIA } from './plan-access'
 import { cadastroDeTeste } from './contas-teste'
 
 export const CONTAS_PADRAO = [
-  { email: 'aluno-1-curso@exemplo.invalid', nome: 'Aluno teste — 1 curso', cursos: 1 },
-  { email: 'aluno-2-cursos@exemplo.invalid', nome: 'Aluno teste — 2 cursos', cursos: 2 },
-  { email: 'aluno-todos-os-cursos@exemplo.invalid', nome: 'Aluno teste — todos os cursos', cursos: 'todos' },
-  { email: 'aluno-gratuito@exemplo.invalid', nome: 'Aluno teste — conta gratuita', cursos: 0 },
+  { email: 'aluno1@exemplo.invalid', usuario: 'aluno1', nome: 'Aluno 1 — 1 curso', cursos: 1 },
+  { email: 'aluno2@exemplo.invalid', usuario: 'aluno2', nome: 'Aluno 2 — 2 cursos', cursos: 2 },
+  { email: 'aluno3@exemplo.invalid', usuario: 'aluno3', nome: 'Aluno 3 — todos os cursos', cursos: 'todos' },
+  { email: 'aluno-gratuito@exemplo.invalid', usuario: null, nome: 'Aluno teste — conta gratuita', cursos: 0 },
 ] as const
 
 /** Matrícula do "acesso a todos os cursos" — a mesma origem do painel. */
@@ -37,13 +41,17 @@ export async function criarContasPadrao(): Promise<{ criadas: string[]; jaExisti
   const criadas: string[] = []
   const jaExistiam: string[] = []
   for (const p of CONTAS_PADRAO) {
-    if (await prisma.user.findUnique({ where: { email: p.email }, select: { id: true } })) {
+    const existe = await prisma.user.findFirst({
+      where: { OR: [{ email: p.email }, ...(p.usuario ? [{ username: p.usuario }] : [])] },
+      select: { id: true },
+    })
+    if (existe) {
       jaExistiam.push(p.email)
       continue
     }
     const conta = await prisma.user.create({
       data: {
-        name: p.nome, email: p.email, role: 'STUDENT', emailVerified: true,
+        name: p.nome, email: p.email, username: p.usuario, role: 'STUDENT', emailVerified: true,
         password: await bcrypt.hash(randomBytes(32).toString('base64url'), 12),
         hasFullAccess: p.cursos === 'todos',
         ...cadastroDeTeste(),
